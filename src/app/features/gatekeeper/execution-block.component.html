@@ -1,0 +1,191 @@
+<section
+  class="execution-block"
+  [class.execution-block--locked]="isLocked()"
+  [class.execution-block--ready]="!isLocked()"
+  aria-labelledby="execution-block-title"
+>
+  <header class="execution-block__header">
+    <h2 id="execution-block-title" class="execution-block__title">Execution</h2>
+    @if (riskMetrics(); as risk) {
+      @if (risk.r_target !== null) {
+        <p-tag
+          class="execution-block__r-tag"
+          [value]="risk.r_target + 'R target'"
+          severity="info"
+        />
+      }
+    }
+  </header>
+
+  @if (isLocked()) {
+    <p-message
+      class="execution-block__lock-banner"
+      severity="warn"
+      icon="pi pi-lock"
+      [text]="lockReason()!"
+    />
+  }
+
+  <div class="execution-block__body" [class.execution-block__body--disabled]="isLocked()">
+    @if (isLocked()) {
+      <div class="execution-block__overlay" aria-hidden="true">
+        <i class="pi pi-lock execution-block__overlay-icon"></i>
+        <span class="execution-block__overlay-text">Execution Locked</span>
+      </div>
+    }
+
+    <form class="execution-block__form" [formGroup]="executionForm" (ngSubmit)="onSubmit()">
+      <div class="execution-block__row execution-block__row--triple">
+        <div class="execution-block__field">
+          <label for="symbol">Symbol</label>
+          <p-select
+            inputId="symbol"
+            formControlName="symbol"
+            [options]="symbolOptions"
+            optionLabel="label"
+            optionValue="value"
+            [disabled]="isLocked()"
+          />
+        </div>
+
+        <div class="execution-block__field">
+          <label for="direction">Direction</label>
+          <p-select
+            inputId="direction"
+            formControlName="direction"
+            [options]="directionOptions"
+            optionLabel="label"
+            optionValue="value"
+            [disabled]="isLocked()"
+          />
+        </div>
+
+        <div class="execution-block__field">
+          <label for="day_type">Day Type</label>
+          <p-select
+            inputId="day_type"
+            formControlName="day_type"
+            [options]="dayTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            [disabled]="isLocked()"
+          />
+        </div>
+      </div>
+
+      <div class="execution-block__row execution-block__row--triple">
+        <div class="execution-block__field">
+          <label for="entry_price">Entry</label>
+          <p-inputnumber
+            inputId="entry_price"
+            formControlName="entry_price"
+            mode="decimal"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="6"
+            [disabled]="isLocked()"
+            inputStyleClass="data-mono"
+          />
+        </div>
+
+        <div class="execution-block__field">
+          <label for="stop_price">Stop</label>
+          <p-inputnumber
+            inputId="stop_price"
+            formControlName="stop_price"
+            mode="decimal"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="6"
+            [disabled]="isLocked()"
+            inputStyleClass="data-mono"
+          />
+        </div>
+
+        <div class="execution-block__field">
+          <label for="size">Size (contracts)</label>
+          <p-inputnumber
+            inputId="size"
+            formControlName="size"
+            [showButtons]="true"
+            [min]="1"
+            [step]="1"
+            [disabled]="isLocked()"
+            inputStyleClass="data-mono"
+          />
+        </div>
+      </div>
+
+      <div class="execution-block__row">
+        <div class="execution-block__field execution-block__field--optional">
+          <label for="target_price">Target (optional, for R calc)</label>
+          <p-inputnumber
+            inputId="target_price"
+            formControlName="target_price"
+            mode="decimal"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="6"
+            [disabled]="isLocked()"
+            inputStyleClass="data-mono"
+          />
+        </div>
+      </div>
+
+      <div class="execution-block__field">
+        <label for="notes">Notes (optional)</label>
+        <textarea
+          pTextarea
+          id="notes"
+          formControlName="notes"
+          rows="2"
+          class="execution-block__notes"
+          [disabled]="isLocked()"
+        ></textarea>
+      </div>
+
+      <p-divider class="execution-block__divider" />
+
+      @if (riskMetrics(); as risk) {
+        <dl class="execution-block__risk-summary">
+          <div class="execution-block__risk-row">
+            <dt>Stop distance</dt>
+            <dd class="data-mono">{{ risk.stopDistancePts }} pts</dd>
+          </div>
+          <div class="execution-block__risk-row">
+            <dt>Risk / contract</dt>
+            <dd class="data-mono">
+              {{ risk.risk_per_contract | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </dd>
+          </div>
+          <div class="execution-block__risk-row execution-block__risk-row--emphasis">
+            <dt>Total risk</dt>
+            <dd class="data-mono">
+              {{ risk.total_risk | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </dd>
+          </div>
+          @if (risk.r_target !== null) {
+            <div class="execution-block__risk-row">
+              <dt>R target</dt>
+              <dd class="data-mono">{{ risk.r_target }}R</dd>
+            </div>
+          }
+        </dl>
+      }
+
+      @if (executionForm.errors?.['stopPlacement'] && executionForm.touched) {
+        <p-message severity="error" [text]="stopPlacementError()" />
+      }
+
+      <footer class="execution-block__footer">
+        <p-button
+          type="submit"
+          label="Execute Trade"
+          icon="pi pi-bolt"
+          severity="success"
+          [disabled]="!canSubmit()"
+          [loading]="submitting()"
+        />
+      </footer>
+    </form>
+  </div>
+</section>
+
+<p-confirmdialog />

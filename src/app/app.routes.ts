@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard, guestGuard } from './core/auth/auth.guard';
 import { FeaturePlaceholderComponent } from './shared/components/feature-placeholder/feature-placeholder.component';
+import { GatekeeperPageComponent } from './features/gatekeeper/gatekeeper-page.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
@@ -28,12 +29,7 @@ export const routes: Routes = [
       },
       {
         path: 'gatekeeper',
-        component: FeaturePlaceholderComponent,
-        data: {
-          title: 'Gatekeeper',
-          subtitle: 'Phase 1 — Trade qualification',
-          description: 'Four-pillar wizard, readiness meter, and execution block coming next per docs/03_GATEKEEPER_PAGE/.',
-        },
+        component: GatekeeperPageComponent,
       },
       {
         path: 'journal',

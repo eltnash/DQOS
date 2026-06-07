@@ -1,0 +1,38 @@
+<section class="readiness-meter" [class.readiness-meter--compact]="compact()">
+  <div class="readiness-meter__gauge">
+    <p-knob
+      [readonly]="true"
+      [min]="0"
+      [max]="100"
+      [ngModel]="readinessPct()"
+      valueTemplate="{value}%"
+      styleClass="readiness-meter__knob"
+    />
+    <p-progressBar
+      [value]="readinessPct()"
+      [showValue]="true"
+      styleClass="readiness-meter__bar"
+    />
+  </div>
+
+  <ul class="readiness-meter__checklist">
+    @for (step of pillarSteps(); track step.key) {
+      <li
+        class="readiness-meter__item"
+        [class.readiness-meter__item--valid]="step.valid"
+      >
+        <i [class]="step.valid ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+        <span>{{ step.label }}</span>
+        @if (step.value) {
+          <span class="readiness-meter__value data-mono">{{ step.value }}</span>
+        }
+      </li>
+    }
+  </ul>
+
+  <p-message
+    [severity]="bannerSeverity()"
+    [text]="bannerText()"
+    styleClass="readiness-meter__banner"
+  />
+</section>

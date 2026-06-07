@@ -1,0 +1,162 @@
+<form class="gatekeeper-form" [formGroup]="form">
+  <nav class="gatekeeper-form__steps" aria-label="Pillar steps">
+    @for (step of steps; track step.key) {
+      <button
+        type="button"
+        class="gatekeeper-form__step"
+        [class.gatekeeper-form__step--active]="activeStep() === step.number"
+        [class.gatekeeper-form__step--complete]="isStepValid(step.key)"
+        (click)="activeStep.set(step.number)"
+      >
+        <span class="gatekeeper-form__step-num">{{ step.number }}</span>
+        <span>{{ step.title }}</span>
+      </button>
+    }
+  </nav>
+
+  <p class="gatekeeper-form__methodology">{{ currentStep().methodology }}</p>
+
+  @if (activeStep() === 1) {
+    <section class="gatekeeper-form__panel form-step--active">
+      <p-message
+        severity="info"
+        text="Daily oath: I will not trade because price touched a level. The first test provides information. The retest provides opportunity."
+        styleClass="gatekeeper-form__oath"
+      />
+
+      <div class="gatekeeper-form__retest">
+        <p-checkbox formControlName="is_retest" [binary]="true" inputId="is-retest" />
+        <label for="is-retest">
+          This is a <strong>retest</strong> of proven behavior (not the initial test)
+        </label>
+      </div>
+
+      <div formGroupName="location" class="gatekeeper-form__fields">
+        <label class="gatekeeper-form__label">Auction location</label>
+        <p-selectbutton
+          formControlName="location"
+          [options]="locationOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="gatekeeper-form__pills"
+        />
+        @if (selectedHint(locationOptions, stepGroup('location').get('location')?.value); as hint) {
+          <p class="gatekeeper-form__hint">{{ hint }}</p>
+        }
+
+        <label class="gatekeeper-form__label" for="location-thesis">Location narrative</label>
+        <textarea
+          pTextarea
+          id="location-thesis"
+          formControlName="location_thesis"
+          rows="4"
+          placeholder="Where is price relative to value? Why is this an auction boundary, not middle of value?"
+          class="gatekeeper-form__textarea"
+        ></textarea>
+      </div>
+    </section>
+  }
+
+  @if (activeStep() === 2) {
+    <section class="gatekeeper-form__panel form-step--active" formGroupName="behavior">
+      <label class="gatekeeper-form__label">Market behavior</label>
+      <p-selectbutton
+        formControlName="behavior"
+        [options]="behaviorOptions"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="gatekeeper-form__pills"
+      />
+      @if (selectedHint(behaviorOptions, stepGroup('behavior').get('behavior')?.value); as hint) {
+        <p class="gatekeeper-form__hint">{{ hint }}</p>
+      }
+
+      <label class="gatekeeper-form__label" for="behavior-thesis">Behavior narrative</label>
+      <textarea
+        pTextarea
+        id="behavior-thesis"
+        formControlName="behavior_thesis"
+        rows="4"
+        placeholder="Acceptance, rejection, or migration? What did the initial test reveal, and what does the retest prove?"
+        class="gatekeeper-form__textarea"
+      ></textarea>
+    </section>
+  }
+
+  @if (activeStep() === 3) {
+    <section class="gatekeeper-form__panel form-step--active" formGroupName="confirmation">
+      <label class="gatekeeper-form__label">Confirmation trigger</label>
+      <p-selectbutton
+        formControlName="confirmation"
+        [options]="confirmationOptions"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="gatekeeper-form__pills"
+      />
+      @if (
+        selectedHint(confirmationOptions, stepGroup('confirmation').get('confirmation')?.value);
+        as hint
+      ) {
+        <p class="gatekeeper-form__hint">{{ hint }}</p>
+      }
+
+      <label class="gatekeeper-form__label" for="confirmation-thesis">Confirmation narrative</label>
+      <textarea
+        pTextarea
+        id="confirmation-thesis"
+        formControlName="confirmation_thesis"
+        rows="4"
+        placeholder="What order flow signature validates the thesis at the retest?"
+        class="gatekeeper-form__textarea"
+      ></textarea>
+    </section>
+  }
+
+  @if (activeStep() === 4) {
+    <section class="gatekeeper-form__panel form-step--active" formGroupName="invalidation">
+      <label class="gatekeeper-form__label" for="invalidation-level">Invalidation level</label>
+      <input
+        pInputText
+        id="invalidation-level"
+        formControlName="invalidation_level"
+        placeholder="e.g. Acceptance back inside value / below retest low"
+        class="gatekeeper-form__input"
+      />
+
+      <label class="gatekeeper-form__label" for="invalidation-price">Invalidation price</label>
+      <p-inputnumber
+        inputId="invalidation-price"
+        formControlName="invalidation_price"
+        mode="decimal"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="6"
+        styleClass="gatekeeper-form__number"
+        inputStyleClass="data-mono"
+      />
+
+      <label class="gatekeeper-form__label" for="invalidation-thesis">Invalidation narrative</label>
+      <textarea
+        pTextarea
+        id="invalidation-thesis"
+        formControlName="invalidation_thesis"
+        rows="4"
+        placeholder="Where is the structural thesis proven wrong? What acceptance would kill the idea?"
+        class="gatekeeper-form__textarea"
+      ></textarea>
+    </section>
+  }
+
+  <div class="gatekeeper-form__nav">
+    <p-button
+      type="button"
+      label="Back"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [disabled]="activeStep() === 1"
+      (onClick)="goBack()"
+    />
+    @if (activeStep() < 4) {
+      <p-button type="button" label="Next pillar" icon="pi pi-arrow-right" (onClick)="goNext()" />
+    }
+  </div>
+</form>
