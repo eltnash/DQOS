@@ -44,8 +44,17 @@ export class HtfNarrativePanelComponent {
   protected readonly priorWeekRangeOptions = PRIOR_WEEK_RANGE_OPTIONS;
 
   protected readonly toolOptions = computed(() => {
-    const allowed = new Set(this.config().toolKeys);
-    return HTF_ANALYSIS_TOOL_OPTIONS.filter((tool) => allowed.has(tool.key));
+    const config = this.config();
+    const allowed = new Set(config.toolKeys);
+
+    return HTF_ANALYSIS_TOOL_OPTIONS.filter((tool) => allowed.has(tool.key)).map((tool) => {
+      const override = config.toolLabels[tool.key];
+      return {
+        key: tool.key,
+        label: override?.label ?? tool.label,
+        hint: override?.hint ?? tool.hint,
+      };
+    });
   });
 
   protected fieldInputId(field: TimeframeNarrativeFieldConfig): string {

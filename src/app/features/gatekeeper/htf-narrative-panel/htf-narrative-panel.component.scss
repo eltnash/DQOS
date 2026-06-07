@@ -141,4 +141,16 @@
       background: rgba(16, 185, 129, 0.1);
     }
   }
+
+  &__tool-text {
+    display: grid;
+    gap: 0.125rem;
+    line-height: 1.35;
+
+    small {
+      font-size: 0.6875rem;
+      color: #9ca3af;
+      font-weight: 400;
+    }
+  }
 }

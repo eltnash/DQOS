@@ -25,25 +25,33 @@ export interface TimeframeNarrativeFieldConfig {
   placeholder?: string;
 }
 
+export interface TimeframeToolDisplay {
+  key: HtfAnalysisTool;
+  label: string;
+  hint?: string;
+}
+
 export interface TimeframeNarrativeConfig {
   intro: HtfNarrativeBlock;
   bridge?: HtfNarrativeBlock;
   toolsReference?: HtfNarrativeBlock;
   fields: readonly TimeframeNarrativeFieldConfig[];
   toolKeys: readonly HtfAnalysisTool[];
+  /** Display labels scoped to this timeframe (storage keys unchanged). */
+  toolLabels: Partial<Record<HtfAnalysisTool, Pick<TimeframeToolDisplay, 'label' | 'hint'>>>;
 }
 
 const WEEKLY_NARRATIVE: TimeframeNarrativeConfig = {
   intro: {
     heading: 'Weekly context — prior week range & composite',
     paragraphs: [
-      'Weekly HTF is only for mapping prior week high/low and prior week composite relative to the developing week. Nothing broader than what affects intraday trades.',
+      'Weekly HTF covers a 1–2 week lookback only — prior week high/low and prior week composite relative to the developing week. Nothing broader than what affects intraday trades.',
     ],
   },
   toolsReference: {
-    heading: 'Weekly tools to reference',
+    heading: 'Weekly tools to reference (1–2 week window)',
     paragraphs: [
-      'Prior week high/low lines · Prior week composite VAH / VAL / POC · Composite volume profile · Major HVNs & LVNs · Market structure trend lines.',
+      'Prior week high/low lines · Prior week composite VAH / VAL / POC · 1–2 week composite profile · Key HVNs & LVNs · Market structure trend lines.',
     ],
   },
   fields: [
@@ -90,6 +98,20 @@ const WEEKLY_NARRATIVE: TimeframeNarrativeConfig = {
     'Market_Structure_Trendlines',
     'Prior_Week_HL_Lines',
   ],
+  toolLabels: {
+    Composite_VP: {
+      label: '1–2 week composite volume profile',
+      hint: 'Composite profile built from the last 1–2 weeks — not monthly macro',
+    },
+    Multi_Day_VAH_VAL_POC: {
+      label: 'Prior week & 1–2 week VAH / VAL / POC',
+      hint: 'Prior week composite plus recent week value — the only VAH/VAL/POC window that matters here',
+    },
+    Major_HVN_LVN: {
+      label: 'Key HVNs & LVNs (1–2 week window)',
+      hint: 'High/low volume nodes within the last 1–2 weeks',
+    },
+  },
 };
 
 const MONTHLY_NARRATIVE: TimeframeNarrativeConfig = {
@@ -141,6 +163,13 @@ const MONTHLY_NARRATIVE: TimeframeNarrativeConfig = {
     'Day_Type_Series',
     'Unfinished_Business',
   ],
+  toolLabels: {
+    Composite_VP: { label: 'Monthly composite volume profile' },
+    Multi_Day_VAH_VAL_POC: { label: 'Multi-week VAH / VAL / POC' },
+    Multi_Day_TPO: { label: 'Multi-week TPO / value migration' },
+    Value_Area_Migration: { label: 'Macro value area migration' },
+    Day_Type_Series: { label: 'Multi-week day type character' },
+  },
 };
 
 const DAILY_NARRATIVE: TimeframeNarrativeConfig = {
@@ -197,6 +226,12 @@ const DAILY_NARRATIVE: TimeframeNarrativeConfig = {
     'Market_Structure_Trendlines',
     'Prior_Week_HL_Lines',
   ],
+  toolLabels: {
+    Composite_VP: { label: 'Developing session / daily profile' },
+    Multi_Day_VAH_VAL_POC: { label: 'Prior day VAH / VAL / POC' },
+    Day_Type_Series: { label: 'Developing day type' },
+    Prior_Week_HL_Lines: { label: 'Prior day high / low lines' },
+  },
 };
 
 const H4_NARRATIVE: TimeframeNarrativeConfig = {
@@ -240,6 +275,11 @@ const H4_NARRATIVE: TimeframeNarrativeConfig = {
     'Market_Structure_Trendlines',
     'Value_Area_Migration',
   ],
+  toolLabels: {
+    Composite_VP: { label: '4H session composite profile' },
+    Multi_Day_VAH_VAL_POC: { label: 'Multi-session VAH / VAL / POC' },
+    Value_Area_Migration: { label: 'Intraweek value migration' },
+  },
 };
 
 const H1_NARRATIVE: TimeframeNarrativeConfig = {
@@ -282,6 +322,11 @@ const H1_NARRATIVE: TimeframeNarrativeConfig = {
     'Market_Structure_Trendlines',
     'Day_Type_Series',
   ],
+  toolLabels: {
+    Composite_VP: { label: 'Session volume profile' },
+    Major_HVN_LVN: { label: 'Session HVNs & LVNs' },
+    Day_Type_Series: { label: 'Intraday day type character' },
+  },
 };
 
 export const TIMEFRAME_NARRATIVE_CONFIG: Record<AnalyzedTimeframe, TimeframeNarrativeConfig> = {

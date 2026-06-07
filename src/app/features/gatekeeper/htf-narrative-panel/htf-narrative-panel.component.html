@@ -151,9 +151,14 @@
             </div>
             <div class="htf-narrative__tool-grid">
               @for (tool of toolOptions(); track tool.key) {
-                <label class="htf-narrative__tool-card">
+                <label class="htf-narrative__tool-card" [title]="tool.hint ?? ''">
                   <p-checkbox [formControlName]="tool.key" [binary]="true" [inputId]="'htf-tool-' + timeframe() + '-' + tool.key" />
-                  <span>{{ tool.label }}</span>
+                  <span class="htf-narrative__tool-text">
+                    <span>{{ tool.label }}</span>
+                    @if (tool.hint) {
+                      <small>{{ tool.hint }}</small>
+                    }
+                  </span>
                 </label>
               }
             </div>
