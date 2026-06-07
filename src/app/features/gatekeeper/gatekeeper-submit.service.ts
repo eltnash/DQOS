@@ -1,13 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 
+import type { AnalyzedTimeframe } from '../../core/models/database.types';
+import { HtfMediaService } from '../../core/supabase/htf-media.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
-import type { GatekeeperFormValue } from './gatekeeper-form.types';
 import type { GatekeeperSubmitPayload, GatekeeperSubmitResult } from './execution-block.types';
+import type { GatekeeperFormValue } from './gatekeeper-form.types';
 import { mapFormToHtfContext } from './htf-context.utils';
+import { HtfScreenshotDraftService } from './htf-screenshot-draft.service';
 
 @Injectable({ providedIn: 'root' })
 export class GatekeeperSubmitService {
   private readonly supabase = inject(SupabaseService);
+  private readonly htfMedia = inject(HtfMediaService);
+  private readonly screenshotDrafts = inject(HtfScreenshotDraftService);
 
   mapFormToAudit(form: GatekeeperFormValue): GatekeeperSubmitPayload['audit'] {
     const location = form.location.location;
@@ -86,6 +91,41 @@ export class GatekeeperSubmitService {
     if (auditError || !audit) {
       await client.from('trades').delete().eq('id', trade.id);
       throw new Error(auditError?.message ?? 'Audit insert failed — trade rolled back');
+    }
+
+    const drafts = this.screenshotDrafts.getAllDrafts();
+    const uploadDrafts: Partial<
+      Record<
+        AnalyzedTimeframe,
+        { file: File; fileName: string; mimeType: string; isAnnotated: boolean }
+      >
+    > = {};
+
+    for (const tf of Object.keys(drafts) as AnalyzedTimeframe[]) {
+      const draft = drafts[tf];
+      if (draft) {
+        uploadDrafts[tf] = {
+          file: draft.file,
+          fileName: draft.fileName,
+          mimeType: draft.mimeType,
+          isAnnotated: draft.isAnnotated,
+        };
+      }
+    }
+
+    try {
+      const enrichedContext = await this.htfMedia.attachScreenshotsToContext(
+        trade.id,
+        payload.audit.htf_context,
+        uploadDrafts,
+      );
+      await this.htfMedia.updateAuditHtfContext(audit.id, enrichedContext);
+      this.screenshotDrafts.clearAll();
+    } catch (err) {
+      await client.from('execution_audits').delete().eq('id', audit.id);
+      await client.from('trades').delete().eq('id', trade.id);
+      const message = err instanceof Error ? err.message : 'Screenshot upload failed';
+      throw new Error(`${message} — trade rolled back`);
     }
 
     return { tradeId: trade.id, auditId: audit.id };

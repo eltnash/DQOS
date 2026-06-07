@@ -229,11 +229,36 @@
     background: rgba(16, 185, 129, 0.06);
   }
 
-  &__weekly-intro {
-    margin: 0;
+  &__hint--template {
+    margin: -0.25rem 0 0.5rem;
+  }
+
+  &__tf-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__tf-tab {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid #4b5563;
+    border-radius: 999px;
+    background: #1a1d24;
+    color: #e5e7eb;
     font-size: 0.8125rem;
-    color: #d1d5db;
-    line-height: 1.5;
+    font-weight: 600;
+    cursor: pointer;
+
+    &--active {
+      border-color: #34d399;
+      background: rgba(16, 185, 129, 0.18);
+      color: #ecfdf5;
+    }
+
+    &--complete:not(&--active) {
+      border-color: rgba(52, 211, 153, 0.55);
+      color: #a7f3d0;
+    }
   }
 }
 

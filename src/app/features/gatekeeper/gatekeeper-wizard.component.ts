@@ -9,30 +9,33 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DividerModule } from 'primeng/divider';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
+import type { AnalyzedTimeframe } from '../../core/models/database.types';
 import {
+  ANALYZED_TIMEFRAME_KEYS,
   ANALYZED_TIMEFRAME_OPTIONS,
   AUCTION_LOCATION_OPTIONS,
-  COMPOSITE_VALUE_POSITION_OPTIONS,
   CONFIRMATION_TRIGGER_OPTIONS,
-  HTF_ANALYSIS_TOOL_OPTIONS,
-  HTF_AUCTION_REGIME_OPTIONS,
   MARKET_BEHAVIOR_OPTIONS,
-  MARKET_STRUCTURE_BIAS_OPTIONS,
-  PRIOR_WEEK_RANGE_OPTIONS,
 } from '../../core/supabase/enum-options';
 import { EnumPillSelectComponent } from '../../shared/components/enum-pill-select/enum-pill-select.component';
 import { READINESS_WEIGHT_PER_STEP } from '../../shared/components/readiness-meter/readiness-meter.types';
+import type { PillarStepState } from '../../shared/components/readiness-meter/readiness-meter.types';
 import { createGatekeeperForm } from './gatekeeper-form.factory';
 import type { GatekeeperFormValue, GatekeeperStepKey } from './gatekeeper-form.types';
-import { EXECUTION_TIMEFRAME, formatHtfContextSummary, mapFormToHtfContext } from './htf-context.utils';
-import type { PillarStepState } from '../../shared/components/readiness-meter/readiness-meter.types';
+import {
+  EXECUTION_TIMEFRAME,
+  formatHtfContextSummary,
+  mapFormToHtfContext,
+  timeframeLabel,
+} from './htf-context.utils';
+import { HtfScreenshotDraftService } from './htf-screenshot-draft.service';
+import { TimeframeJournalPanelComponent } from './timeframe-journal-panel.component';
 
 interface WizardStepMeta {
   key: GatekeeperStepKey;
@@ -45,6 +48,7 @@ interface WizardStepMeta {
   selector: 'app-gatekeeper-wizard',
   imports: [
     ReactiveFormsModule,
+    TimeframeJournalPanelComponent,
     EnumPillSelectComponent,
     TextareaModule,
     CheckboxModule,
@@ -52,7 +56,6 @@ interface WizardStepMeta {
     InputTextModule,
     ButtonModule,
     MessageModule,
-    DividerModule,
     TagModule,
   ],
   templateUrl: './gatekeeper-wizard.component.html',
@@ -61,6 +64,7 @@ interface WizardStepMeta {
 })
 export class GatekeeperWizardComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly screenshotDrafts = inject(HtfScreenshotDraftService);
 
   readonly pillarsChange = output<{
     pillarSteps: PillarStepState[];
@@ -71,14 +75,11 @@ export class GatekeeperWizardComponent {
 
   protected readonly form = createGatekeeperForm(this.fb);
   protected readonly activeStep = signal(1);
+  protected readonly activeTimeframeTab = signal<AnalyzedTimeframe>('W');
   protected readonly executionTimeframe = EXECUTION_TIMEFRAME;
 
   protected readonly timeframeOptions = ANALYZED_TIMEFRAME_OPTIONS;
-  protected readonly toolOptions = HTF_ANALYSIS_TOOL_OPTIONS;
-  protected readonly compositePositionOptions = COMPOSITE_VALUE_POSITION_OPTIONS;
-  protected readonly auctionRegimeOptions = HTF_AUCTION_REGIME_OPTIONS;
-  protected readonly structureBiasOptions = MARKET_STRUCTURE_BIAS_OPTIONS;
-  protected readonly priorWeekRangeOptions = PRIOR_WEEK_RANGE_OPTIONS;
+  protected readonly timeframeKeys = ANALYZED_TIMEFRAME_KEYS;
   protected readonly locationOptions = AUCTION_LOCATION_OPTIONS;
   protected readonly behaviorOptions = MARKET_BEHAVIOR_OPTIONS;
   protected readonly confirmationOptions = CONFIRMATION_TRIGGER_OPTIONS;
@@ -89,7 +90,7 @@ export class GatekeeperWizardComponent {
       number: 1,
       title: 'HTF Context',
       methodology:
-        'On your weekly chart, mark prior week high/low — then select whether the current week is inside that range, above the high, or below the low. No trade decision here; only macro posture.',
+        'Select the timeframes relevant to today\'s trade. For each one, upload a chart screenshot, write notes, and annotate the image if you want. Execution decisions happen on 15m — this step is your visual journal.',
     },
     {
       key: 'location',
@@ -122,15 +123,19 @@ export class GatekeeperWizardComponent {
   ];
 
   protected readonly stepCount = this.steps.length;
-  protected readonly weeklySelected = computed(() => {
+
+  protected readonly selectedTimeframes = computed((): AnalyzedTimeframe[] => {
     this.formTick();
-    return this.contextGroup().get('analyzed_timeframes.W')?.value === true;
+    return this.timeframeKeys.filter(
+      (tf) => this.contextGroup().get('analyzed_timeframes')?.get(tf)?.value === true,
+    );
   });
 
   protected readonly currentStep = computed(() => this.steps[this.activeStep() - 1]);
 
   protected readonly pillarSteps = computed((): PillarStepState[] => {
     this.formTick();
+    this.screenshotDrafts.revisionSnapshot();
     const value = this.form.getRawValue() as GatekeeperFormValue;
     let contextSummary: string | null = null;
     if (this.isStepValid('context')) {
@@ -188,6 +193,7 @@ export class GatekeeperWizardComponent {
   constructor() {
     this.form.valueChanges.subscribe(() => {
       this.formTick.update((n) => n + 1);
+      this.ensureActiveTab();
       this.emitState();
     });
 
@@ -195,11 +201,18 @@ export class GatekeeperWizardComponent {
       this.form.get('location.location')?.updateValueAndValidity({ emitEvent: true });
     });
 
-    this.contextGroup()
-      .get('analyzed_timeframes.W')
-      ?.valueChanges.subscribe(() => {
-        this.contextGroup().updateValueAndValidity({ emitEvent: true });
-      });
+    this.timeframeKeys.forEach((tf) => {
+      this.contextGroup()
+        .get('analyzed_timeframes')
+        ?.get(tf)
+        ?.valueChanges.subscribe((enabled) => {
+          if (!enabled) {
+            this.screenshotDrafts.removeDraft(tf);
+          } else {
+            this.activeTimeframeTab.set(tf);
+          }
+        });
+    });
 
     this.emitState();
   }
@@ -208,15 +221,37 @@ export class GatekeeperWizardComponent {
     return this.stepGroup('context');
   }
 
+  protected journalGroup(tf: AnalyzedTimeframe): FormGroup {
+    return (this.contextGroup().get('timeframe_journals') as FormGroup).get(tf) as FormGroup;
+  }
+
   protected stepGroup(key: GatekeeperStepKey): FormGroup {
     return this.form.get(key) as FormGroup;
   }
 
   protected isStepValid(key: GatekeeperStepKey): boolean {
+    if (key === 'context') {
+      const selected = this.selectedTimeframes();
+      return (
+        this.stepGroup('context').valid &&
+        selected.length > 0 &&
+        this.screenshotDrafts.hasDraftsFor(selected)
+      );
+    }
+
     if (key === 'location') {
       return this.form.controls.is_retest.valid && this.stepGroup('location').valid;
     }
+
     return this.stepGroup(key).valid;
+  }
+
+  protected timeframeTabLabel(tf: AnalyzedTimeframe): string {
+    return timeframeLabel(tf);
+  }
+
+  protected isTimeframeComplete(tf: AnalyzedTimeframe): boolean {
+    return this.journalGroup(tf).valid && this.screenshotDrafts.hasDraft(tf);
   }
 
   protected selectedHint(options: { value: string; hint?: string }[], value: string | null): string {
@@ -242,8 +277,20 @@ export class GatekeeperWizardComponent {
 
   resetWizard(): void {
     this.form.reset();
+    this.screenshotDrafts.clearAll();
     this.activeStep.set(1);
+    this.activeTimeframeTab.set('W');
     this.emitState();
+  }
+
+  private ensureActiveTab(): void {
+    const selected = this.selectedTimeframes();
+    if (selected.length === 0) {
+      return;
+    }
+    if (!selected.includes(this.activeTimeframeTab())) {
+      this.activeTimeframeTab.set(selected[0]);
+    }
   }
 
   private emitState(): void {

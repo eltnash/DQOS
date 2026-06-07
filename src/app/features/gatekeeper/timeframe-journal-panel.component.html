@@ -1,0 +1,65 @@
+<section class="journal-panel" [formGroup]="journalGroup()">
+  <header class="journal-panel__header">
+    <h3 class="journal-panel__title">{{ title() }}</h3>
+    <p class="journal-panel__intro">Upload your chart for this timeframe, describe what you see, and annotate if needed.</p>
+  </header>
+
+  <div class="journal-panel__screenshot">
+    <label class="journal-panel__label">Chart screenshot</label>
+
+    @if (uploadError(); as error) {
+      <p-message severity="error" [text]="error" />
+    }
+
+    @if (screenshotDraft(); as draft) {
+      <div class="journal-panel__preview">
+        <button type="button" class="journal-panel__thumb" (click)="openAnnotator()">
+          <img [src]="draft.previewUrl" [alt]="title()" />
+        </button>
+        <div class="journal-panel__actions">
+          <p-button type="button" label="Annotate" icon="pi pi-pencil" (onClick)="openAnnotator()" />
+          <p-button type="button" label="Replace" icon="pi pi-upload" [text]="true" severity="secondary" (onClick)="openFilePicker()" />
+          <p-button type="button" label="Remove" icon="pi pi-trash" [text]="true" severity="danger" (onClick)="removeScreenshot()" />
+        </div>
+        @if (draft.isAnnotated) {
+          <p class="journal-panel__tag">Annotated</p>
+        }
+      </div>
+    } @else {
+      <button type="button" class="journal-panel__upload" (click)="openFilePicker()">
+        <i class="pi pi-image"></i>
+        <span>Upload chart screenshot</span>
+        <small>PNG, JPEG, WebP · max 5 MB</small>
+      </button>
+    }
+
+    <input
+      #fileInputRef
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      hidden
+      (change)="onScreenshotSelected($event)"
+    />
+  </div>
+
+  <div class="journal-panel__notes">
+    <label class="journal-panel__label" [for]="'notes-' + timeframe()">Notes describing this chart</label>
+    <textarea
+      pTextarea
+      [id]="'notes-' + timeframe()"
+      formControlName="notes"
+      rows="6"
+      placeholder="Describe composite profile, key levels, unfinished business, day type, and how this timeframe sets context for 15m execution..."
+      class="journal-panel__textarea"
+    ></textarea>
+  </div>
+</section>
+
+@if (annotatorOpen() && screenshotDraft(); as draft) {
+  <app-image-annotator-dialog
+    [imageUrl]="draft.previewUrl"
+    [title]="title()"
+    (saved)="onAnnotatedSaved($event)"
+    (closed)="closeAnnotator()"
+  />
+}

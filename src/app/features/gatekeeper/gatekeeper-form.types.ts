@@ -1,26 +1,19 @@
 import type {
   AnalyzedTimeframe,
   AuctionLocation,
-  CompositeValuePosition,
   ConfirmationTrigger,
-  HtfAnalysisTool,
-  HtfAuctionRegime,
   MarketBehavior,
-  MarketStructureBias,
-  PriorWeekRangePosition,
   TradingTimeframe,
 } from '../../core/models/database.types';
+
+export interface TimeframeJournalFormValue {
+  notes: string;
+}
 
 export interface ContextStepValue {
   analyzed_timeframes: Record<AnalyzedTimeframe, boolean>;
   trading_timeframe: TradingTimeframe;
-  prior_week_range_position: PriorWeekRangePosition | null;
-  composite_value_position: CompositeValuePosition | null;
-  auction_regime: HtfAuctionRegime | null;
-  structure_bias: MarketStructureBias | null;
-  tools_used: Record<HtfAnalysisTool, boolean>;
-  htf_thesis: string;
-  session_posture: string;
+  timeframe_journals: Record<AnalyzedTimeframe, TimeframeJournalFormValue>;
 }
 
 export interface LocationStepValue {

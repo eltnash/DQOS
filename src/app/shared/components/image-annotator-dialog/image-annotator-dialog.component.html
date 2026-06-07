@@ -1,0 +1,76 @@
+<div class="annotator" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+  <div class="annotator__backdrop" (click)="close()"></div>
+
+  <div class="annotator__panel">
+    <header class="annotator__header">
+      <h3 class="annotator__title">{{ title() }}</h3>
+      <div class="annotator__header-actions">
+        <p-button type="button" icon="pi pi-search-minus" [text]="true" (onClick)="zoomOut()" />
+        <p-button type="button" icon="pi pi-search-plus" [text]="true" (onClick)="zoomIn()" />
+        <p-button type="button" label="Reset view" [text]="true" (onClick)="resetView()" />
+        <p-button type="button" icon="pi pi-times" [text]="true" severity="secondary" (onClick)="close()" />
+      </div>
+    </header>
+
+    <div class="annotator__toolbar">
+      <div class="annotator__tools">
+        @for (option of toolOptions; track option.value) {
+          <button
+            type="button"
+            class="annotator__tool"
+            [class.annotator__tool--active]="tool() === option.value"
+            (click)="setTool(option.value)"
+          >
+            <i [class]="option.icon"></i>
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      <div class="annotator__colors">
+        @for (color of colorOptions; track color) {
+          <button
+            type="button"
+            class="annotator__swatch"
+            [class.annotator__swatch--active]="strokeColor() === color"
+            [style.background]="color"
+            (click)="setColor(color)"
+            [attr.aria-label]="'Color ' + color"
+          ></button>
+        }
+      </div>
+
+      <div class="annotator__edit-actions">
+        <p-button type="button" label="Undo" icon="pi pi-undo" [text]="true" (onClick)="undo()" />
+        <p-button type="button" label="Clear" icon="pi pi-trash" [text]="true" severity="secondary" (onClick)="clearAll()" />
+        <p-button type="button" label="Save" icon="pi pi-check" (onClick)="save()" />
+      </div>
+    </div>
+
+    <div
+      #viewport
+      class="annotator__viewport"
+      (wheel)="onWheel($event)"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerUp($event)"
+    >
+      <div class="annotator__stage" [style.transform]="stageTransform()">
+        <img #image class="annotator__image" [src]="imageUrl()" [alt]="title()" (load)="onImageLoad()" draggable="false" />
+        <canvas #canvas class="annotator__canvas"></canvas>
+      </div>
+    </div>
+
+    @if (pendingTextPoint(); as point) {
+      <div class="annotator__text-bar">
+        <span class="annotator__text-label">Add text at mark</span>
+        <input pInputText [ngModel]="textInput()" (ngModelChange)="textInput.set($event)" placeholder="Label or note..." />
+        <p-button type="button" label="Place" icon="pi pi-check" (onClick)="applyTextStamp()" />
+        <p-button type="button" label="Cancel" [text]="true" severity="secondary" (onClick)="cancelTextStamp()" />
+      </div>
+    }
+
+    <p class="annotator__hint">Draw · add text · pan · scroll to zoom · save merges annotations into the image</p>
+  </div>
+</div>

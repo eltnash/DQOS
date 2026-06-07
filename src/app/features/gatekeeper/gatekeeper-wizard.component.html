@@ -20,7 +20,7 @@
     <section class="gatekeeper-form__panel" formGroupName="context">
       <p-message
         severity="info"
-        text="Higher timeframe auction — no trade decision here. Establish macro backdrop (composite value, TPO, structure). Then drop to 15m for execution pillars."
+        text="Chart journal — upload screenshots and notes for each relevant timeframe before dropping to 15m execution."
         styleClass="gatekeeper-form__oath"
       />
 
@@ -29,9 +29,9 @@
         <p-tag severity="success" [value]="executionTimeframe + ' chart'" />
       </div>
 
-      <div class="gatekeeper-form__section">
+      <div class="gatekeeper-form__section" formGroupName="analyzed_timeframes">
         <label class="gatekeeper-form__label">Timeframes analyzed (select all that apply)</label>
-        <div formGroupName="analyzed_timeframes" class="gatekeeper-form__checkbox-grid">
+        <div class="gatekeeper-form__checkbox-grid">
           @for (tf of timeframeOptions; track tf.key) {
             <label class="gatekeeper-form__checkbox-card">
               <p-checkbox [formControlName]="tf.key" [binary]="true" [inputId]="'tf-' + tf.key" />
@@ -46,114 +46,41 @@
         </div>
       </div>
 
-      @if (weeklySelected()) {
-        <div class="gatekeeper-form__weekly-panel">
-          <p class="gatekeeper-form__weekly-intro">
-            On your weekly chart, mark the prior week's high and low — then select where the
-            <strong>current week</strong> is trading relative to that candle.
-          </p>
+      @if (selectedTimeframes().length === 0) {
+        <p-message
+          severity="warn"
+          text="Select at least one timeframe — each gets its own screenshot and notes."
+        />
+      } @else {
+        <nav class="gatekeeper-form__tf-tabs" aria-label="Timeframe journal tabs">
+          @for (tf of selectedTimeframes(); track tf) {
+            <button
+              type="button"
+              class="gatekeeper-form__tf-tab"
+              [class.gatekeeper-form__tf-tab--active]="activeTimeframeTab() === tf"
+              [class.gatekeeper-form__tf-tab--complete]="isTimeframeComplete(tf)"
+              (click)="activeTimeframeTab.set(tf)"
+            >
+              {{ timeframeTabLabel(tf) }}
+            </button>
+          }
+        </nav>
 
-          <label class="gatekeeper-form__label">Current week vs prior week range</label>
-          <app-enum-pill-select
-            formControlName="prior_week_range_position"
-            ariaLabel="Current week position vs prior week"
-            [options]="priorWeekRangeOptions"
+        <div formGroupName="timeframe_journals">
+          @for (tf of selectedTimeframes(); track tf) {
+            @if (activeTimeframeTab() === tf) {
+              <app-timeframe-journal-panel [timeframe]="tf" [journalGroup]="journalGroup(tf)" />
+            }
+          }
+        </div>
+
+        @if (!isStepValid('context') && contextGroup().touched) {
+          <p-message
+            severity="warn"
+            text="Each selected timeframe needs a screenshot and notes (minimum 20 characters)."
           />
-          @if (
-            selectedHint(
-              priorWeekRangeOptions,
-              contextGroup().get('prior_week_range_position')?.value
-            );
-            as hint
-          ) {
-            <p class="gatekeeper-form__hint">{{ hint }}</p>
-          }
-        </div>
+        }
       }
-
-      <p-divider />
-
-      <div class="gatekeeper-form__section">
-        <label class="gatekeeper-form__label">Price vs composite value area</label>
-        <app-enum-pill-select
-          formControlName="composite_value_position"
-          ariaLabel="Composite value position"
-          [options]="compositePositionOptions"
-        />
-        @if (
-          selectedHint(
-            compositePositionOptions,
-            contextGroup().get('composite_value_position')?.value
-          );
-          as hint
-        ) {
-          <p class="gatekeeper-form__hint">{{ hint }}</p>
-        }
-      </div>
-
-      <div class="gatekeeper-form__section">
-        <label class="gatekeeper-form__label">Higher timeframe auction regime</label>
-        <app-enum-pill-select
-          formControlName="auction_regime"
-          ariaLabel="Auction regime"
-          [options]="auctionRegimeOptions"
-        />
-        @if (
-          selectedHint(auctionRegimeOptions, contextGroup().get('auction_regime')?.value);
-          as hint
-        ) {
-          <p class="gatekeeper-form__hint">{{ hint }}</p>
-        }
-      </div>
-
-      <div class="gatekeeper-form__section">
-        <label class="gatekeeper-form__label">Market structure (who is in control?)</label>
-        <app-enum-pill-select
-          formControlName="structure_bias"
-          ariaLabel="Market structure bias"
-          [options]="structureBiasOptions"
-        />
-        @if (
-          selectedHint(structureBiasOptions, contextGroup().get('structure_bias')?.value);
-          as hint
-        ) {
-          <p class="gatekeeper-form__hint">{{ hint }}</p>
-        }
-      </div>
-
-      <div class="gatekeeper-form__section">
-        <label class="gatekeeper-form__label">Tools used in analysis</label>
-        <div formGroupName="tools_used" class="gatekeeper-form__checkbox-grid">
-          @for (tool of toolOptions; track tool.key) {
-            <label class="gatekeeper-form__checkbox-card">
-              <p-checkbox [formControlName]="tool.key" [binary]="true" [inputId]="'tool-' + tool.key" />
-              <span class="gatekeeper-form__checkbox-text">
-                <strong>{{ tool.label }}</strong>
-              </span>
-            </label>
-          }
-        </div>
-      </div>
-
-      <label class="gatekeeper-form__label" for="htf-thesis">HTF auction narrative</label>
-      <textarea
-        pTextarea
-        id="htf-thesis"
-        formControlName="htf_thesis"
-        rows="4"
-        placeholder="Where has value been? Are HTF players pushing toward new value, or are we in balance where extremes fade? Reference composite profile, TPO migration, day types, unfinished business..."
-        class="gatekeeper-form__textarea"
-      ></textarea>
-
-      <label class="gatekeeper-form__label" for="session-posture">Today's trading posture</label>
-      <textarea
-        pTextarea
-        id="session-posture"
-        formControlName="session_posture"
-        rows="3"
-        placeholder="How does today's developing session translate HTF context into a practical posture on 15m? Initiative vs responsive? Which direction aligns with structure?"
-        class="gatekeeper-form__textarea"
-      ></textarea>
     </section>
   }
 

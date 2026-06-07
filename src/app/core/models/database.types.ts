@@ -90,16 +90,23 @@ export interface WeeklyRangeContext {
   current_week_position: PriorWeekRangePosition;
 }
 
+export interface TimeframeScreenshotRef {
+  storage_path: string;
+  file_name: string;
+  mime_type: string;
+  is_annotated: boolean;
+}
+
+/** Per-timeframe chart journal before 15m execution. */
+export interface TimeframeJournalEntry {
+  timeframe: AnalyzedTimeframe;
+  notes: string;
+  screenshot: TimeframeScreenshotRef | null;
+}
+
 export interface HtfContextSnapshot {
-  analyzed_timeframes: AnalyzedTimeframe[];
   trading_timeframe: TradingTimeframe;
-  composite_value_position: CompositeValuePosition;
-  auction_regime: HtfAuctionRegime;
-  structure_bias: MarketStructureBias;
-  tools_used: HtfAnalysisTool[];
-  htf_thesis: string;
-  session_posture: string;
-  weekly_range: WeeklyRangeContext | null;
+  timeframe_entries: TimeframeJournalEntry[];
 }
 
 export type MarketSession = 'Asia' | 'London' | 'New_York';

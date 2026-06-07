@@ -150,6 +150,8 @@ export interface CheckboxOption<T extends string = string> {
   hint?: string;
 }
 
+export const ANALYZED_TIMEFRAME_KEYS = ['M', 'W', 'D', 'H4', 'H1'] as const satisfies readonly AnalyzedTimeframe[];
+
 export const ANALYZED_TIMEFRAME_OPTIONS: CheckboxOption<AnalyzedTimeframe>[] = [
   { key: 'M', label: 'Monthly', hint: 'Macro value migration & major balance' },
   {
