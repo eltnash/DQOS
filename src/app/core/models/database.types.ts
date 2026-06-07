@@ -55,8 +55,13 @@ export type ConfirmationTrigger =
 /** Timeframes reviewed before dropping to execution TF (15m). */
 export type AnalyzedTimeframe = 'M' | 'W' | 'D' | 'H4' | 'H1';
 
-/** Primary execution timeframe for gatekeeper pillars. */
+/** Primary execution timeframe for gatekeeper HTF context step. */
 export type TradingTimeframe = 'M15';
+
+/** LTF focus for each execution pillar (location, behavior, confirmation, invalidation). */
+export type PillarFocusTimeframe = 'M15' | 'M5' | 'M1';
+
+export type PillarStepKey = 'location' | 'behavior' | 'confirmation' | 'invalidation';
 
 export type CompositeValuePosition = 'Above_VA' | 'Below_VA' | 'Inside_VA';
 
@@ -117,6 +122,20 @@ export interface HtfContextSnapshot {
   timeframe_entries: TimeframeJournalEntry[];
 }
 
+export interface PillarStepJournal {
+  focus_timeframe: PillarFocusTimeframe;
+  notes: string;
+  note_tags: JournalNoteTag[];
+  screenshots: TimeframeScreenshotRef[];
+}
+
+export interface PillarJournalsSnapshot {
+  location: PillarStepJournal;
+  behavior: PillarStepJournal;
+  confirmation: PillarStepJournal;
+  invalidation: PillarStepJournal;
+}
+
 export type MarketSession = 'Asia' | 'London' | 'New_York';
 export type AnalysisPeriod = 'Morning' | 'Afternoon' | 'Night';
 
@@ -175,6 +194,7 @@ export interface ExecutionAudit {
   confirmation_thesis: string;
   invalidation_thesis: string;
   htf_context: HtfContextSnapshot;
+  pillar_journals: PillarJournalsSnapshot;
   location_valid_post: boolean | null;
   behavior_matched_post: boolean | null;
   confirmation_legitimate_post: boolean | null;

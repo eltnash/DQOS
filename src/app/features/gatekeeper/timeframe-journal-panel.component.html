@@ -4,85 +4,12 @@
     <p class="journal-panel__intro">Add one or more chart screenshots for this timeframe, describe what you see, and annotate images if needed.</p>
   </header>
 
-  <div class="journal-panel__screenshot">
-    <span class="journal-panel__label">Chart screenshots</span>
-
-    @if (uploadError(); as error) {
-      <p-message severity="error" [text]="error" />
-    }
-
-    @if (screenshotItems().length > 0) {
-      <div class="journal-panel__gallery">
-        @for (item of screenshotItems(); track item.id) {
-          <article class="journal-panel__gallery-item">
-            <button type="button" class="journal-panel__thumb" (click)="openAnnotator(item.id)">
-              <img [src]="item.previewUrl" [alt]="title()" />
-            </button>
-            <div class="journal-panel__item-actions">
-              <p-button type="button" label="Annotate" icon="pi pi-pencil" size="small" (onClick)="openAnnotator(item.id)" />
-              <p-button
-                type="button"
-                label="Remove"
-                icon="pi pi-trash"
-                size="small"
-                [text]="true"
-                severity="danger"
-                (onClick)="removeScreenshot(item.id)"
-              />
-            </div>
-            @if (item.isAnnotated) {
-              <p class="journal-panel__tag">Annotated</p>
-            }
-          </article>
-        }
-      </div>
-    }
-
-    <div
-      class="journal-panel__upload-zone"
-      [class.journal-panel__upload-zone--dragging]="dragging()"
-      (dragenter)="onDragEnter($event)"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave($event)"
-      (drop)="onDrop($event)"
-    >
-      <div class="journal-panel__upload-body">
-        <i class="pi pi-images journal-panel__upload-icon"></i>
-        <p class="journal-panel__upload-title">
-          @if (screenshotItems().length > 0) {
-            Add another screenshot
-          } @else {
-            Add chart screenshots
-          }
-        </p>
-        <p class="journal-panel__upload-hint">Drag images here, choose files, or paste from your clipboard. You can add multiple charts per timeframe.</p>
-
-        <div class="journal-panel__upload-actions">
-          <p-button type="button" label="Choose files" icon="pi pi-folder-open" (onClick)="openFilePicker()" />
-          <p-button
-            type="button"
-            label="Paste screenshot"
-            icon="pi pi-copy"
-            severity="secondary"
-            [loading]="pasting()"
-            (onClick)="pasteFromClipboard()"
-          />
-        </div>
-
-        <p class="journal-panel__upload-meta">PNG, JPEG, WebP · max 5 MB each · ⌘V works anywhere on this page (except notes)</p>
-      </div>
-    </div>
-
-    <input
-      #fileInput
-      type="file"
-      class="journal-panel__file-input"
-      [id]="fileInputId()"
-      accept="image/png,image/jpeg,image/webp,image/*"
-      multiple
-      (change)="onScreenshotSelected($event)"
-    />
-  </div>
+  <app-journal-screenshots-panel
+    [scope]="screenshotScope()"
+    [fileInputId]="'screenshot-file-' + timeframe()"
+    [title]="'Chart screenshots'"
+    uploadHint="Drag images here, choose files, or paste from your clipboard. You can add multiple charts per timeframe."
+  />
 
   <div class="journal-panel__notes">
     <label class="journal-panel__label" [for]="'notes-' + timeframe()">Notes describing this chart</label>
@@ -92,12 +19,3 @@
     />
   </div>
 </section>
-
-@if (annotatorOpen() && annotatingItem(); as item) {
-  <app-image-annotator-dialog
-    [imageUrl]="item.previewUrl"
-    [title]="title()"
-    (saved)="onAnnotatedSaved($event)"
-    (closed)="closeAnnotator()"
-  />
-}

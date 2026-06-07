@@ -11,6 +11,7 @@ import type {
   MarketBehavior,
   MarketSession,
   MarketStructureBias,
+  PillarFocusTimeframe,
   PriorWeekRangePosition,
   TradeDirection,
 } from '../models/database.types';
@@ -162,6 +163,12 @@ export const ANALYZED_TIMEFRAME_OPTIONS: CheckboxOption<AnalyzedTimeframe>[] = [
   { key: 'D', label: 'Daily', hint: 'Developing day type & session value' },
   { key: 'H4', label: '4 Hour', hint: 'Intermediate structure & rotations' },
   { key: 'H1', label: '1 Hour', hint: 'Intraday structure into 15m execution' },
+];
+
+export const PILLAR_FOCUS_TIMEFRAME_OPTIONS: SelectOption<PillarFocusTimeframe>[] = [
+  { label: '15 minute', value: 'M15', hint: 'Primary execution timeframe' },
+  { label: '5 minute', value: 'M5', hint: 'Finer entry structure & retest detail' },
+  { label: '1 minute', value: 'M1', hint: 'Micro confirmation & order flow' },
 ];
 
 export const COMPOSITE_VALUE_POSITION_OPTIONS: SelectOption<CompositeValuePosition>[] = [

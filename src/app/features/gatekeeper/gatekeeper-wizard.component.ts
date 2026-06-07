@@ -13,7 +13,6 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
-import { TextareaModule } from 'primeng/textarea';
 
 import type { AnalyzedTimeframe } from '../../core/models/database.types';
 import {
@@ -27,14 +26,16 @@ import { EnumPillSelectComponent } from '../../shared/components/enum-pill-selec
 import { READINESS_WEIGHT_PER_STEP } from '../../shared/components/readiness-meter/readiness-meter.types';
 import type { PillarStepState } from '../../shared/components/readiness-meter/readiness-meter.types';
 import { createGatekeeperForm } from './gatekeeper-form.factory';
-import type { GatekeeperFormValue, GatekeeperStepKey } from './gatekeeper-form.types';
+import type { ExecutionPillarStepKey, GatekeeperFormValue, GatekeeperStepKey } from './gatekeeper-form.types';
+import { GatekeeperScreenshotDraftService } from './gatekeeper-screenshot-draft.service';
 import {
   EXECUTION_TIMEFRAME,
   formatHtfContextSummary,
   mapFormToHtfContext,
   timeframeLabel,
 } from './htf-context.utils';
-import { HtfScreenshotDraftService } from './htf-screenshot-draft.service';
+import { PillarStepPanelComponent } from './pillar-step-panel/pillar-step-panel.component';
+import { pillarFocusLabel } from './pillar-context.utils';
 import { TimeframeJournalPanelComponent } from './timeframe-journal-panel.component';
 
 interface WizardStepMeta {
@@ -44,13 +45,20 @@ interface WizardStepMeta {
   methodology: string;
 }
 
+const PILLAR_STEP_LABELS: Record<ExecutionPillarStepKey, string> = {
+  location: 'Location',
+  behavior: 'Behavior',
+  confirmation: 'Confirmation',
+  invalidation: 'Invalidation',
+};
+
 @Component({
   selector: 'app-gatekeeper-wizard',
   imports: [
     ReactiveFormsModule,
     TimeframeJournalPanelComponent,
+    PillarStepPanelComponent,
     EnumPillSelectComponent,
-    TextareaModule,
     CheckboxModule,
     InputNumberModule,
     InputTextModule,
@@ -64,7 +72,7 @@ interface WizardStepMeta {
 })
 export class GatekeeperWizardComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly screenshotDrafts = inject(HtfScreenshotDraftService);
+  private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
 
   readonly pillarsChange = output<{
     pillarSteps: PillarStepState[];
@@ -90,35 +98,35 @@ export class GatekeeperWizardComponent {
       number: 1,
       title: 'HTF Context',
       methodology:
-        'Select the timeframes relevant to today\'s trade. For each one, upload a chart screenshot, write notes, and annotate the image if you want. Execution decisions happen on 15m — this step is your visual journal.',
+        'Select the timeframes relevant to today\'s trade. For each one, upload chart screenshots, write tagged notes, and annotate images. This is your higher-timeframe visual journal.',
     },
     {
       key: 'location',
       number: 2,
       title: 'Location',
       methodology:
-        'On your 15m execution timeframe: the level is not the trade. Identify where today\'s auction must decide — VAH, VAL, POC, VWAP, overnight extremes, or single prints. Price in the middle of value = no trade.',
+        'Choose your chart focus (15m, 5m, or 1m). The level is not the trade — identify where today\'s auction must decide. Upload your chart and journal what you see.',
     },
     {
       key: 'behavior',
       number: 3,
       title: 'Behavior',
       methodology:
-        'How is today\'s session translating HTF narrative? Acceptance, rejection, or migration at the edge? The first test builds context — the retest is where opportunity lives.',
+        'On your chosen LTF chart: how is the session translating HTF narrative? Acceptance, rejection, or migration at the edge?',
     },
     {
       key: 'confirmation',
       number: 4,
       title: 'Confirmation',
       methodology:
-        'Location + behavior build context. Confirmation validates participation at the retest — CVD divergence, absorption, VWAP reclaim, or structure break.',
+        'Location + behavior build context. Confirmation validates participation at the retest on your chosen chart timeframe.',
     },
     {
       key: 'invalidation',
       number: 5,
       title: 'Invalidation',
       methodology:
-        'Where is the thesis objectively dead on your execution timeframe? Without structural invalidation, risk cannot be defined.',
+        'Where is the thesis objectively dead on your chosen chart timeframe? Without structural invalidation, risk cannot be defined.',
     },
   ];
 
@@ -156,25 +164,25 @@ export class GatekeeperWizardComponent {
       },
       {
         key: 'location',
-        label: 'Location (15m)',
+        label: `Location (${pillarFocusLabel(value.location.focus_timeframe)})`,
         valid: this.isStepValid('location'),
         value: value.location.location,
       },
       {
         key: 'behavior',
-        label: 'Behavior',
+        label: `Behavior (${pillarFocusLabel(value.behavior.focus_timeframe)})`,
         valid: this.isStepValid('behavior'),
         value: value.behavior.behavior,
       },
       {
         key: 'confirmation',
-        label: 'Confirmation',
+        label: `Confirmation (${pillarFocusLabel(value.confirmation.focus_timeframe)})`,
         valid: this.isStepValid('confirmation'),
         value: value.confirmation.confirmation,
       },
       {
         key: 'invalidation',
-        label: 'Invalidation',
+        label: `Invalidation (${pillarFocusLabel(value.invalidation.focus_timeframe)})`,
         valid: this.isStepValid('invalidation'),
         value: value.invalidation.invalidation_level || null,
       },
@@ -208,7 +216,7 @@ export class GatekeeperWizardComponent {
         ?.get(tf)
         ?.valueChanges.subscribe((enabled) => {
           if (!enabled) {
-            this.screenshotDrafts.removeDraft(tf);
+            this.screenshotDrafts.removeScope({ kind: 'htf', id: tf });
           } else {
             this.activeTimeframeTab.set(tf);
           }
@@ -230,18 +238,47 @@ export class GatekeeperWizardComponent {
     return this.form.get(key) as FormGroup;
   }
 
+  protected pillarStepTitle(key: ExecutionPillarStepKey): string {
+    return PILLAR_STEP_LABELS[key];
+  }
+
   protected isStepValid(key: GatekeeperStepKey): boolean {
     if (key === 'context') {
       const selected = this.selectedTimeframes();
       return (
         this.stepGroup('context').valid &&
         selected.length > 0 &&
-        this.screenshotDrafts.hasDraftsFor(selected)
+        this.screenshotDrafts.hasHtfDraftsFor(selected)
       );
     }
 
     if (key === 'location') {
-      return this.form.controls.is_retest.valid && this.stepGroup('location').valid;
+      return (
+        this.form.controls.is_retest.valid &&
+        this.stepGroup('location').valid &&
+        this.screenshotDrafts.hasDraft({ kind: 'pillar', id: 'location' })
+      );
+    }
+
+    if (key === 'behavior') {
+      return (
+        this.stepGroup('behavior').valid &&
+        this.screenshotDrafts.hasDraft({ kind: 'pillar', id: 'behavior' })
+      );
+    }
+
+    if (key === 'confirmation') {
+      return (
+        this.stepGroup('confirmation').valid &&
+        this.screenshotDrafts.hasDraft({ kind: 'pillar', id: 'confirmation' })
+      );
+    }
+
+    if (key === 'invalidation') {
+      return (
+        this.stepGroup('invalidation').valid &&
+        this.screenshotDrafts.hasDraft({ kind: 'pillar', id: 'invalidation' })
+      );
     }
 
     return this.stepGroup(key).valid;
@@ -253,7 +290,7 @@ export class GatekeeperWizardComponent {
 
   protected isTimeframeComplete(tf: AnalyzedTimeframe): boolean {
     this.screenshotDrafts.revisionSnapshot();
-    return this.journalGroup(tf).valid && this.screenshotDrafts.hasDraft(tf);
+    return this.journalGroup(tf).valid && this.screenshotDrafts.hasDraft({ kind: 'htf', id: tf });
   }
 
   protected selectedHint(options: { value: string; hint?: string }[], value: string | null): string {

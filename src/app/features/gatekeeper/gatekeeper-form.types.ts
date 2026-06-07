@@ -3,6 +3,7 @@ import type {
   AuctionLocation,
   ConfirmationTrigger,
   MarketBehavior,
+  PillarFocusTimeframe,
   TradingTimeframe,
 } from '../../core/models/database.types';
 import type { TaggedNotesValue } from '../../shared/components/tagged-notes-editor/tagged-notes.types';
@@ -17,25 +18,26 @@ export interface ContextStepValue {
   timeframe_journals: Record<AnalyzedTimeframe, TimeframeJournalFormValue>;
 }
 
-export interface LocationStepValue {
+export interface PillarStepFormValue {
+  focus_timeframe: PillarFocusTimeframe;
+  notes_content: TaggedNotesValue;
+}
+
+export interface LocationStepValue extends PillarStepFormValue {
   location: AuctionLocation | null;
-  location_thesis: string;
 }
 
-export interface BehaviorStepValue {
+export interface BehaviorStepValue extends PillarStepFormValue {
   behavior: MarketBehavior | null;
-  behavior_thesis: string;
 }
 
-export interface ConfirmationStepValue {
+export interface ConfirmationStepValue extends PillarStepFormValue {
   confirmation: ConfirmationTrigger | null;
-  confirmation_thesis: string;
 }
 
-export interface InvalidationStepValue {
+export interface InvalidationStepValue extends PillarStepFormValue {
   invalidation_level: string;
   invalidation_price: number | null;
-  invalidation_thesis: string;
 }
 
 export interface GatekeeperFormValue {
@@ -53,3 +55,5 @@ export type GatekeeperStepKey =
   | 'behavior'
   | 'confirmation'
   | 'invalidation';
+
+export type ExecutionPillarStepKey = Exclude<GatekeeperStepKey, 'context'>;

@@ -20,12 +20,12 @@
     <section class="gatekeeper-form__panel" formGroupName="context">
       <p-message
         severity="info"
-        text="Chart journal — upload screenshots and notes for each relevant timeframe before dropping to 15m execution."
+        text="Chart journal — upload screenshots and tagged notes for each relevant timeframe before qualifying execution pillars."
         styleClass="gatekeeper-form__oath"
       />
 
       <div class="gatekeeper-form__exec-badge">
-        <span class="gatekeeper-form__label">Execution timeframe</span>
+        <span class="gatekeeper-form__label">Default execution reference</span>
         <p-tag severity="success" [value]="executionTimeframe + ' chart'" />
       </div>
 
@@ -49,7 +49,7 @@
       @if (selectedTimeframes().length === 0) {
         <p-message
           severity="warn"
-          text="Select at least one timeframe — each gets its own screenshot and notes."
+          text="Select at least one timeframe — each gets its own screenshots and tagged notes."
         />
       } @else {
         <nav class="gatekeeper-form__tf-tabs" aria-label="Timeframe journal tabs">
@@ -69,7 +69,11 @@
         <div formGroupName="timeframe_journals">
           @for (tf of selectedTimeframes(); track tf) {
             @if (activeTimeframeTab() === tf) {
-              <app-timeframe-journal-panel [timeframe]="tf" [journalGroup]="journalGroup(tf)" />
+              <app-timeframe-journal-panel
+                [timeframe]="tf"
+                [journalGroup]="journalGroup(tf)"
+                [pasteActive]="activeStep() === 1"
+              />
             }
           }
         </div>
@@ -77,7 +81,7 @@
         @if (!isStepValid('context') && contextGroup().touched) {
           <p-message
             severity="warn"
-            text="Each selected timeframe needs at least one screenshot and notes (minimum 20 characters)."
+            text="Each selected timeframe needs at least one screenshot and tagged notes (minimum 20 characters)."
           />
         }
       }
@@ -92,12 +96,6 @@
         styleClass="gatekeeper-form__oath"
       />
 
-      <p-message
-        severity="warn"
-        [text]="'Execution timeframe: ' + executionTimeframe + ' — complete HTF context before qualifying this trade.'"
-        styleClass="gatekeeper-form__oath"
-      />
-
       <div class="gatekeeper-form__retest">
         <p-checkbox formControlName="is_retest" [binary]="true" inputId="is-retest" />
         <label for="is-retest">
@@ -105,8 +103,14 @@
         </label>
       </div>
 
-      <div formGroupName="location" class="gatekeeper-form__fields">
-        <label class="gatekeeper-form__label">Auction location (15m)</label>
+      <app-pillar-step-panel
+        stepKey="location"
+        [stepGroup]="stepGroup('location')"
+        stepTitle="Location pillar journal"
+        notesPlaceholder="Where is price relative to value on your chosen chart? Why is this an auction boundary aligned with HTF posture, not middle of value?"
+        [pasteActive]="activeStep() === 2"
+      >
+        <label class="gatekeeper-form__label">Auction location</label>
         <app-enum-pill-select
           formControlName="location"
           ariaLabel="Auction location"
@@ -115,102 +119,114 @@
         @if (selectedHint(locationOptions, stepGroup('location').get('location')?.value); as hint) {
           <p class="gatekeeper-form__hint">{{ hint }}</p>
         }
+      </app-pillar-step-panel>
 
-        <label class="gatekeeper-form__label" for="location-thesis">Location narrative</label>
-        <textarea
-          pTextarea
-          id="location-thesis"
-          formControlName="location_thesis"
-          rows="4"
-          placeholder="Where is price relative to value on 15m? Why is this an auction boundary aligned with your HTF posture, not middle of value?"
-          class="gatekeeper-form__textarea"
-        ></textarea>
-      </div>
+      @if (!isStepValid('location') && stepGroup('location').touched) {
+        <p-message
+          severity="warn"
+          text="Select a location, add at least one screenshot, and write tagged notes (minimum 20 characters)."
+        />
+      }
     </section>
   }
 
   @if (activeStep() === 3) {
-    <section class="gatekeeper-form__panel form-step--active" formGroupName="behavior">
-      <label class="gatekeeper-form__label">Market behavior (15m)</label>
-      <app-enum-pill-select
-        formControlName="behavior"
-        ariaLabel="Market behavior"
-        [options]="behaviorOptions"
-      />
-      @if (selectedHint(behaviorOptions, stepGroup('behavior').get('behavior')?.value); as hint) {
-        <p class="gatekeeper-form__hint">{{ hint }}</p>
-      }
+    <section class="gatekeeper-form__panel form-step--active">
+      <app-pillar-step-panel
+        stepKey="behavior"
+        [stepGroup]="stepGroup('behavior')"
+        stepTitle="Behavior pillar journal"
+        notesPlaceholder="Acceptance, rejection, or migration? What did the initial test reveal, and what does the retest prove relative to HTF context?"
+        [pasteActive]="activeStep() === 3"
+      >
+        <label class="gatekeeper-form__label">Market behavior</label>
+        <app-enum-pill-select
+          formControlName="behavior"
+          ariaLabel="Market behavior"
+          [options]="behaviorOptions"
+        />
+        @if (selectedHint(behaviorOptions, stepGroup('behavior').get('behavior')?.value); as hint) {
+          <p class="gatekeeper-form__hint">{{ hint }}</p>
+        }
+      </app-pillar-step-panel>
 
-      <label class="gatekeeper-form__label" for="behavior-thesis">Behavior narrative</label>
-      <textarea
-        pTextarea
-        id="behavior-thesis"
-        formControlName="behavior_thesis"
-        rows="4"
-        placeholder="Acceptance, rejection, or migration? What did the initial test reveal, and what does the retest prove relative to HTF context?"
-        class="gatekeeper-form__textarea"
-      ></textarea>
+      @if (!isStepValid('behavior') && stepGroup('behavior').touched) {
+        <p-message
+          severity="warn"
+          text="Select behavior, add at least one screenshot, and write tagged notes (minimum 20 characters)."
+        />
+      }
     </section>
   }
 
   @if (activeStep() === 4) {
-    <section class="gatekeeper-form__panel form-step--active" formGroupName="confirmation">
-      <label class="gatekeeper-form__label">Confirmation trigger (15m)</label>
-      <app-enum-pill-select
-        formControlName="confirmation"
-        ariaLabel="Confirmation trigger"
-        [options]="confirmationOptions"
-      />
-      @if (
-        selectedHint(confirmationOptions, stepGroup('confirmation').get('confirmation')?.value);
-        as hint
-      ) {
-        <p class="gatekeeper-form__hint">{{ hint }}</p>
-      }
+    <section class="gatekeeper-form__panel form-step--active">
+      <app-pillar-step-panel
+        stepKey="confirmation"
+        [stepGroup]="stepGroup('confirmation')"
+        stepTitle="Confirmation pillar journal"
+        notesPlaceholder="What order flow signature validates the thesis at the retest on your chosen chart?"
+        [pasteActive]="activeStep() === 4"
+      >
+        <label class="gatekeeper-form__label">Confirmation trigger</label>
+        <app-enum-pill-select
+          formControlName="confirmation"
+          ariaLabel="Confirmation trigger"
+          [options]="confirmationOptions"
+        />
+        @if (
+          selectedHint(confirmationOptions, stepGroup('confirmation').get('confirmation')?.value);
+          as hint
+        ) {
+          <p class="gatekeeper-form__hint">{{ hint }}</p>
+        }
+      </app-pillar-step-panel>
 
-      <label class="gatekeeper-form__label" for="confirmation-thesis">Confirmation narrative</label>
-      <textarea
-        pTextarea
-        id="confirmation-thesis"
-        formControlName="confirmation_thesis"
-        rows="4"
-        placeholder="What order flow signature validates the thesis at the retest?"
-        class="gatekeeper-form__textarea"
-      ></textarea>
+      @if (!isStepValid('confirmation') && stepGroup('confirmation').touched) {
+        <p-message
+          severity="warn"
+          text="Select confirmation, add at least one screenshot, and write tagged notes (minimum 20 characters)."
+        />
+      }
     </section>
   }
 
   @if (activeStep() === 5) {
-    <section class="gatekeeper-form__panel form-step--active" formGroupName="invalidation">
-      <label class="gatekeeper-form__label" for="invalidation-level">Invalidation level</label>
-      <input
-        pInputText
-        id="invalidation-level"
-        formControlName="invalidation_level"
-        placeholder="e.g. Acceptance back inside value / below retest low"
-        class="gatekeeper-form__input"
-      />
+    <section class="gatekeeper-form__panel form-step--active">
+      <app-pillar-step-panel
+        stepKey="invalidation"
+        [stepGroup]="stepGroup('invalidation')"
+        stepTitle="Invalidation pillar journal"
+        notesPlaceholder="Where is the structural thesis proven wrong? What acceptance would kill the idea?"
+        [pasteActive]="activeStep() === 5"
+      >
+        <label class="gatekeeper-form__label" for="invalidation-level">Invalidation level</label>
+        <input
+          pInputText
+          id="invalidation-level"
+          formControlName="invalidation_level"
+          placeholder="e.g. Acceptance back inside value / below retest low"
+          class="gatekeeper-form__input"
+        />
 
-      <label class="gatekeeper-form__label" for="invalidation-price">Invalidation price</label>
-      <p-inputnumber
-        inputId="invalidation-price"
-        formControlName="invalidation_price"
-        mode="decimal"
-        [minFractionDigits]="2"
-        [maxFractionDigits]="6"
-        styleClass="gatekeeper-form__number"
-        inputStyleClass="data-mono"
-      />
+        <label class="gatekeeper-form__label" for="invalidation-price">Invalidation price</label>
+        <p-inputnumber
+          inputId="invalidation-price"
+          formControlName="invalidation_price"
+          mode="decimal"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="6"
+          styleClass="gatekeeper-form__number"
+          inputStyleClass="data-mono"
+        />
+      </app-pillar-step-panel>
 
-      <label class="gatekeeper-form__label" for="invalidation-thesis">Invalidation narrative</label>
-      <textarea
-        pTextarea
-        id="invalidation-thesis"
-        formControlName="invalidation_thesis"
-        rows="4"
-        placeholder="Where is the structural thesis proven wrong? What acceptance would kill the idea?"
-        class="gatekeeper-form__textarea"
-      ></textarea>
+      @if (!isStepValid('invalidation') && stepGroup('invalidation').touched) {
+        <p-message
+          severity="warn"
+          text="Enter invalidation level and price, add at least one screenshot, and write tagged notes (minimum 20 characters)."
+        />
+      }
     </section>
   }
 

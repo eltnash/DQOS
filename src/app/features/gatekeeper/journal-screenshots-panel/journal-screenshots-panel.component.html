@@ -1,0 +1,86 @@
+<div class="journal-shots">
+  <span class="journal-shots__label">{{ title() }}</span>
+
+  @if (uploadError(); as error) {
+    <p-message severity="error" [text]="error" />
+  }
+
+  @if (screenshotItems().length > 0) {
+    <div class="journal-shots__gallery">
+      @for (item of screenshotItems(); track item.id) {
+        <article class="journal-shots__gallery-item">
+          <button type="button" class="journal-shots__thumb" (click)="openAnnotator(item.id)">
+            <img [src]="item.previewUrl" [alt]="title()" />
+          </button>
+          <div class="journal-shots__item-actions">
+            <p-button type="button" label="Annotate" icon="pi pi-pencil" size="small" (onClick)="openAnnotator(item.id)" />
+            <p-button
+              type="button"
+              label="Remove"
+              icon="pi pi-trash"
+              size="small"
+              [text]="true"
+              severity="danger"
+              (onClick)="removeScreenshot(item.id)"
+            />
+          </div>
+          @if (item.isAnnotated) {
+            <p class="journal-shots__tag">Annotated</p>
+          }
+        </article>
+      }
+    </div>
+  }
+
+  <div
+    class="journal-shots__upload-zone"
+    [class.journal-shots__upload-zone--dragging]="dragging()"
+    (dragenter)="onDragEnter($event)"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    <div class="journal-shots__upload-body">
+      <i class="pi pi-images journal-shots__upload-icon"></i>
+      <p class="journal-shots__upload-title">
+        @if (screenshotItems().length > 0) {
+          Add another screenshot
+        } @else {
+          Add chart screenshots
+        }
+      </p>
+      <p class="journal-shots__upload-hint">{{ uploadHint() }}</p>
+      <div class="journal-shots__upload-actions">
+        <p-button type="button" label="Choose files" icon="pi pi-folder-open" (onClick)="openFilePicker()" />
+        <p-button
+          type="button"
+          label="Paste screenshot"
+          icon="pi pi-copy"
+          severity="secondary"
+          [loading]="pasting()"
+          (onClick)="pasteFromClipboard()"
+        />
+      </div>
+      <p class="journal-shots__upload-meta">PNG, JPEG, WebP · max 5 MB each</p>
+    </div>
+  </div>
+
+  <input
+    #fileInput
+    type="file"
+    class="journal-shots__file-input"
+    [id]="fileInputId()"
+    accept="image/png,image/jpeg,image/webp,image/*"
+    multiple
+    (change)="onScreenshotSelected($event)"
+  />
+</div>
+
+@if (annotatorOpen() && annotatingItem(); as item) {
+  <app-image-annotator-dialog
+    [imageUrl]="item.previewUrl"
+    [title]="title()"
+    (saved)="onAnnotatedSaved($event)"
+    (closed)="closeAnnotator()"
+  />
+}

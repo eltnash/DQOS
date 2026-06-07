@@ -1,0 +1,37 @@
+<section class="pillar-panel" [formGroup]="stepGroup()">
+  <header class="pillar-panel__header">
+    <h3 class="pillar-panel__title">{{ stepTitle() }}</h3>
+  </header>
+
+  <div class="pillar-panel__section">
+    <label class="pillar-panel__label">Chart focus timeframe</label>
+    <p class="pillar-panel__hint">Choose which LTF chart you are analyzing for this pillar — independent of the other steps.</p>
+    <app-enum-pill-select
+      formControlName="focus_timeframe"
+      ariaLabel="Chart focus timeframe"
+      [options]="focusTimeframeOptions"
+    />
+  </div>
+
+  <div class="pillar-panel__section pillar-panel__section--fields">
+    <ng-content />
+  </div>
+
+  <div class="pillar-panel__section">
+    <app-journal-screenshots-panel
+      [scope]="screenshotScope()"
+      [fileInputId]="'pillar-shots-' + stepKey()"
+        [title]="'Chart screenshots'"
+      uploadHint="Upload the chart for this pillar at your selected focus timeframe."
+    />
+  </div>
+
+  <div class="pillar-panel__section">
+    <label class="pillar-panel__label" [for]="'pillar-notes-' + stepKey()">Notes</label>
+    <app-tagged-notes-editor
+      formControlName="notes_content"
+      [inputId]="'pillar-notes-' + stepKey()"
+      [placeholder]="notesPlaceholder()"
+    />
+  </div>
+</section>

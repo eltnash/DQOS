@@ -12,6 +12,7 @@ import type {
   AuctionLocation,
   ConfirmationTrigger,
   MarketBehavior,
+  PillarFocusTimeframe,
 } from '../../core/models/database.types';
 import { ANALYZED_TIMEFRAME_KEYS } from '../../core/supabase/enum-options';
 import {
@@ -20,19 +21,8 @@ import {
 } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { TaggedNotesValue } from '../../shared/components/tagged-notes-editor/tagged-notes.types';
 
-const THESIS_MIN_LENGTH = 20;
-const THESIS_MAX_LENGTH = 2000;
 const JOURNAL_NOTES_MIN = 20;
 const JOURNAL_NOTES_MAX = 4000;
-
-export function thesisValidators(): ValidatorFn[] {
-  return [
-    Validators.required,
-    Validators.minLength(THESIS_MIN_LENGTH),
-    Validators.maxLength(THESIS_MAX_LENGTH),
-    Validators.pattern(/\S/),
-  ];
-}
 
 function journalNotesContentValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -108,6 +98,15 @@ function createTimeframeJournalsGroup(fb: FormBuilder) {
   return fb.group(blocks);
 }
 
+function createPillarStepBase(fb: FormBuilder) {
+  return {
+    focus_timeframe: fb.nonNullable.control<PillarFocusTimeframe>('M15', Validators.required),
+    notes_content: fb.nonNullable.control<TaggedNotesValue>(EMPTY_TAGGED_NOTES, [
+      journalNotesContentValidator(),
+    ]),
+  };
+}
+
 export function createGatekeeperForm(fb: FormBuilder) {
   const form = fb.group({
     context: fb.group({
@@ -117,21 +116,22 @@ export function createGatekeeperForm(fb: FormBuilder) {
     }),
     is_retest: fb.nonNullable.control(false, { validators: [Validators.requiredTrue] }),
     location: fb.group({
+      ...createPillarStepBase(fb),
       location: fb.control<AuctionLocation | null>(null, [
         Validators.required,
         retestGateValidator(),
       ]),
-      location_thesis: fb.nonNullable.control('', thesisValidators()),
     }),
     behavior: fb.group({
+      ...createPillarStepBase(fb),
       behavior: fb.control<MarketBehavior | null>(null, Validators.required),
-      behavior_thesis: fb.nonNullable.control('', thesisValidators()),
     }),
     confirmation: fb.group({
+      ...createPillarStepBase(fb),
       confirmation: fb.control<ConfirmationTrigger | null>(null, Validators.required),
-      confirmation_thesis: fb.nonNullable.control('', thesisValidators()),
     }),
     invalidation: fb.group({
+      ...createPillarStepBase(fb),
       invalidation_level: fb.nonNullable.control('', [
         Validators.required,
         Validators.minLength(3),
@@ -142,7 +142,6 @@ export function createGatekeeperForm(fb: FormBuilder) {
         Validators.required,
         Validators.min(0.000001),
       ]),
-      invalidation_thesis: fb.nonNullable.control('', thesisValidators()),
     }),
   });
 

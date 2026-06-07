@@ -1,18 +1,20 @@
 import { Injectable, inject } from '@angular/core';
 
-import type { AnalyzedTimeframe } from '../../core/models/database.types';
-import { HtfMediaService } from '../../core/supabase/htf-media.service';
+import type { AnalyzedTimeframe, PillarStepKey } from '../../core/models/database.types';
+import { GatekeeperMediaService } from '../../core/supabase/gatekeeper-media.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
+import { taggedNotesPlainText } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { GatekeeperSubmitPayload, GatekeeperSubmitResult } from './execution-block.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
+import { GatekeeperScreenshotDraftService } from './gatekeeper-screenshot-draft.service';
 import { mapFormToHtfContext } from './htf-context.utils';
-import { HtfScreenshotDraftService } from './htf-screenshot-draft.service';
+import { mapFormToPillarJournals } from './pillar-context.utils';
 
 @Injectable({ providedIn: 'root' })
 export class GatekeeperSubmitService {
   private readonly supabase = inject(SupabaseService);
-  private readonly htfMedia = inject(HtfMediaService);
-  private readonly screenshotDrafts = inject(HtfScreenshotDraftService);
+  private readonly media = inject(GatekeeperMediaService);
+  private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
 
   mapFormToAudit(form: GatekeeperFormValue): GatekeeperSubmitPayload['audit'] {
     const location = form.location.location;
@@ -31,11 +33,12 @@ export class GatekeeperSubmitService {
       invalidation_level: form.invalidation.invalidation_level.trim(),
       invalidation_price: invalidationPrice,
       is_retest: true,
-      location_thesis: form.location.location_thesis.trim(),
-      behavior_thesis: form.behavior.behavior_thesis.trim(),
-      confirmation_thesis: form.confirmation.confirmation_thesis.trim(),
-      invalidation_thesis: form.invalidation.invalidation_thesis.trim(),
+      location_thesis: taggedNotesPlainText(form.location.notes_content),
+      behavior_thesis: taggedNotesPlainText(form.behavior.notes_content),
+      confirmation_thesis: taggedNotesPlainText(form.confirmation.notes_content),
+      invalidation_thesis: taggedNotesPlainText(form.invalidation.notes_content),
       htf_context: mapFormToHtfContext(form),
+      pillar_journals: mapFormToPillarJournals(form),
     };
   }
 
@@ -93,33 +96,50 @@ export class GatekeeperSubmitService {
       throw new Error(auditError?.message ?? 'Audit insert failed — trade rolled back');
     }
 
-    const drafts = this.screenshotDrafts.getAllDrafts();
-    const uploadDrafts: Partial<
-      Record<
-        AnalyzedTimeframe,
-        { file: File; fileName: string; mimeType: string; isAnnotated: boolean }[]
-      >
-    > = {};
+    const htfDrafts = this.screenshotDrafts.getHtfDrafts();
+    const pillarDrafts = this.screenshotDrafts.getPillarDrafts();
 
-    for (const tf of Object.keys(drafts) as AnalyzedTimeframe[]) {
-      const items = drafts[tf];
+    const mapDraftItems = (
+      items: { file: File; fileName: string; mimeType: string; isAnnotated: boolean }[],
+    ) =>
+      items.map((item) => ({
+        file: item.file,
+        fileName: item.fileName,
+        mimeType: item.mimeType,
+        isAnnotated: item.isAnnotated,
+      }));
+
+    const htfUploadDrafts: Partial<Record<AnalyzedTimeframe, ReturnType<typeof mapDraftItems>[number][]>> =
+      {};
+    for (const tf of Object.keys(htfDrafts) as AnalyzedTimeframe[]) {
+      const items = htfDrafts[tf];
       if (items?.length) {
-        uploadDrafts[tf] = items.map((item) => ({
-          file: item.file,
-          fileName: item.fileName,
-          mimeType: item.mimeType,
-          isAnnotated: item.isAnnotated,
-        }));
+        htfUploadDrafts[tf] = mapDraftItems(items);
+      }
+    }
+
+    const pillarUploadDrafts: Partial<Record<PillarStepKey, ReturnType<typeof mapDraftItems>[number][]>> =
+      {};
+    for (const step of Object.keys(pillarDrafts) as PillarStepKey[]) {
+      const items = pillarDrafts[step];
+      if (items?.length) {
+        pillarUploadDrafts[step] = mapDraftItems(items);
       }
     }
 
     try {
-      const enrichedContext = await this.htfMedia.attachScreenshotsToContext(
+      const enrichedContext = await this.media.attachHtfScreenshots(
         trade.id,
         payload.audit.htf_context,
-        uploadDrafts,
+        htfUploadDrafts,
       );
-      await this.htfMedia.updateAuditHtfContext(audit.id, enrichedContext);
+      const enrichedPillars = await this.media.attachPillarScreenshots(
+        trade.id,
+        payload.audit.pillar_journals,
+        pillarUploadDrafts,
+      );
+      await this.media.updateAuditHtfContext(audit.id, enrichedContext);
+      await this.media.updateAuditPillarJournals(audit.id, enrichedPillars);
       this.screenshotDrafts.clearAll();
     } catch (err) {
       await client.from('execution_audits').delete().eq('id', audit.id);

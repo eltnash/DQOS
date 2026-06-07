@@ -2,13 +2,9 @@
   display: block;
 }
 
-.journal-panel {
+.pillar-panel {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #3d4556;
-  border-radius: 12px;
-  background: rgba(22, 25, 32, 0.9);
+  gap: 1.25rem;
 
   &__header {
     display: grid;
@@ -22,22 +18,26 @@
     color: #f3f4f6;
   }
 
-  &__intro {
-    margin: 0;
-    font-size: 0.8125rem;
-    color: #9ca3af;
+  &__section {
+    display: grid;
+    gap: 0.5rem;
+
+    &--fields {
+      gap: 0.75rem;
+    }
   }
 
   &__label {
     display: block;
-    margin-bottom: 0.5rem;
     font-size: 0.8125rem;
     font-weight: 600;
     color: #f3f4f6;
   }
 
-  &__notes {
-    display: grid;
-    gap: 0.5rem;
+  &__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    line-height: 1.4;
   }
 }
