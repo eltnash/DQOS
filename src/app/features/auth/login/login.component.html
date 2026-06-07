@@ -1,0 +1,100 @@
+<div class="login">
+  <div class="login__panel">
+    <header class="login__header">
+      <h1 class="login__title">DQOS // AMT Lab</h1>
+      <p class="login__subtitle">Decision Quality Operating System</p>
+    </header>
+
+    @if (errorMessage(); as error) {
+      <p-message severity="error" [text]="error" styleClass="login__message" />
+    }
+
+    @if (successMessage(); as success) {
+      <p-message severity="success" [text]="success" styleClass="login__message" />
+    }
+
+    <p-tabs value="sign-in">
+      <p-tablist>
+        <p-tab value="sign-in">Sign In</p-tab>
+        <p-tab value="sign-up">Sign Up</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <p-tabpanel value="sign-in">
+          <form class="login__form" [formGroup]="signInForm" (ngSubmit)="onSignIn()">
+            <label class="login__label" for="sign-in-email">Email</label>
+            <input
+              pInputText
+              id="sign-in-email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              class="login__input"
+            />
+
+            <label class="login__label" for="sign-in-password">Password</label>
+            <p-password
+              inputId="sign-in-password"
+              formControlName="password"
+              [feedback]="false"
+              [toggleMask]="true"
+              autocomplete="current-password"
+              styleClass="login__password"
+              inputStyleClass="login__input"
+            />
+
+            <p-button
+              type="submit"
+              label="Sign In"
+              icon="pi pi-sign-in"
+              [loading]="submitting()"
+              styleClass="login__submit"
+            />
+          </form>
+        </p-tabpanel>
+
+        <p-tabpanel value="sign-up">
+          <form class="login__form" [formGroup]="signUpForm" (ngSubmit)="onSignUp()">
+            <label class="login__label" for="sign-up-name">Display Name</label>
+            <input
+              pInputText
+              id="sign-up-name"
+              type="text"
+              formControlName="displayName"
+              autocomplete="name"
+              class="login__input"
+            />
+
+            <label class="login__label" for="sign-up-email">Email</label>
+            <input
+              pInputText
+              id="sign-up-email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              class="login__input"
+            />
+
+            <label class="login__label" for="sign-up-password">Password</label>
+            <p-password
+              inputId="sign-up-password"
+              formControlName="password"
+              [toggleMask]="true"
+              autocomplete="new-password"
+              styleClass="login__password"
+              inputStyleClass="login__input"
+            />
+
+            <p-button
+              type="submit"
+              label="Create Account"
+              icon="pi pi-user-plus"
+              [loading]="submitting()"
+              styleClass="login__submit"
+            />
+          </form>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+</div>

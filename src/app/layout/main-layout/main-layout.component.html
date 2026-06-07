@@ -1,0 +1,36 @@
+<div class="shell">
+  <aside class="shell__sidebar">
+    <div class="shell__brand">
+      <span class="shell__brand-mark">DQOS</span>
+      <span class="shell__brand-sub">AMT Lab</span>
+    </div>
+
+    <nav class="shell__nav">
+      @for (item of navItems; track item.route) {
+        <a
+          class="shell__nav-link"
+          [routerLink]="item.route"
+          routerLinkActive="shell__nav-link--active"
+        >
+          <i [class]="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="shell__footer">
+      <p class="shell__user data-mono">{{ userEmail() }}</p>
+      <p-button
+        label="Sign Out"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [text]="true"
+        (onClick)="signOut()"
+      />
+    </div>
+  </aside>
+
+  <main class="shell__main">
+    <router-outlet />
+  </main>
+</div>
