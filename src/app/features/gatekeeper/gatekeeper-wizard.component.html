@@ -6,6 +6,8 @@
         class="gatekeeper-form__step"
         [class.gatekeeper-form__step--active]="activeStep() === step.number"
         [class.gatekeeper-form__step--complete]="isStepValid(step.key)"
+        [class.gatekeeper-form__step--locked]="isStepLocked(step.number)"
+        [disabled]="isStepLocked(step.number)"
         (click)="goToStep(step.number)"
       >
         <span class="gatekeeper-form__step-num">{{ step.number }}</span>
@@ -91,7 +93,63 @@
       }
 
       @case (2) {
+        <section class="gatekeeper-form__panel" formGroupName="auction_type">
+          <p-message
+            severity="info"
+            text="You don't need the final day type at the open — update your read as the session develops. When volume profile shape and auction behavior tell the same story, confidence increases."
+            styleClass="gatekeeper-form__oath"
+          />
+
+          <div class="gatekeeper-form__fields">
+            <label class="gatekeeper-form__label">Volume profile day type</label>
+            <p class="gatekeeper-form__hint gatekeeper-form__hint--lead">
+              Is the market spending most of its time rotating around a center (balance), or driving directionally and building structure as it goes (trend/discovery)?
+            </p>
+            <app-enum-pill-select
+              formControlName="day_type"
+              ariaLabel="Volume profile day type"
+              [options]="dayTypeOptions"
+            />
+            @if (selectedHint(dayTypeOptions, auctionTypeGroup().get('day_type')?.value); as hint) {
+              <p class="gatekeeper-form__hint">{{ hint }}</p>
+            }
+          </div>
+
+          @if (activePlaybook(); as playbook) {
+            <div class="gatekeeper-form__playbook">
+              <div class="gatekeeper-form__playbook-header">
+                <p-tag
+                  [severity]="playbook === 'fade' ? 'info' : 'success'"
+                  [value]="playbookLabel(playbook)"
+                />
+                @if (selectedDayType(); as dayType) {
+                  <span class="gatekeeper-form__playbook-day">{{ dayTypeLabel(dayType) }}</span>
+                }
+              </div>
+              <p class="gatekeeper-form__playbook-copy">{{ playbookDescription(playbook) }}</p>
+              <p class="gatekeeper-form__hint">
+                Location, Behavior, Confirmation, and Invalidation unlock with options matched to this playbook.
+              </p>
+            </div>
+          }
+
+          @if (!isStepValid('auction_type') && auctionTypeGroup().touched) {
+            <p-message severity="warn" text="Select today's developing volume profile day type to unlock the execution pillars." />
+          }
+        </section>
+      }
+
+      @case (3) {
         <section class="gatekeeper-form__panel">
+          @if (activePlaybook(); as playbook) {
+            <div class="gatekeeper-form__playbook gatekeeper-form__playbook--compact">
+              <p-tag
+                [severity]="playbook === 'fade' ? 'info' : 'success'"
+                [value]="playbookLabel(playbook)"
+              />
+            </div>
+          }
+
           <p-message
             severity="info"
             text="Daily oath: I will not trade because price touched a level. The first test provides information. The retest provides opportunity."
@@ -109,7 +167,7 @@
             stepKey="location"
             [stepGroup]="stepGroup('location')"
             stepTitle="Location pillar journal"
-            notesPlaceholder="Where is price relative to value on your chosen chart? Why is this an auction boundary aligned with HTF posture, not middle of value?"
+            notesPlaceholder="Where is price relative to value on your chosen chart? Why is this an auction boundary aligned with HTF posture and today's playbook?"
             [pasteActive]="true"
           />
 
@@ -118,9 +176,9 @@
             <app-enum-pill-select
               formControlName="location"
               ariaLabel="Auction location"
-              [options]="locationOptions"
+              [options]="locationOptions()"
             />
-            @if (selectedHint(locationOptions, stepGroup('location').get('location')?.value); as hint) {
+            @if (selectedHint(locationOptions(), stepGroup('location').get('location')?.value); as hint) {
               <p class="gatekeeper-form__hint">{{ hint }}</p>
             }
           </div>
@@ -134,13 +192,22 @@
         </section>
       }
 
-      @case (3) {
+      @case (4) {
         <section class="gatekeeper-form__panel">
+          @if (activePlaybook(); as playbook) {
+            <div class="gatekeeper-form__playbook gatekeeper-form__playbook--compact">
+              <p-tag
+                [severity]="playbook === 'fade' ? 'info' : 'success'"
+                [value]="playbookLabel(playbook)"
+              />
+            </div>
+          }
+
           <app-pillar-step-panel
             stepKey="behavior"
             [stepGroup]="stepGroup('behavior')"
             stepTitle="Behavior pillar journal"
-            notesPlaceholder="Acceptance, rejection, or migration? What did the initial test reveal, and what does the retest prove relative to HTF context?"
+            notesPlaceholder="What behavior at your location supports today's playbook? Rejection/rotation for fades, acceptance/migration for trends."
             [pasteActive]="true"
           />
 
@@ -149,9 +216,9 @@
             <app-enum-pill-select
               formControlName="behavior"
               ariaLabel="Market behavior"
-              [options]="behaviorOptions"
+              [options]="behaviorOptions()"
             />
-            @if (selectedHint(behaviorOptions, stepGroup('behavior').get('behavior')?.value); as hint) {
+            @if (selectedHint(behaviorOptions(), stepGroup('behavior').get('behavior')?.value); as hint) {
               <p class="gatekeeper-form__hint">{{ hint }}</p>
             }
           </div>
@@ -165,8 +232,17 @@
         </section>
       }
 
-      @case (4) {
+      @case (5) {
         <section class="gatekeeper-form__panel">
+          @if (activePlaybook(); as playbook) {
+            <div class="gatekeeper-form__playbook gatekeeper-form__playbook--compact">
+              <p-tag
+                [severity]="playbook === 'fade' ? 'info' : 'success'"
+                [value]="playbookLabel(playbook)"
+              />
+            </div>
+          }
+
           <app-pillar-step-panel
             stepKey="confirmation"
             [stepGroup]="stepGroup('confirmation')"
@@ -180,10 +256,10 @@
             <app-enum-pill-select
               formControlName="confirmation"
               ariaLabel="Confirmation trigger"
-              [options]="confirmationOptions"
+              [options]="confirmationOptions()"
             />
             @if (
-              selectedHint(confirmationOptions, stepGroup('confirmation').get('confirmation')?.value);
+              selectedHint(confirmationOptions(), stepGroup('confirmation').get('confirmation')?.value);
               as hint
             ) {
               <p class="gatekeeper-form__hint">{{ hint }}</p>
@@ -199,8 +275,17 @@
         </section>
       }
 
-      @case (5) {
+      @case (6) {
         <section class="gatekeeper-form__panel">
+          @if (activePlaybook(); as playbook) {
+            <div class="gatekeeper-form__playbook gatekeeper-form__playbook--compact">
+              <p-tag
+                [severity]="playbook === 'fade' ? 'info' : 'success'"
+                [value]="playbookLabel(playbook)"
+              />
+            </div>
+          }
+
           <app-pillar-step-panel
             stepKey="invalidation"
             [stepGroup]="stepGroup('invalidation')"
@@ -215,7 +300,7 @@
               pInputText
               id="invalidation-level"
               formControlName="invalidation_level"
-              placeholder="e.g. Acceptance back inside value / below retest low"
+              [placeholder]="invalidationHint()"
               class="gatekeeper-form__input"
             />
 

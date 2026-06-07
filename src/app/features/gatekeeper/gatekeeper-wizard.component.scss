@@ -84,6 +84,21 @@
       background: rgba(16, 185, 129, 0.14);
       color: #d1fae5;
     }
+
+    &--locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-color: #374151;
+      color: #6b7280;
+      background: #151820;
+
+      &:hover {
+        border-color: #374151;
+        background: #151820;
+        color: #6b7280;
+        box-shadow: none;
+      }
+    }
   }
 
   &__step-num {
@@ -149,6 +164,44 @@
     font-size: 0.75rem;
     color: #9ca3af;
     font-style: italic;
+
+    &--lead {
+      font-style: normal;
+      line-height: 1.45;
+    }
+  }
+
+  &__playbook {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.08);
+
+    &--compact {
+      padding: 0.625rem 0.875rem;
+    }
+  }
+
+  &__playbook-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+  }
+
+  &__playbook-day {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #e5e7eb;
+  }
+
+  &__playbook-copy {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #d1d5db;
   }
 
   &__textarea,

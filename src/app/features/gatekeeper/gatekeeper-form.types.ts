@@ -2,6 +2,7 @@ import type {
   AnalyzedTimeframe,
   AuctionLocation,
   ConfirmationTrigger,
+  DayType,
   MarketBehavior,
   PillarFocusTimeframe,
   TradingTimeframe,
@@ -16,6 +17,10 @@ export interface ContextStepValue {
   analyzed_timeframes: Record<AnalyzedTimeframe, boolean>;
   trading_timeframe: TradingTimeframe;
   timeframe_journals: Record<AnalyzedTimeframe, TimeframeJournalFormValue>;
+}
+
+export interface AuctionTypeStepValue {
+  day_type: DayType | null;
 }
 
 export interface PillarStepFormValue {
@@ -42,6 +47,7 @@ export interface InvalidationStepValue extends PillarStepFormValue {
 
 export interface GatekeeperFormValue {
   context: ContextStepValue;
+  auction_type: AuctionTypeStepValue;
   is_retest: boolean;
   location: LocationStepValue;
   behavior: BehaviorStepValue;
@@ -51,9 +57,10 @@ export interface GatekeeperFormValue {
 
 export type GatekeeperStepKey =
   | 'context'
+  | 'auction_type'
   | 'location'
   | 'behavior'
   | 'confirmation'
   | 'invalidation';
 
-export type ExecutionPillarStepKey = Exclude<GatekeeperStepKey, 'context'>;
+export type ExecutionPillarStepKey = Exclude<GatekeeperStepKey, 'context' | 'auction_type'>;

@@ -11,6 +11,7 @@ import type {
   AnalyzedTimeframe,
   AuctionLocation,
   ConfirmationTrigger,
+  DayType,
   MarketBehavior,
   PillarFocusTimeframe,
 } from '../../core/models/database.types';
@@ -113,6 +114,9 @@ export function createGatekeeperForm(fb: FormBuilder) {
       analyzed_timeframes: createTimeframeGroup(fb),
       trading_timeframe: fb.nonNullable.control<'M15'>('M15'),
       timeframe_journals: createTimeframeJournalsGroup(fb),
+    }),
+    auction_type: fb.group({
+      day_type: fb.control<DayType | null>(null, Validators.required),
     }),
     is_retest: fb.nonNullable.control(false, { validators: [Validators.requiredTrue] }),
     location: fb.group({

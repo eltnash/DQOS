@@ -52,17 +52,12 @@
           />
         </div>
 
-        <div class="execution-block__field">
-          <label for="day_type">Day Type</label>
-          <p-select
-            inputId="day_type"
-            formControlName="day_type"
-            [options]="dayTypeOptions"
-            optionLabel="label"
-            optionValue="value"
-            [disabled]="isLocked()"
-          />
-        </div>
+        @if (auditDraft()?.auction_type?.day_type; as dayType) {
+          <div class="execution-block__field execution-block__field--readonly">
+            <span class="execution-block__field-label">Auction type</span>
+            <p-tag severity="info" [value]="dayTypeLabel(dayType)" />
+          </div>
+        }
       </div>
 
       <div class="execution-block__row execution-block__row--triple">

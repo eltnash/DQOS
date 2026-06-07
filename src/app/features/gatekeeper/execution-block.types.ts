@@ -4,7 +4,6 @@ import type { GatekeeperFormValue } from './gatekeeper-form.types';
 export interface ExecutionFormValue {
   symbol: AssetSymbol;
   direction: TradeDirection;
-  day_type: DayType;
   entry_price: number;
   stop_price: number;
   size: number;

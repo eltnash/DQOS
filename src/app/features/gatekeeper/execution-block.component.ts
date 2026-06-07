@@ -21,10 +21,8 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
 import { GatekeeperSubmitService } from './gatekeeper-submit.service';
-import {
-  DAY_TYPE_OPTIONS,
-  TRADE_DIRECTION_OPTIONS,
-} from '../../core/supabase/enum-options';
+import { TRADE_DIRECTION_OPTIONS } from '../../core/supabase/enum-options';
+import { dayTypeLabel } from './auction-playbook.utils';
 import { createExecutionForm } from './execution-form.factory';
 import type { ExecutionFormValue, GatekeeperSubmitResult } from './execution-block.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
@@ -79,7 +77,7 @@ export class ExecutionBlockComponent {
   );
 
   protected readonly directionOptions = TRADE_DIRECTION_OPTIONS;
-  protected readonly dayTypeOptions = DAY_TYPE_OPTIONS;
+  protected readonly dayTypeLabel = dayTypeLabel;
 
   protected readonly sessionSummary = computed(() => {
     const state = this.sessionState();
@@ -95,7 +93,7 @@ export class ExecutionBlockComponent {
     if (this.pillarsQualified()) {
       return null;
     }
-    return 'Complete all four pillars and confirm retest to unlock execution.';
+    return 'Complete HTF context, auction type, all four pillars, and confirm retest to unlock execution.';
   });
 
   protected readonly canSubmit = computed(() => {
@@ -148,7 +146,6 @@ export class ExecutionBlockComponent {
     this.executionForm.reset({
       symbol,
       direction: 'LONG',
-      day_type: 'D_Day',
       entry_price: null,
       stop_price: null,
       size: null,
@@ -167,7 +164,7 @@ export class ExecutionBlockComponent {
     const exec = this.executionForm.getRawValue() as ExecutionFormValue;
     const auditForm = this.auditDraft();
     const session = this.sessionState();
-    if (!auditForm || !session) {
+    if (!auditForm || !session || !auditForm.auction_type.day_type) {
       return;
     }
 
@@ -192,6 +189,11 @@ export class ExecutionBlockComponent {
       return;
     }
 
+    const dayType = auditForm.auction_type.day_type;
+    if (!dayType) {
+      return;
+    }
+
     this.submitting.set(true);
 
     try {
@@ -200,7 +202,7 @@ export class ExecutionBlockComponent {
         trade: {
           symbol: session.symbol,
           direction: exec.direction,
-          day_type: exec.day_type,
+          day_type: dayType,
           entry_price: exec.entry_price,
           stop_price: exec.stop_price,
           size: exec.size,

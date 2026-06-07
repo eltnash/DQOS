@@ -6,7 +6,7 @@ import {
   Validators,
 } from '@angular/forms';
 
-import type { AssetSymbol, DayType, TradeDirection } from '../../core/models/database.types';
+import type { AssetSymbol, TradeDirection } from '../../core/models/database.types';
 import { isStopPlacementValid } from './execution-risk.utils';
 import type { ExecutionFormValue } from './execution-block.types';
 
@@ -25,7 +25,6 @@ export function createExecutionForm(fb: FormBuilder) {
     {
       symbol: fb.nonNullable.control<AssetSymbol>('ES', Validators.required),
       direction: fb.nonNullable.control<TradeDirection>('LONG', Validators.required),
-      day_type: fb.nonNullable.control<DayType>('D_Day', Validators.required),
       entry_price: fb.control<number | null>(null, [
         Validators.required,
         Validators.min(0.000001),

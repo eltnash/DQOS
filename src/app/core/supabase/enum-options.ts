@@ -144,11 +144,31 @@ export const TRADE_DIRECTION_OPTIONS: SelectOption<TradeDirection>[] = [
 ];
 
 export const DAY_TYPE_OPTIONS: SelectOption<DayType>[] = [
-  { label: 'D-Day (Balanced)', value: 'D_Day' },
-  { label: 'P-Day (Trend)', value: 'P_Day' },
-  { label: 'b-Day (Double distribution)', value: 'b_Day' },
-  { label: 'Trend Day', value: 'Trend_Day' },
-  { label: 'Double Distribution', value: 'Double_Dist' },
+  {
+    label: 'D-Shape (Balance)',
+    value: 'D_Day',
+    hint: 'Two-sided auction rotating around a center — normal, neutral, or non-trend character',
+  },
+  {
+    label: 'P-Shape (Short Covering)',
+    value: 'P_Day',
+    hint: 'Short covering / squeeze profile — responsive fades at upper extremes often work',
+  },
+  {
+    label: 'b-Shape (Long Liquidation)',
+    value: 'b_Day',
+    hint: 'Long liquidation profile — responsive fades at lower extremes often work',
+  },
+  {
+    label: 'Trend / Elongated',
+    value: 'Trend_Day',
+    hint: 'Directional discovery — value migrating with the drive; join pullbacks',
+  },
+  {
+    label: 'Double Distribution',
+    value: 'Double_Dist',
+    hint: 'Two value zones with a low-volume corridor — trend or breakout continuation setups',
+  },
 ];
 
 export interface CheckboxOption<T extends string = string> {
