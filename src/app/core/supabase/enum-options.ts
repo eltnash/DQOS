@@ -26,15 +26,21 @@ export const AUCTION_LOCATION_OPTIONS: SelectOption<AuctionLocation>[] = [
   { label: 'VAH', value: 'VAH', hint: 'Value area high — upper boundary of accepted value' },
   { label: 'VAL', value: 'VAL', hint: 'Value area low — lower boundary of accepted value' },
   { label: 'POC', value: 'POC', hint: 'Point of control — greatest participation' },
-  { label: 'Weekly VWAP', value: 'Weekly_VWAP', hint: 'Multi-day value reference' },
-  { label: 'Monthly VWAP', value: 'Monthly_VWAP', hint: 'Higher-timeframe value reference' },
+  { label: 'Session VWAP', value: 'Session_VWAP', hint: 'Current session volume-weighted average price' },
+  { label: 'Anchored VWAP', value: 'Anchored_VWAP', hint: 'VWAP anchored to a structural event or session open' },
   { label: 'Composite VAH', value: 'Composite_VAH', hint: 'Composite profile upper edge' },
   { label: 'Composite VAL', value: 'Composite_VAL', hint: 'Composite profile lower edge' },
   { label: 'Composite POC', value: 'Composite_POC', hint: 'Composite point of control' },
   { label: 'Overnight High', value: 'Overnight_High', hint: 'Session boundary — stress zone' },
   { label: 'Overnight Low', value: 'Overnight_Low', hint: 'Session boundary — stress zone' },
+  { label: 'Prior Day High', value: 'Prior_Day_High', hint: 'Previous RTH high — reference for continuation or failure' },
+  { label: 'Prior Day Low', value: 'Prior_Day_Low', hint: 'Previous RTH low — reference for continuation or failure' },
   { label: 'Single Print', value: 'Single_Print', hint: 'Low-volume node — fast migration unless accepted' },
   { label: 'Naked POC', value: 'Naked_POC', hint: 'Untested POC — magnet / decision level' },
+  { label: 'Order Block', value: 'Order_Block', hint: 'Institutional footprint — last opposing candle before displacement' },
+  { label: 'Fair Value Gap', value: 'Fair_Value_Gap', hint: 'Imbalance zone — price may retrace to rebalance' },
+  { label: 'HVN', value: 'HVN', hint: 'High volume node — accepted business, potential rotation' },
+  { label: 'LVN', value: 'LVN', hint: 'Low volume node — thin liquidity, fast migration' },
 ];
 
 export const MARKET_BEHAVIOR_OPTIONS: SelectOption<MarketBehavior>[] = [
