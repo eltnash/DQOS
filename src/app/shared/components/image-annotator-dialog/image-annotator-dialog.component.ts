@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
-type AnnotatorTool = 'pan' | 'draw' | 'text';
+type AnnotatorTool = 'pan' | 'select' | 'draw' | 'text' | 'eraser';
 
 interface TextStamp {
   id: string;
@@ -54,8 +54,10 @@ export class ImageAnnotatorDialogComponent {
 
   protected readonly toolOptions = [
     { label: 'Pan', value: 'pan' as const, icon: 'pi pi-arrows-alt' },
+    { label: 'Select', value: 'select' as const, icon: 'pi pi-arrow-up-right' },
     { label: 'Draw', value: 'draw' as const, icon: 'pi pi-pencil' },
     { label: 'Text', value: 'text' as const, icon: 'pi pi-font' },
+    { label: 'Eraser', value: 'eraser' as const, icon: 'pi pi-eraser' },
   ];
 
   protected readonly colorOptions = ['#34d399', '#f87171', '#fbbf24', '#ffffff', '#60a5fa'];
@@ -66,12 +68,15 @@ export class ImageAnnotatorDialogComponent {
   private readonly textStampRefs = viewChildren<ElementRef<HTMLElement>>('textStamp');
 
   private drawing = false;
+  private erasing = false;
   private panning = false;
   private lastX = 0;
   private lastY = 0;
   private textDrag: TextDragState | null = null;
   private naturalWidth = 0;
   private naturalHeight = 0;
+
+  private readonly eraserWidth = 22;
 
   protected stageTransform(): string {
     return `translate(${this.translateX()}px, ${this.translateY()}px) scale(${this.scale()})`;
@@ -93,7 +98,7 @@ export class ImageAnnotatorDialogComponent {
 
   protected setTool(tool: AnnotatorTool): void {
     this.tool.set(tool);
-    if (tool !== 'text') {
+    if (tool !== 'select' && tool !== 'text') {
       this.selectedTextId.set(null);
     }
   }
@@ -143,8 +148,7 @@ export class ImageAnnotatorDialogComponent {
     if (!selectedId) {
       return;
     }
-    this.textStamps.update((stamps) => stamps.filter((stamp) => stamp.id !== selectedId));
-    this.selectedTextId.set(null);
+    this.removeTextStamp(selectedId);
   }
 
   protected close(): void {
@@ -208,18 +212,31 @@ export class ImageAnnotatorDialogComponent {
       return;
     }
 
+    if (this.tool() === 'select') {
+      this.selectedTextId.set(null);
+      return;
+    }
+
     const point = this.canvasPoint(event, canvas);
 
     if (this.tool() === 'draw') {
       this.drawing = true;
-      const ctx = canvas.getContext('2d');
+      const ctx = this.prepareDrawContext(canvas);
       if (!ctx) {
         return;
       }
-      ctx.strokeStyle = this.strokeColor();
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      viewport.setPointerCapture(event.pointerId);
+      return;
+    }
+
+    if (this.tool() === 'eraser') {
+      this.erasing = true;
+      const ctx = this.prepareEraserContext(canvas);
+      if (!ctx) {
+        return;
+      }
       ctx.beginPath();
       ctx.moveTo(point.x, point.y);
       viewport.setPointerCapture(event.pointerId);
@@ -232,7 +249,8 @@ export class ImageAnnotatorDialogComponent {
   }
 
   protected onTextStampPointerDown(event: PointerEvent, stampId: string): void {
-    if (this.tool() !== 'text') {
+    const tool = this.tool();
+    if (tool !== 'select' && tool !== 'text') {
       return;
     }
 
@@ -244,6 +262,21 @@ export class ImageAnnotatorDialogComponent {
     }
 
     this.selectedTextId.set(stampId);
+
+    if (tool === 'text') {
+      this.textDrag = {
+        id: stampId,
+        pointerId: event.pointerId,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        originX: stamp.x,
+        originY: stamp.y,
+        moved: false,
+      };
+      viewport.setPointerCapture(event.pointerId);
+      return;
+    }
+
     this.textDrag = {
       id: stampId,
       pointerId: event.pointerId,
@@ -256,6 +289,12 @@ export class ImageAnnotatorDialogComponent {
     viewport.setPointerCapture(event.pointerId);
   }
 
+  protected onTextStampDoubleClick(stampId: string): void {
+    this.tool.set('text');
+    this.selectedTextId.set(stampId);
+    queueMicrotask(() => this.focusTextStamp(stampId));
+  }
+
   protected onTextInput(stampId: string, event: Event): void {
     const target = event.target as HTMLElement;
     this.textStamps.update((stamps) =>
@@ -263,6 +302,29 @@ export class ImageAnnotatorDialogComponent {
         stamp.id === stampId ? { ...stamp, text: target.innerText ?? '' } : stamp,
       ),
     );
+  }
+
+  protected onTextStampKeydown(event: KeyboardEvent, stampId: string): void {
+    if (event.key !== 'Backspace' && event.key !== 'Delete') {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    const text = (target.innerText ?? '').replace(/\u00a0/g, ' ').trim();
+    if (text.length > 0) {
+      return;
+    }
+
+    event.preventDefault();
+    this.removeTextStamp(stampId);
+  }
+
+  protected onTextStampBlur(stampId: string, event: FocusEvent): void {
+    const target = event.target as HTMLElement;
+    const text = (target.innerText ?? '').replace(/\u00a0/g, ' ').trim();
+    if (text.length === 0) {
+      this.removeTextStamp(stampId);
+    }
   }
 
   protected onPointerMove(event: PointerEvent): void {
@@ -302,22 +364,31 @@ export class ImageAnnotatorDialogComponent {
       return;
     }
 
-    if (!this.drawing) {
-      return;
-    }
-
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas) {
       return;
     }
 
     const point = this.canvasPoint(event, canvas);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
+
+    if (this.drawing) {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
       return;
     }
-    ctx.lineTo(point.x, point.y);
-    ctx.stroke();
+
+    if (this.erasing) {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        return;
+      }
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+    }
   }
 
   protected onPointerUp(event: PointerEvent): void {
@@ -326,13 +397,19 @@ export class ImageAnnotatorDialogComponent {
       this.textDrag = null;
       this.viewportRef()?.nativeElement.releasePointerCapture(event.pointerId);
 
-      if (!drag.moved) {
+      if (!drag.moved && this.tool() === 'text') {
         this.focusTextStamp(drag.id);
       }
       return;
     }
 
+    if (this.drawing || this.erasing) {
+      const canvas = this.canvasRef()?.nativeElement;
+      canvas?.getContext('2d')?.beginPath();
+    }
+
     this.drawing = false;
+    this.erasing = false;
     this.panning = false;
     this.viewportRef()?.nativeElement.releasePointerCapture(event.pointerId);
   }
@@ -362,6 +439,7 @@ export class ImageAnnotatorDialogComponent {
     if (target?.isContentEditable) {
       return;
     }
+
     if (this.selectedTextId()) {
       event.preventDefault();
       this.deleteSelectedText();
@@ -378,6 +456,13 @@ export class ImageAnnotatorDialogComponent {
     queueMicrotask(() => this.focusTextStamp(id));
   }
 
+  private removeTextStamp(stampId: string): void {
+    this.textStamps.update((stamps) => stamps.filter((stamp) => stamp.id !== stampId));
+    if (this.selectedTextId() === stampId) {
+      this.selectedTextId.set(null);
+    }
+  }
+
   private focusTextStamp(id: string): void {
     const ref = this.textStampRefs().find((item) => item.nativeElement.dataset['stampId'] === id);
     const element = ref?.nativeElement;
@@ -391,6 +476,32 @@ export class ImageAnnotatorDialogComponent {
     range.collapse(false);
     selection?.removeAllRanges();
     selection?.addRange(range);
+  }
+
+  private prepareDrawContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return null;
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = this.strokeColor();
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    return ctx;
+  }
+
+  private prepareEraserContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return null;
+    }
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth = this.eraserWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    return ctx;
   }
 
   private canvasPoint(event: PointerEvent, canvas: HTMLCanvasElement): { x: number; y: number } {
@@ -409,6 +520,10 @@ export class ImageAnnotatorDialogComponent {
       return;
     }
     const ctx = canvas.getContext('2d');
-    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    if (!ctx) {
+      return;
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 }

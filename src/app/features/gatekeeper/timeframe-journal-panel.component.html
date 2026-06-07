@@ -86,14 +86,10 @@
 
   <div class="journal-panel__notes">
     <label class="journal-panel__label" [for]="'notes-' + timeframe()">Notes describing this chart</label>
-    <textarea
-      pTextarea
-      [id]="'notes-' + timeframe()"
-      formControlName="notes"
-      rows="6"
-      placeholder="Describe composite profile, key levels, unfinished business, day type, and how this timeframe sets context for 15m execution..."
-      class="journal-panel__textarea"
-    ></textarea>
+    <app-tagged-notes-editor
+      formControlName="notes_content"
+      [inputId]="'notes-' + timeframe()"
+    />
   </div>
 </section>
 

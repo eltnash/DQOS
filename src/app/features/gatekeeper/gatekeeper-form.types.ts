@@ -5,9 +5,10 @@ import type {
   MarketBehavior,
   TradingTimeframe,
 } from '../../core/models/database.types';
+import type { TaggedNotesValue } from '../../shared/components/tagged-notes-editor/tagged-notes.types';
 
 export interface TimeframeJournalFormValue {
-  notes: string;
+  notes_content: TaggedNotesValue;
 }
 
 export interface ContextStepValue {

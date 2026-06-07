@@ -97,10 +97,18 @@ export interface TimeframeScreenshotRef {
   is_annotated: boolean;
 }
 
+export interface JournalNoteTag {
+  id: string;
+  label: string;
+  start: number;
+  end: number;
+}
+
 /** Per-timeframe chart journal before 15m execution. */
 export interface TimeframeJournalEntry {
   timeframe: AnalyzedTimeframe;
   notes: string;
+  note_tags: JournalNoteTag[];
   screenshots: TimeframeScreenshotRef[];
 }
 

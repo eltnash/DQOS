@@ -14,6 +14,11 @@ import type {
   MarketBehavior,
 } from '../../core/models/database.types';
 import { ANALYZED_TIMEFRAME_KEYS } from '../../core/supabase/enum-options';
+import {
+  EMPTY_TAGGED_NOTES,
+  taggedNotesPlainText,
+} from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
+import type { TaggedNotesValue } from '../../shared/components/tagged-notes-editor/tagged-notes.types';
 
 const THESIS_MIN_LENGTH = 20;
 const THESIS_MAX_LENGTH = 2000;
@@ -29,13 +34,21 @@ export function thesisValidators(): ValidatorFn[] {
   ];
 }
 
-function journalNotesValidators(): ValidatorFn[] {
-  return [
-    Validators.required,
-    Validators.minLength(JOURNAL_NOTES_MIN),
-    Validators.maxLength(JOURNAL_NOTES_MAX),
-    Validators.pattern(/\S/),
-  ];
+function journalNotesContentValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value as TaggedNotesValue;
+    const text = taggedNotesPlainText(value);
+    if (text.length < JOURNAL_NOTES_MIN) {
+      return { minlength: { requiredLength: JOURNAL_NOTES_MIN, actualLength: text.length } };
+    }
+    if (text.length > JOURNAL_NOTES_MAX) {
+      return { maxlength: { requiredLength: JOURNAL_NOTES_MAX, actualLength: text.length } };
+    }
+    if (!/\S/.test(text)) {
+      return { pattern: true };
+    }
+    return null;
+  };
 }
 
 export function atLeastOneCheckedValidator(): ValidatorFn {
@@ -74,13 +87,13 @@ function createTimeframeGroup(fb: FormBuilder) {
 
 function createJournalBlock(fb: FormBuilder) {
   return fb.group({
-    notes: fb.nonNullable.control('', []),
+    notes_content: fb.nonNullable.control<TaggedNotesValue>(EMPTY_TAGGED_NOTES, []),
   });
 }
 
 function applyJournalValidators(block: FormGroup, enabled: boolean): void {
-  block.get('notes')?.setValidators(enabled ? journalNotesValidators() : []);
-  block.get('notes')?.updateValueAndValidity({ emitEvent: false });
+  block.get('notes_content')?.setValidators(enabled ? [journalNotesContentValidator()] : []);
+  block.get('notes_content')?.updateValueAndValidity({ emitEvent: false });
 }
 
 function createTimeframeJournalsGroup(fb: FormBuilder) {
@@ -143,7 +156,7 @@ export function createGatekeeperForm(fb: FormBuilder) {
     timeframes.get(tf)?.valueChanges.subscribe((enabled) => {
       applyJournalValidators(journals.get(tf) as FormGroup, enabled === true);
       if (!enabled) {
-        journals.get(tf)?.patchValue({ notes: '' }, { emitEvent: false });
+        journals.get(tf)?.patchValue({ notes_content: EMPTY_TAGGED_NOTES }, { emitEvent: false });
       }
       journals.get(tf)?.updateValueAndValidity({ emitEvent: true });
     });

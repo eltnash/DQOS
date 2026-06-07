@@ -13,10 +13,10 @@ import {
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
-import { TextareaModule } from 'primeng/textarea';
 
 import type { AnalyzedTimeframe } from '../../core/models/database.types';
 import { ImageAnnotatorDialogComponent } from '../../shared/components/image-annotator-dialog/image-annotator-dialog.component';
+import { TaggedNotesEditorComponent } from '../../shared/components/tagged-notes-editor/tagged-notes-editor.component';
 import type { HtfScreenshotItem } from './htf-screenshot-draft.service';
 import { HtfScreenshotDraftService } from './htf-screenshot-draft.service';
 import { timeframeLabel } from './htf-context.utils';
@@ -31,10 +31,10 @@ import {
   selector: 'app-timeframe-journal-panel',
   imports: [
     ReactiveFormsModule,
-    TextareaModule,
     ButtonModule,
     MessageModule,
     ImageAnnotatorDialogComponent,
+    TaggedNotesEditorComponent,
   ],
   templateUrl: './timeframe-journal-panel.component.html',
   styleUrl: './timeframe-journal-panel.component.scss',

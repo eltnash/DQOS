@@ -13,11 +13,15 @@ const TIMEFRAME_LABELS: Record<AnalyzedTimeframe, string> = {
 export function mapContextStepToSnapshot(context: ContextStepValue): HtfContextSnapshot {
   const timeframe_entries = ANALYZED_TIMEFRAME_KEYS.filter(
     (tf) => context.analyzed_timeframes[tf],
-  ).map((tf) => ({
-    timeframe: tf,
-    notes: context.timeframe_journals[tf].notes.trim(),
-    screenshots: [],
-  }));
+  ).map((tf) => {
+    const journal = context.timeframe_journals[tf];
+    return {
+      timeframe: tf,
+      notes: journal.notes_content.text.trim(),
+      note_tags: journal.notes_content.tags,
+      screenshots: [],
+    };
+  });
 
   if (timeframe_entries.length === 0) {
     throw new Error('Select at least one timeframe');
