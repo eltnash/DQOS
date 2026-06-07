@@ -123,8 +123,19 @@ export interface TimeframeJournalEntry {
   screenshots: TimeframeScreenshotRef[];
 }
 
+/** HTF narrative Q&A captured before timeframe chart journals. */
+export interface HtfNarrativeSnapshot {
+  value_migration: string;
+  composite_va_position: CompositeValuePosition;
+  auction_regime: HtfAuctionRegime;
+  tools_used: HtfAnalysisTool[];
+  htf_trade_posture: string;
+  session_read: string;
+}
+
 export interface HtfContextSnapshot {
   trading_timeframe: TradingTimeframe;
+  narrative: HtfNarrativeSnapshot;
   timeframe_entries: TimeframeJournalEntry[];
 }
 

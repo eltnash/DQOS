@@ -1,8 +1,11 @@
 import type {
   AnalyzedTimeframe,
   AuctionLocation,
+  CompositeValuePosition,
   ConfirmationTrigger,
   DayType,
+  HtfAnalysisTool,
+  HtfAuctionRegime,
   MarketBehavior,
   PillarFocusTimeframe,
   TradingTimeframe,
@@ -13,7 +16,17 @@ export interface TimeframeJournalFormValue {
   notes_content: TaggedNotesValue;
 }
 
+export interface HtfNarrativeFormValue {
+  value_migration: string;
+  composite_va_position: CompositeValuePosition | null;
+  auction_regime: HtfAuctionRegime | null;
+  tools_used: Record<HtfAnalysisTool, boolean>;
+  htf_trade_posture: string;
+  session_read: string;
+}
+
 export interface ContextStepValue {
+  narrative: HtfNarrativeFormValue;
   analyzed_timeframes: Record<AnalyzedTimeframe, boolean>;
   trading_timeframe: TradingTimeframe;
   timeframe_journals: Record<AnalyzedTimeframe, TimeframeJournalFormValue>;

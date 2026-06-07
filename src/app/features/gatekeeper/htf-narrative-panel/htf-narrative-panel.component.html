@@ -1,0 +1,184 @@
+<section class="htf-narrative" [formGroup]="narrativeGroup()">
+  <header class="htf-narrative__story">
+    @if (intro.heading) {
+      <h3 class="htf-narrative__heading">{{ intro.heading }}</h3>
+    }
+    @for (paragraph of intro.paragraphs; track paragraph) {
+      <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+    }
+  </header>
+
+  <div class="htf-narrative__qa">
+    <div class="htf-narrative__question">
+      <div class="htf-narrative__question-header">
+        <label class="htf-narrative__label" for="htf-value-migration">
+          Where has value been over the last several days/weeks?
+        </label>
+        @if (hasAnswer('value_migration')) {
+          <span class="htf-narrative__saved">Saved</span>
+        }
+        <button
+          type="button"
+          class="htf-narrative__clear"
+          [disabled]="!hasAnswer('value_migration')"
+          (click)="clearAnswer('value_migration')"
+        >
+          Clear
+        </button>
+      </div>
+      <textarea
+        pTextarea
+        id="htf-value-migration"
+        formControlName="value_migration"
+        rows="4"
+        placeholder="Describe value migration, composite profile shape, and where business has been accepted over recent sessions…"
+        class="htf-narrative__textarea"
+      ></textarea>
+    </div>
+
+    <div class="htf-narrative__question">
+      <div class="htf-narrative__question-header">
+        <span class="htf-narrative__label">Are we trading relative to composite value?</span>
+        @if (hasAnswer('composite_va_position')) {
+          <span class="htf-narrative__saved">Saved</span>
+        }
+        <button
+          type="button"
+          class="htf-narrative__clear"
+          [disabled]="!hasAnswer('composite_va_position')"
+          (click)="clearAnswer('composite_va_position')"
+        >
+          Clear
+        </button>
+      </div>
+      <p class="htf-narrative__prompt">Above · Below · Inside composite volume profile value area</p>
+      <app-enum-pill-select
+        formControlName="composite_va_position"
+        ariaLabel="Composite value area position"
+        [options]="compositeVaOptions"
+      />
+    </div>
+
+    <div class="htf-narrative__question">
+      <div class="htf-narrative__question-header">
+        <span class="htf-narrative__label">What is the higher-timeframe auction doing?</span>
+        @if (hasAnswer('auction_regime')) {
+          <span class="htf-narrative__saved">Saved</span>
+        }
+        <button
+          type="button"
+          class="htf-narrative__clear"
+          [disabled]="!hasAnswer('auction_regime')"
+          (click)="clearAnswer('auction_regime')"
+        >
+          Clear
+        </button>
+      </div>
+      <p class="htf-narrative__prompt">
+        Breaking away from balance · Rotating within balance · Repairing structure (poor highs/lows, single prints, LVNs)
+      </p>
+      <app-enum-pill-select
+        formControlName="auction_regime"
+        ariaLabel="Higher timeframe auction regime"
+        [options]="auctionRegimeOptions"
+      />
+    </div>
+
+    <div class="htf-narrative__reference">
+      @if (toolsReference.heading) {
+        <h4 class="htf-narrative__subheading">{{ toolsReference.heading }}</h4>
+      }
+      @for (paragraph of toolsReference.paragraphs; track paragraph) {
+        <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+      }
+    </div>
+
+    <div class="htf-narrative__question" formGroupName="tools_used">
+      <div class="htf-narrative__question-header">
+        <span class="htf-narrative__label">Which tools did you use for this read?</span>
+        @if (hasAnyToolSelected()) {
+          <span class="htf-narrative__saved">Saved</span>
+        }
+        <button
+          type="button"
+          class="htf-narrative__clear"
+          [disabled]="!hasAnyToolSelected()"
+          (click)="clearTools()"
+        >
+          Clear
+        </button>
+      </div>
+      <div class="htf-narrative__tool-grid">
+        @for (tool of toolOptions; track tool.key) {
+          <label class="htf-narrative__tool-card">
+            <p-checkbox [formControlName]="tool.key" [binary]="true" [inputId]="'htf-tool-' + tool.key" />
+            <span>{{ tool.label }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <div class="htf-narrative__question">
+      <div class="htf-narrative__question-header">
+        <label class="htf-narrative__label" for="htf-trade-posture">
+          What kind of trades might make sense later?
+        </label>
+        @if (hasAnswer('htf_trade_posture')) {
+          <span class="htf-narrative__saved">Saved</span>
+        }
+        <button
+          type="button"
+          class="htf-narrative__clear"
+          [disabled]="!hasAnswer('htf_trade_posture')"
+          (click)="clearAnswer('htf_trade_posture')"
+        >
+          Clear
+        </button>
+      </div>
+      <p class="htf-narrative__prompt">
+        Are HTF players likely pushing toward new value areas, or are we in a bigger balance where extremes are meant to be faded?
+      </p>
+      <textarea
+        pTextarea
+        id="htf-trade-posture"
+        formControlName="htf_trade_posture"
+        rows="4"
+        placeholder="You don't decide trades here — decide the environment your playbook should fit…"
+        class="htf-narrative__textarea"
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="htf-narrative__story htf-narrative__story--bridge">
+    @for (paragraph of bridge.paragraphs; track paragraph) {
+      <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+    }
+  </div>
+
+  <div class="htf-narrative__question">
+    <div class="htf-narrative__question-header">
+      <label class="htf-narrative__label" for="htf-session-read">
+        How is today's session translating the HTF narrative?
+      </label>
+      @if (hasAnswer('session_read')) {
+        <span class="htf-narrative__saved">Saved</span>
+      }
+      <button
+        type="button"
+        class="htf-narrative__clear"
+        [disabled]="!hasAnswer('session_read')"
+        (click)="clearAnswer('session_read')"
+      >
+        Clear
+      </button>
+    </div>
+    <textarea
+      pTextarea
+      id="htf-session-read"
+      formControlName="session_read"
+      rows="4"
+      placeholder="Session vs prior value, acceptance vs rejection, practical trading posture for today…"
+      class="htf-narrative__textarea"
+    ></textarea>
+  </div>
+</section>

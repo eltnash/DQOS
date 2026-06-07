@@ -12,10 +12,13 @@ import type {
   AuctionLocation,
   ConfirmationTrigger,
   DayType,
+  HtfAnalysisTool,
+  HtfAuctionRegime,
+  CompositeValuePosition,
   MarketBehavior,
   PillarFocusTimeframe,
 } from '../../core/models/database.types';
-import { ANALYZED_TIMEFRAME_KEYS } from '../../core/supabase/enum-options';
+import { ANALYZED_TIMEFRAME_KEYS, HTF_ANALYSIS_TOOL_OPTIONS } from '../../core/supabase/enum-options';
 import {
   EMPTY_TAGGED_NOTES,
   taggedNotesPlainText,
@@ -61,6 +64,48 @@ export function retestGateValidator(): ValidatorFn {
     }
     return null;
   };
+}
+
+const NARRATIVE_TEXT_MIN = 20;
+const NARRATIVE_TEXT_MAX = 4000;
+
+function narrativeTextValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const text = (control.value as string | null)?.trim() ?? '';
+    if (text.length < NARRATIVE_TEXT_MIN) {
+      return { minlength: { requiredLength: NARRATIVE_TEXT_MIN, actualLength: text.length } };
+    }
+    if (text.length > NARRATIVE_TEXT_MAX) {
+      return { maxlength: { requiredLength: NARRATIVE_TEXT_MAX, actualLength: text.length } };
+    }
+    if (!/\S/.test(text)) {
+      return { pattern: true };
+    }
+    return null;
+  };
+}
+
+function createHtfToolsGroup(fb: FormBuilder) {
+  const controls = HTF_ANALYSIS_TOOL_OPTIONS.reduce(
+    (acc, tool) => {
+      acc[tool.key] = fb.nonNullable.control(false);
+      return acc;
+    },
+    {} as Record<HtfAnalysisTool, ReturnType<FormBuilder['control']>>,
+  );
+
+  return fb.group(controls);
+}
+
+function createHtfNarrativeGroup(fb: FormBuilder) {
+  return fb.group({
+    value_migration: fb.nonNullable.control('', [narrativeTextValidator()]),
+    composite_va_position: fb.control<CompositeValuePosition | null>(null, Validators.required),
+    auction_regime: fb.control<HtfAuctionRegime | null>(null, Validators.required),
+    tools_used: createHtfToolsGroup(fb),
+    htf_trade_posture: fb.nonNullable.control('', [narrativeTextValidator()]),
+    session_read: fb.nonNullable.control('', [narrativeTextValidator()]),
+  });
 }
 
 function createTimeframeGroup(fb: FormBuilder) {
@@ -111,6 +156,7 @@ function createPillarStepBase(fb: FormBuilder) {
 export function createGatekeeperForm(fb: FormBuilder) {
   const form = fb.group({
     context: fb.group({
+      narrative: createHtfNarrativeGroup(fb),
       analyzed_timeframes: createTimeframeGroup(fb),
       trading_timeframe: fb.nonNullable.control<'M15'>('M15'),
       timeframe_journals: createTimeframeJournalsGroup(fb),

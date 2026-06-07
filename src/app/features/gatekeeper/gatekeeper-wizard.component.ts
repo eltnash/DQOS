@@ -48,6 +48,7 @@ import {
 } from './htf-context.utils';
 import { PillarStepPanelComponent } from './pillar-step-panel/pillar-step-panel.component';
 import { pillarFocusLabel } from './pillar-context.utils';
+import { HtfNarrativePanelComponent } from './htf-narrative-panel/htf-narrative-panel.component';
 import { TimeframeJournalPanelComponent } from './timeframe-journal-panel.component';
 
 interface WizardStepMeta {
@@ -72,6 +73,7 @@ const WIZARD_UNLOCK_ALL_STEPS = true;
   imports: [
     ReactiveFormsModule,
     TimeframeJournalPanelComponent,
+    HtfNarrativePanelComponent,
     PillarStepPanelComponent,
     EnumPillSelectComponent,
     CheckboxModule,
@@ -116,7 +118,7 @@ export class GatekeeperWizardComponent {
       number: 1,
       title: 'HTF Context',
       methodology:
-        'Select the timeframes relevant to today\'s trade. For each one, upload chart screenshots, write tagged notes, and annotate images. This is your higher-timeframe visual journal.',
+        'Read the HTF auction narrative, answer each question, then journal chart screenshots and tagged notes for each timeframe you are analyzing.',
     },
     {
       key: 'auction_type',
@@ -304,6 +306,10 @@ export class GatekeeperWizardComponent {
     return this.stepGroup('context');
   }
 
+  protected narrativeGroup(): FormGroup {
+    return this.contextGroup().get('narrative') as FormGroup;
+  }
+
   protected auctionTypeGroup(): FormGroup {
     return this.stepGroup('auction_type');
   }
@@ -334,6 +340,7 @@ export class GatekeeperWizardComponent {
     if (key === 'context') {
       const selected = this.selectedTimeframes();
       return (
+        this.narrativeGroup().valid &&
         this.stepGroup('context').valid &&
         selected.length > 0 &&
         this.screenshotDrafts.hasHtfDraftsFor(selected)
@@ -409,6 +416,9 @@ export class GatekeeperWizardComponent {
   protected goNext(): void {
     const key = this.currentStep().key;
     this.stepGroup(key).markAllAsTouched();
+    if (key === 'context') {
+      this.narrativeGroup().markAllAsTouched();
+    }
     if (key === 'location') {
       this.form.controls.is_retest.markAsTouched();
     }

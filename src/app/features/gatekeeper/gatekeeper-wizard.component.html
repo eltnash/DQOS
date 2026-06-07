@@ -22,6 +22,15 @@
     @switch (activeStep()) {
       @case (1) {
         <section class="gatekeeper-form__panel" formGroupName="context">
+          <app-htf-narrative-panel [narrativeGroup]="narrativeGroup()" />
+
+          @if (!narrativeGroup().valid && narrativeGroup().touched) {
+            <p-message
+              severity="warn"
+              text="Complete every HTF narrative question — text answers need at least 20 characters."
+            />
+          }
+
           <p-message
             severity="info"
             text="HTF chart journal — upload screenshots and tagged notes for each higher timeframe before qualifying execution pillars."
@@ -85,7 +94,7 @@
             @if (!isStepValid('context') && contextGroup().touched) {
               <p-message
                 severity="warn"
-                text="Each selected timeframe needs at least one screenshot and tagged notes (minimum 20 characters)."
+                text="Complete the HTF narrative, then ensure each selected timeframe has at least one screenshot and tagged notes (minimum 20 characters)."
               />
             }
           }
