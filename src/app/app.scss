@@ -1,0 +1,22 @@
+.app-shell {
+  padding: 2rem;
+  min-height: 100vh;
+  background-color: var(--dqos-bg-base);
+
+  &__header {
+    margin-bottom: 1.5rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    margin: 0.25rem 0 0;
+    color: #9ca3af;
+    font-size: 0.875rem;
+  }
+}

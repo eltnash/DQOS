@@ -1,1 +1,30 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'primeicons/primeicons.css';
+
+:root {
+  --dqos-bg-base: #0d0e12;
+  --dqos-bg-panel: #161920;
+  --dqos-border: #262b37;
+  --dqos-accent-qualified: #10b981;
+  --dqos-accent-warning: #f59e0b;
+  --dqos-font-ui: 'Inter', system-ui, sans-serif;
+  --dqos-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body.dqos-dark {
+  background-color: var(--dqos-bg-base);
+  color: #e5e7eb;
+  font-family: var(--dqos-font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+.data-mono,
+.p-inputnumber-input {
+  font-family: var(--dqos-font-mono) !important;
+}
