@@ -1,4 +1,24 @@
-export type AssetSymbol = 'ES' | 'NQ' | 'RTY' | 'YM' | 'CL' | 'GC' | 'SI' | 'ZB';
+export type AssetSymbol =
+  | 'ES'
+  | 'NQ'
+  | 'RTY'
+  | 'YM'
+  | 'CL'
+  | 'GC'
+  | 'SI'
+  | 'ZB'
+  | 'EURUSD'
+  | 'GBPUSD'
+  | 'USDJPY'
+  | 'AUDUSD'
+  | 'USDCAD'
+  | 'USDCHF'
+  | 'NZDUSD'
+  | 'EURGBP'
+  | 'EURJPY'
+  | 'GBPJPY'
+  | 'XAUUSD'
+  | 'XAGUSD';
 export type TradeDirection = 'LONG' | 'SHORT';
 export type TradeStatus = 'DRAFT' | 'OPEN' | 'CLOSED' | 'CANCELLED';
 export type DayType = 'D_Day' | 'P_Day' | 'b_Day' | 'Trend_Day' | 'Double_Dist';
@@ -60,6 +80,16 @@ export type HtfAnalysisTool =
   | 'Day_Type_Series'
   | 'Unfinished_Business';
 
+/** Where the developing week is trading relative to the prior week's candle. */
+export type PriorWeekRangePosition =
+  | 'Inside_Prior_Week'
+  | 'Breaking_Prior_Week_High'
+  | 'Breaking_Prior_Week_Low';
+
+export interface WeeklyRangeContext {
+  current_week_position: PriorWeekRangePosition;
+}
+
 export interface HtfContextSnapshot {
   analyzed_timeframes: AnalyzedTimeframe[];
   trading_timeframe: TradingTimeframe;
@@ -69,6 +99,18 @@ export interface HtfContextSnapshot {
   tools_used: HtfAnalysisTool[];
   htf_thesis: string;
   session_posture: string;
+  weekly_range: WeeklyRangeContext | null;
+}
+
+export type MarketSession = 'Asia' | 'London' | 'New_York';
+export type AnalysisPeriod = 'Morning' | 'Afternoon' | 'Night';
+
+export interface TradeSessionContext {
+  trading_date: string;
+  market_session: MarketSession;
+  analysis_period: AnalysisPeriod;
+  analysis_recorded_at: string;
+  timezone: string;
 }
 
 export interface Profile {
@@ -88,6 +130,8 @@ export interface Trade {
   symbol: AssetSymbol;
   direction: TradeDirection;
   day_type: DayType;
+  trading_date: string;
+  session_context: TradeSessionContext;
   opened_at: string;
   closed_at: string | null;
   entry_price: number | null;

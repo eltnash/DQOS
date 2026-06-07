@@ -7,12 +7,14 @@ import type {
   HtfAuctionRegime,
   MarketBehavior,
   MarketStructureBias,
+  PriorWeekRangePosition,
   TradingTimeframe,
 } from '../../core/models/database.types';
 
 export interface ContextStepValue {
   analyzed_timeframes: Record<AnalyzedTimeframe, boolean>;
   trading_timeframe: TradingTimeframe;
+  prior_week_range_position: PriorWeekRangePosition | null;
   composite_value_position: CompositeValuePosition | null;
   auction_regime: HtfAuctionRegime | null;
   structure_bias: MarketStructureBias | null;

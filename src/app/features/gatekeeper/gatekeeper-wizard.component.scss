@@ -219,6 +219,22 @@
       font-weight: 400;
     }
   }
+
+  &__weekly-panel {
+    display: grid;
+    gap: 0.875rem;
+    padding: 1rem;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.06);
+  }
+
+  &__weekly-intro {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #d1d5db;
+    line-height: 1.5;
+  }
 }
 
 @media (max-width: 900px) {

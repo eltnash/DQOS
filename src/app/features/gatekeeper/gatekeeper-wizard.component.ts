@@ -25,6 +25,7 @@ import {
   HTF_AUCTION_REGIME_OPTIONS,
   MARKET_BEHAVIOR_OPTIONS,
   MARKET_STRUCTURE_BIAS_OPTIONS,
+  PRIOR_WEEK_RANGE_OPTIONS,
 } from '../../core/supabase/enum-options';
 import { EnumPillSelectComponent } from '../../shared/components/enum-pill-select/enum-pill-select.component';
 import { READINESS_WEIGHT_PER_STEP } from '../../shared/components/readiness-meter/readiness-meter.types';
@@ -77,6 +78,7 @@ export class GatekeeperWizardComponent {
   protected readonly compositePositionOptions = COMPOSITE_VALUE_POSITION_OPTIONS;
   protected readonly auctionRegimeOptions = HTF_AUCTION_REGIME_OPTIONS;
   protected readonly structureBiasOptions = MARKET_STRUCTURE_BIAS_OPTIONS;
+  protected readonly priorWeekRangeOptions = PRIOR_WEEK_RANGE_OPTIONS;
   protected readonly locationOptions = AUCTION_LOCATION_OPTIONS;
   protected readonly behaviorOptions = MARKET_BEHAVIOR_OPTIONS;
   protected readonly confirmationOptions = CONFIRMATION_TRIGGER_OPTIONS;
@@ -87,7 +89,7 @@ export class GatekeeperWizardComponent {
       number: 1,
       title: 'HTF Context',
       methodology:
-        'Where has value been over days/weeks? You do not decide trades here — you decide what kind of trades might make sense later. Map composite profile, TPO migration, unfinished business, and market structure (HH/HL vs LH/LL vs balance) before dropping to 15m execution.',
+        'On your weekly chart, mark prior week high/low — then select whether the current week is inside that range, above the high, or below the low. No trade decision here; only macro posture.',
     },
     {
       key: 'location',
@@ -120,6 +122,11 @@ export class GatekeeperWizardComponent {
   ];
 
   protected readonly stepCount = this.steps.length;
+  protected readonly weeklySelected = computed(() => {
+    this.formTick();
+    return this.contextGroup().get('analyzed_timeframes.W')?.value === true;
+  });
+
   protected readonly currentStep = computed(() => this.steps[this.activeStep() - 1]);
 
   protected readonly pillarSteps = computed((): PillarStepState[] => {
@@ -187,6 +194,12 @@ export class GatekeeperWizardComponent {
     this.form.get('is_retest')?.valueChanges.subscribe(() => {
       this.form.get('location.location')?.updateValueAndValidity({ emitEvent: true });
     });
+
+    this.contextGroup()
+      .get('analyzed_timeframes.W')
+      ?.valueChanges.subscribe(() => {
+        this.contextGroup().updateValueAndValidity({ emitEvent: true });
+      });
 
     this.emitState();
   }

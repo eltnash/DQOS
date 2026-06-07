@@ -64,6 +64,8 @@ export class GatekeeperSubmitService {
         stop_price: payload.trade.stop_price,
         size: payload.trade.size,
         notes: payload.trade.notes,
+        trading_date: payload.trade.trading_date,
+        session_context: payload.trade.session_context,
       })
       .select('id')
       .single();

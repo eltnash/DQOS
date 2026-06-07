@@ -46,6 +46,31 @@
         </div>
       </div>
 
+      @if (weeklySelected()) {
+        <div class="gatekeeper-form__weekly-panel">
+          <p class="gatekeeper-form__weekly-intro">
+            On your weekly chart, mark the prior week's high and low — then select where the
+            <strong>current week</strong> is trading relative to that candle.
+          </p>
+
+          <label class="gatekeeper-form__label">Current week vs prior week range</label>
+          <app-enum-pill-select
+            formControlName="prior_week_range_position"
+            ariaLabel="Current week position vs prior week"
+            [options]="priorWeekRangeOptions"
+          />
+          @if (
+            selectedHint(
+              priorWeekRangeOptions,
+              contextGroup().get('prior_week_range_position')?.value
+            );
+            as hint
+          ) {
+            <p class="gatekeeper-form__hint">{{ hint }}</p>
+          }
+        </div>
+      }
+
       <p-divider />
 
       <div class="gatekeeper-form__section">

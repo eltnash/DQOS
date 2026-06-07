@@ -7,6 +7,8 @@
   </div>
 </header>
 
+<app-trading-session-bar (sessionChange)="onSessionChange($event)" />
+
 <p-message
   severity="warn"
   icon="pi pi-shield"
@@ -33,6 +35,7 @@
       [pillarsQualified]="pillarsQualified()"
       [readinessPct]="readinessPct()"
       [auditDraft]="qualifiedFormValue()"
+      [sessionState]="sessionState()"
       (tradeSubmitted)="onTradeSubmitted($event)"
     />
   </aside>

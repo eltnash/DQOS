@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -19,16 +20,17 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
+import { GatekeeperSubmitService } from './gatekeeper-submit.service';
 import {
-  ASSET_SYMBOL_OPTIONS,
   DAY_TYPE_OPTIONS,
   TRADE_DIRECTION_OPTIONS,
 } from '../../core/supabase/enum-options';
 import { createExecutionForm } from './execution-form.factory';
 import type { ExecutionFormValue, GatekeeperSubmitResult } from './execution-block.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
+import type { TradingSessionState } from './trading-session.types';
+import { formatSessionSummary } from './trading-session.utils';
 import { computeRiskMetrics, formatUsd, isStopPlacementValid } from './execution-risk.utils';
-import { GatekeeperSubmitService } from './gatekeeper-submit.service';
 
 @Component({
   selector: 'app-execution-block',
@@ -58,6 +60,7 @@ export class ExecutionBlockComponent {
   readonly pillarsQualified = input.required<boolean>();
   readonly readinessPct = input.required<number>();
   readonly auditDraft = input.required<GatekeeperFormValue | null>();
+  readonly sessionState = input.required<TradingSessionState | null>();
 
   readonly tradeSubmitted = output<GatekeeperSubmitResult>();
 
@@ -75,9 +78,16 @@ export class ExecutionBlockComponent {
     }),
   );
 
-  protected readonly symbolOptions = ASSET_SYMBOL_OPTIONS;
   protected readonly directionOptions = TRADE_DIRECTION_OPTIONS;
   protected readonly dayTypeOptions = DAY_TYPE_OPTIONS;
+
+  protected readonly sessionSummary = computed(() => {
+    const state = this.sessionState();
+    if (!state) {
+      return null;
+    }
+    return formatSessionSummary(state.session, state.symbol);
+  });
 
   protected readonly isLocked = computed(() => !this.pillarsQualified());
 
@@ -95,6 +105,7 @@ export class ExecutionBlockComponent {
     }
     const value = this.executionForm.getRawValue() as ExecutionFormValue;
     return (
+      this.sessionState() !== null &&
       this.pillarsQualified() &&
       this.readinessPct() === 100 &&
       this.executionForm.valid &&
@@ -111,6 +122,13 @@ export class ExecutionBlockComponent {
   });
 
   constructor() {
+    effect(() => {
+      const state = this.sessionState();
+      if (state?.symbol) {
+        this.executionForm.patchValue({ symbol: state.symbol }, { emitEvent: true });
+      }
+    });
+
     this.executionForm.valueChanges.subscribe(() => {
       this.formTick.update((n) => n + 1);
       const value = this.executionForm.getRawValue() as ExecutionFormValue;
@@ -126,8 +144,9 @@ export class ExecutionBlockComponent {
   }
 
   resetExecutionForm(): void {
+    const symbol = this.sessionState()?.symbol ?? 'EURUSD';
     this.executionForm.reset({
-      symbol: 'ES',
+      symbol,
       direction: 'LONG',
       day_type: 'D_Day',
       entry_price: null,
@@ -147,7 +166,8 @@ export class ExecutionBlockComponent {
 
     const exec = this.executionForm.getRawValue() as ExecutionFormValue;
     const auditForm = this.auditDraft();
-    if (!auditForm) {
+    const session = this.sessionState();
+    if (!auditForm || !session) {
       return;
     }
 
@@ -167,19 +187,26 @@ export class ExecutionBlockComponent {
     exec: ExecutionFormValue,
     auditForm: GatekeeperFormValue,
   ): Promise<void> {
+    const session = this.sessionState();
+    if (!session) {
+      return;
+    }
+
     this.submitting.set(true);
 
     try {
       const audit = this.submitService.mapFormToAudit(auditForm);
       const result = await this.submitService.submitQualifiedTrade({
         trade: {
-          symbol: exec.symbol,
+          symbol: session.symbol,
           direction: exec.direction,
           day_type: exec.day_type,
           entry_price: exec.entry_price,
           stop_price: exec.stop_price,
           size: exec.size,
           notes: exec.notes,
+          trading_date: session.session.trading_date,
+          session_context: session.session,
           status: 'OPEN',
           readiness_pct_at_entry: 100,
         },

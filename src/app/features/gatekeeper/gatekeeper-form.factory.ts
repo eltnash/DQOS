@@ -16,6 +16,7 @@ import type {
   HtfAuctionRegime,
   MarketBehavior,
   MarketStructureBias,
+  PriorWeekRangePosition,
 } from '../../core/models/database.types';
 
 const THESIS_MIN_LENGTH = 20;
@@ -53,6 +54,17 @@ export function retestGateValidator(): ValidatorFn {
   };
 }
 
+export function weeklyContextValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const group = control as FormGroup;
+    if (group.get('analyzed_timeframes.W')?.value !== true) {
+      return null;
+    }
+
+    return group.get('prior_week_range_position')?.value ? null : { weeklyContextRequired: true };
+  };
+}
+
 function createTimeframeGroup(fb: FormBuilder) {
   return fb.group(
     {
@@ -83,21 +95,25 @@ function createToolsGroup(fb: FormBuilder) {
 
 export function createGatekeeperForm(fb: FormBuilder) {
   return fb.group({
-    context: fb.group({
-      analyzed_timeframes: createTimeframeGroup(fb),
-      trading_timeframe: fb.nonNullable.control<'M15'>('M15'),
-      composite_value_position: fb.control<CompositeValuePosition | null>(null, Validators.required),
-      auction_regime: fb.control<HtfAuctionRegime | null>(null, Validators.required),
-      structure_bias: fb.control<MarketStructureBias | null>(null, Validators.required),
-      tools_used: createToolsGroup(fb),
-      htf_thesis: fb.nonNullable.control('', thesisValidators()),
-      session_posture: fb.nonNullable.control('', [
-        Validators.required,
-        Validators.minLength(POSTURE_MIN_LENGTH),
-        Validators.maxLength(POSTURE_MAX_LENGTH),
-        Validators.pattern(/\S/),
-      ]),
-    }),
+    context: fb.group(
+      {
+        analyzed_timeframes: createTimeframeGroup(fb),
+        trading_timeframe: fb.nonNullable.control<'M15'>('M15'),
+        prior_week_range_position: fb.control<PriorWeekRangePosition | null>(null),
+        composite_value_position: fb.control<CompositeValuePosition | null>(null, Validators.required),
+        auction_regime: fb.control<HtfAuctionRegime | null>(null, Validators.required),
+        structure_bias: fb.control<MarketStructureBias | null>(null, Validators.required),
+        tools_used: createToolsGroup(fb),
+        htf_thesis: fb.nonNullable.control('', thesisValidators()),
+        session_posture: fb.nonNullable.control('', [
+          Validators.required,
+          Validators.minLength(POSTURE_MIN_LENGTH),
+          Validators.maxLength(POSTURE_MAX_LENGTH),
+          Validators.pattern(/\S/),
+        ]),
+      },
+      { validators: [weeklyContextValidator()] },
+    ),
     is_retest: fb.nonNullable.control(false, { validators: [Validators.requiredTrue] }),
     location: fb.group({
       location: fb.control<AuctionLocation | null>(null, [

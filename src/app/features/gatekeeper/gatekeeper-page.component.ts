@@ -11,10 +11,13 @@ import { ExecutionBlockComponent } from './execution-block.component';
 import { GatekeeperWizardComponent } from './gatekeeper-wizard.component';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
 import type { GatekeeperSubmitResult } from './execution-block.types';
+import type { TradingSessionState } from './trading-session.types';
+import { TradingSessionBarComponent } from './trading-session-bar.component';
 
 @Component({
   selector: 'app-gatekeeper-page',
   imports: [
+    TradingSessionBarComponent,
     GatekeeperWizardComponent,
     ReadinessMeterComponent,
     ExecutionBlockComponent,
@@ -34,6 +37,13 @@ export class GatekeeperPageComponent {
   protected readonly readinessPct = signal(0);
   protected readonly qualifiedFormValue = signal<GatekeeperFormValue | null>(null);
   protected readonly isRetest = signal(false);
+  protected readonly sessionState = signal<TradingSessionState | null>(null);
+  protected readonly sessionValid = signal(false);
+
+  protected onSessionChange(event: { valid: boolean; state: TradingSessionState | null }): void {
+    this.sessionValid.set(event.valid);
+    this.sessionState.set(event.state);
+  }
 
   protected onPillarsChange(event: {
     pillarSteps: PillarStepState[];

@@ -17,6 +17,10 @@
     }
   </header>
 
+  @if (sessionSummary(); as summary) {
+    <p-tag severity="info" [value]="summary" styleClass="execution-block__session-tag" />
+  }
+
   @if (isLocked()) {
     <p-message
       class="execution-block__lock-banner"
@@ -35,19 +39,7 @@
     }
 
     <form class="execution-block__form" [formGroup]="executionForm" (ngSubmit)="onSubmit()">
-      <div class="execution-block__row execution-block__row--triple">
-        <div class="execution-block__field">
-          <label for="symbol">Symbol</label>
-          <p-select
-            inputId="symbol"
-            formControlName="symbol"
-            [options]="symbolOptions"
-            optionLabel="label"
-            optionValue="value"
-            [disabled]="isLocked()"
-          />
-        </div>
-
+      <div class="execution-block__row execution-block__row--double">
         <div class="execution-block__field">
           <label for="direction">Direction</label>
           <p-select

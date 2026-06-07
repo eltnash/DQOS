@@ -1,0 +1,109 @@
+:host {
+  display: block;
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
+.session-bar {
+  padding: 1.25rem;
+  border: 1px solid #3d4556;
+  border-radius: 12px;
+  background: rgba(22, 25, 32, 0.95);
+  display: grid;
+  gap: 1rem;
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  &__title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #9ca3af;
+  }
+
+  &__clock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
+  &__clock-label {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+  }
+
+  &__clock-value {
+    font-size: 0.875rem;
+    color: #34d399;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  &__field {
+    display: grid;
+    gap: 0.375rem;
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #d1d5db;
+    }
+  }
+
+  &__section {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  &__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  &__symbol-groups {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  &__symbol-group {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  &__group-title {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+  }
+}
+
+@media (max-width: 900px) {
+  .session-bar__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-bar__clock {
+    align-items: flex-start;
+  }
+}

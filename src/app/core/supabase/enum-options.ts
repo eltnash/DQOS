@@ -1,4 +1,5 @@
 import type {
+  AnalysisPeriod,
   AnalyzedTimeframe,
   AssetSymbol,
   AuctionLocation,
@@ -8,7 +9,9 @@ import type {
   HtfAnalysisTool,
   HtfAuctionRegime,
   MarketBehavior,
+  MarketSession,
   MarketStructureBias,
+  PriorWeekRangePosition,
   TradeDirection,
 } from '../models/database.types';
 
@@ -69,15 +72,63 @@ export const CONFIRMATION_TRIGGER_OPTIONS: SelectOption<ConfirmationTrigger>[] =
   { label: 'Market Structure Break', value: 'Market_Structure_Break', hint: 'Structural shift confirming control' },
 ];
 
+export const FUTURES_SYMBOL_OPTIONS: SelectOption<AssetSymbol>[] = [
+  { label: 'ES (S&P)', value: 'ES' },
+  { label: 'NQ (Nasdaq)', value: 'NQ' },
+  { label: 'RTY (Russell)', value: 'RTY' },
+  { label: 'YM (Dow)', value: 'YM' },
+  { label: 'CL (Crude)', value: 'CL' },
+  { label: 'GC (Gold futures)', value: 'GC' },
+  { label: 'SI (Silver futures)', value: 'SI' },
+  { label: 'ZB (Bonds)', value: 'ZB' },
+];
+
+export const FX_SYMBOL_OPTIONS: SelectOption<AssetSymbol>[] = [
+  { label: 'EUR/USD', value: 'EURUSD' },
+  { label: 'GBP/USD', value: 'GBPUSD' },
+  { label: 'USD/JPY', value: 'USDJPY' },
+  { label: 'AUD/USD', value: 'AUDUSD' },
+  { label: 'USD/CAD', value: 'USDCAD' },
+  { label: 'USD/CHF', value: 'USDCHF' },
+  { label: 'NZD/USD', value: 'NZDUSD' },
+  { label: 'EUR/GBP', value: 'EURGBP' },
+  { label: 'EUR/JPY', value: 'EURJPY' },
+  { label: 'GBP/JPY', value: 'GBPJPY' },
+];
+
+export const COMMODITY_SYMBOL_OPTIONS: SelectOption<AssetSymbol>[] = [
+  { label: 'Gold (XAU/USD)', value: 'XAUUSD' },
+  { label: 'Silver (XAG/USD)', value: 'XAGUSD' },
+];
+
+/** @deprecated Use grouped options in session bar; kept for execution fallbacks. */
 export const ASSET_SYMBOL_OPTIONS: SelectOption<AssetSymbol>[] = [
-  { label: 'ES', value: 'ES' },
-  { label: 'NQ', value: 'NQ' },
-  { label: 'RTY', value: 'RTY' },
-  { label: 'YM', value: 'YM' },
-  { label: 'CL', value: 'CL' },
-  { label: 'GC', value: 'GC' },
-  { label: 'SI', value: 'SI' },
-  { label: 'ZB', value: 'ZB' },
+  ...FUTURES_SYMBOL_OPTIONS,
+  ...FX_SYMBOL_OPTIONS,
+  ...COMMODITY_SYMBOL_OPTIONS,
+];
+
+export const MARKET_SESSION_OPTIONS: SelectOption<MarketSession>[] = [
+  { label: 'Asia', value: 'Asia', hint: 'Tokyo / Sydney session overlap' },
+  { label: 'London', value: 'London', hint: 'European session — key liquidity window' },
+  { label: 'New York', value: 'New_York', hint: 'US session — highest participation for many instruments' },
+];
+
+export const ANALYSIS_PERIOD_OPTIONS: SelectOption<AnalysisPeriod>[] = [
+  { label: 'Morning', value: 'Morning', hint: 'Pre-market / early session analysis' },
+  { label: 'Afternoon', value: 'Afternoon', hint: 'Mid-session rotation or continuation reads' },
+  { label: 'Night', value: 'Night', hint: 'Late session or overnight planning' },
+];
+
+export const TIMEZONE_OPTIONS: SelectOption<string>[] = [
+  { label: 'Auto (browser)', value: 'AUTO' },
+  { label: 'New York (ET)', value: 'America/New_York' },
+  { label: 'Chicago (CT)', value: 'America/Chicago' },
+  { label: 'London (GMT/BST)', value: 'Europe/London' },
+  { label: 'Johannesburg (SAST)', value: 'Africa/Johannesburg' },
+  { label: 'Tokyo (JST)', value: 'Asia/Tokyo' },
+  { label: 'Sydney (AEST)', value: 'Australia/Sydney' },
+  { label: 'UTC', value: 'UTC' },
 ];
 
 export const TRADE_DIRECTION_OPTIONS: SelectOption<TradeDirection>[] = [
@@ -101,7 +152,11 @@ export interface CheckboxOption<T extends string = string> {
 
 export const ANALYZED_TIMEFRAME_OPTIONS: CheckboxOption<AnalyzedTimeframe>[] = [
   { key: 'M', label: 'Monthly', hint: 'Macro value migration & major balance' },
-  { key: 'W', label: 'Weekly', hint: 'Weekly composite profile & VWAP' },
+  {
+    key: 'W',
+    label: 'Weekly',
+    hint: 'Prior week high/low — is the current week inside or breaking that range?',
+  },
   { key: 'D', label: 'Daily', hint: 'Developing day type & session value' },
   { key: 'H4', label: '4 Hour', hint: 'Intermediate structure & rotations' },
   { key: 'H1', label: '1 Hour', hint: 'Intraday structure into 15m execution' },
@@ -174,4 +229,22 @@ export const HTF_ANALYSIS_TOOL_OPTIONS: CheckboxOption<HtfAnalysisTool>[] = [
   { key: 'Value_Area_Migration', label: 'Value area migration' },
   { key: 'Day_Type_Series', label: 'Day type series (trend vs balance)' },
   { key: 'Unfinished_Business', label: 'Unfinished business (poor highs/lows, single prints)' },
+];
+
+export const PRIOR_WEEK_RANGE_OPTIONS: SelectOption<PriorWeekRangePosition>[] = [
+  {
+    label: 'Inside prior week',
+    value: 'Inside_Prior_Week',
+    hint: 'Current week trading within prior week high/low — rotational / responsive environment',
+  },
+  {
+    label: 'Above prior week high',
+    value: 'Breaking_Prior_Week_High',
+    hint: 'Current week trading above prior week high — initiative higher, watch acceptance',
+  },
+  {
+    label: 'Below prior week low',
+    value: 'Breaking_Prior_Week_Low',
+    hint: 'Current week trading below prior week low — initiative lower, watch acceptance',
+  },
 ];

@@ -1,4 +1,4 @@
-import type { AssetSymbol, DayType, HtfContextSnapshot, TradeDirection } from '../../core/models/database.types';
+import type { AssetSymbol, DayType, HtfContextSnapshot, TradeDirection, TradeSessionContext } from '../../core/models/database.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
 
 export interface ExecutionFormValue {
@@ -28,6 +28,8 @@ export interface GatekeeperSubmitPayload {
     stop_price: number;
     size: number;
     notes: string | null;
+    trading_date: string;
+    session_context: TradeSessionContext;
     status: 'OPEN';
     readiness_pct_at_entry: 100;
   };

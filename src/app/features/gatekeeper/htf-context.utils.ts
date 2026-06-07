@@ -5,7 +5,8 @@ import type {
   HtfAuctionRegime,
   HtfContextSnapshot,
   MarketStructureBias,
-  TradingTimeframe,
+  PriorWeekRangePosition,
+  WeeklyRangeContext,
 } from '../../core/models/database.types';
 import type { ContextStepValue, GatekeeperFormValue } from './gatekeeper-form.types';
 
@@ -14,6 +15,25 @@ export function serializeCheckboxGroup<T extends string>(
   keys: readonly T[],
 ): T[] {
   return keys.filter((key) => group[key] === true);
+}
+
+const PRIOR_WEEK_LABELS: Record<PriorWeekRangePosition, string> = {
+  Inside_Prior_Week: 'Inside prior week',
+  Breaking_Prior_Week_High: 'Above PW high',
+  Breaking_Prior_Week_Low: 'Below PW low',
+};
+
+function buildWeeklyRange(context: ContextStepValue): WeeklyRangeContext | null {
+  if (!context.analyzed_timeframes.W) {
+    return null;
+  }
+
+  const position = context.prior_week_range_position;
+  if (!position) {
+    return null;
+  }
+
+  return { current_week_position: position };
 }
 
 export function mapContextStepToSnapshot(context: ContextStepValue): HtfContextSnapshot {
@@ -44,6 +64,11 @@ export function mapContextStepToSnapshot(context: ContextStepValue): HtfContextS
     throw new Error('Select at least one timeframe and one analysis tool');
   }
 
+  const weekly_range = buildWeeklyRange(context);
+  if (context.analyzed_timeframes.W && !weekly_range) {
+    throw new Error('Select where the current week is trading vs the prior week range');
+  }
+
   return {
     analyzed_timeframes,
     trading_timeframe: context.trading_timeframe,
@@ -53,6 +78,7 @@ export function mapContextStepToSnapshot(context: ContextStepValue): HtfContextS
     tools_used,
     htf_thesis: context.htf_thesis.trim(),
     session_posture: context.session_posture.trim(),
+    weekly_range,
   };
 }
 
@@ -61,7 +87,16 @@ export function mapFormToHtfContext(form: GatekeeperFormValue): HtfContextSnapsh
 }
 
 export function formatHtfContextSummary(snapshot: HtfContextSnapshot): string {
-  return `${snapshot.structure_bias.replace(/_/g, ' ')} · ${snapshot.composite_value_position.replace(/_/g, ' ')}`;
+  const parts = [
+    snapshot.structure_bias.replace(/_/g, ' '),
+    snapshot.composite_value_position.replace(/_/g, ' '),
+  ];
+
+  if (snapshot.weekly_range) {
+    parts.push(PRIOR_WEEK_LABELS[snapshot.weekly_range.current_week_position]);
+  }
+
+  return parts.join(' · ');
 }
 
-export const EXECUTION_TIMEFRAME: TradingTimeframe = 'M15';
+export const EXECUTION_TIMEFRAME = 'M15' as const;

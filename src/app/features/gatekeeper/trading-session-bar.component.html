@@ -1,0 +1,86 @@
+<section class="session-bar" [formGroup]="form">
+  <header class="session-bar__header">
+    <div>
+      <h2 class="session-bar__title">Trading session</h2>
+      <p class="session-bar__subtitle">All Gatekeeper work is anchored to this day, symbol, and session.</p>
+    </div>
+    <div class="session-bar__clock">
+      <span class="session-bar__clock-label">Recorded time</span>
+      <span class="session-bar__clock-value data-mono">{{ liveClockLabel() }}</span>
+      <p-button
+        type="button"
+        label="Set to now"
+        icon="pi pi-clock"
+        severity="secondary"
+        [text]="true"
+        size="small"
+        (onClick)="syncRecordedTimeToNow()"
+      />
+    </div>
+  </header>
+
+  <div class="session-bar__grid">
+    <div class="session-bar__field">
+      <label for="trading-date">Trading day</label>
+      <p-datepicker
+        inputId="trading-date"
+        formControlName="trading_date"
+        [showIcon]="true"
+        dateFormat="yy-mm-dd"
+        [showButtonBar]="true"
+        styleClass="session-bar__date"
+      />
+    </div>
+
+    <div class="session-bar__field">
+      <label for="timezone">Timezone</label>
+      <p-select
+        inputId="timezone"
+        formControlName="timezone"
+        [options]="timezoneOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
+    <div class="session-bar__field">
+      <label for="recorded-at">Analysis timestamp</label>
+      <p-datepicker
+        inputId="recorded-at"
+        formControlName="analysis_recorded_at"
+        [showTime]="true"
+        hourFormat="24"
+        [showIcon]="true"
+        dateFormat="yy-mm-dd"
+        styleClass="session-bar__date"
+      />
+    </div>
+  </div>
+
+  <div class="session-bar__section">
+    <label class="session-bar__label">Market session</label>
+    <app-enum-pill-select
+      formControlName="market_session"
+      ariaLabel="Market session"
+      [options]="marketSessionOptions"
+    />
+  </div>
+
+  <div class="session-bar__section">
+    <label class="session-bar__label">Time of day</label>
+    <app-enum-pill-select
+      formControlName="analysis_period"
+      ariaLabel="Analysis time of day"
+      [options]="analysisPeriodOptions"
+    />
+  </div>
+
+  <div class="session-bar__section">
+    <label class="session-bar__label">Symbol (FX, commodities, futures)</label>
+    <app-enum-pill-select
+      formControlName="symbol"
+      ariaLabel="Trading symbol"
+      [options]="symbolOptions"
+    />
+  </div>
+</section>
