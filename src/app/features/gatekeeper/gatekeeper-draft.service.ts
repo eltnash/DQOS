@@ -23,10 +23,13 @@ import type {
   GatekeeperDraftSaveStatus,
   GatekeeperDraftUiState,
   GatekeeperJournalSummary,
+  ListJournalsOptions,
 } from './gatekeeper-draft.types';
 import {
   DEFAULT_DRAFT_UI_STATE,
   EMPTY_DRAFT_MEDIA,
+  normalizeJournalName,
+  validateJournalName,
 } from './gatekeeper-draft.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
 import type { JournalScreenshotScope } from './gatekeeper-screenshot-draft.service';
@@ -126,7 +129,7 @@ export class GatekeeperDraftService {
     const journalName = sessionState.journalName.trim();
     const { data: existing, error: fetchError } = await client
       .from('gatekeeper_drafts')
-      .select(DRAFT_SELECT)
+      .select(DRAFT_SELECT + ', archived_at')
       .eq('user_id', user.id)
       .eq('journal_name', journalName)
       .maybeSingle();
@@ -138,7 +141,11 @@ export class GatekeeperDraftService {
     }
 
     if (existing) {
-      return this.applyLoadedDraft(existing as GatekeeperDraftRow, true);
+      const row = existing as unknown as GatekeeperDraftRow & { archived_at: string | null };
+      if (row.archived_at) {
+        await this.setArchivedAt(row.id, null);
+      }
+      return this.applyLoadedDraft(row, true);
     }
 
     const session = sessionState.session;
@@ -168,7 +175,7 @@ export class GatekeeperDraftService {
     return this.applyLoadedDraft(created as GatekeeperDraftRow, false);
   }
 
-  async listJournals(): Promise<GatekeeperJournalSummary[]> {
+  async listJournals(options?: ListJournalsOptions): Promise<GatekeeperJournalSummary[]> {
     const {
       data: { user },
     } = await this.supabase.client.auth.getUser();
@@ -177,11 +184,18 @@ export class GatekeeperDraftService {
       return [];
     }
 
-    const { data, error } = await this.supabase.client
+    let query = this.supabase.client
       .from('gatekeeper_drafts')
-      .select('id, journal_name, trading_date, symbol, session_context, ui_state, updated_at')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false });
+      .select('id, journal_name, trading_date, symbol, session_context, ui_state, updated_at, archived_at')
+      .eq('user_id', user.id);
+
+    if (options?.archivedOnly) {
+      query = query.not('archived_at', 'is', null);
+    } else {
+      query = query.is('archived_at', null);
+    }
+
+    const { data, error } = await query.order('updated_at', { ascending: false });
 
     if (error) {
       throw new Error(this.formatDraftError(error.message));
@@ -199,8 +213,68 @@ export class GatekeeperDraftService {
         analysis_period: context.analysis_period,
         active_step: uiState?.active_step ?? 1,
         updated_at: row.updated_at,
+        archived_at: row.archived_at ?? null,
       };
     });
+  }
+
+  async renameJournal(draftId: string, newName: string): Promise<string> {
+    const trimmed = normalizeJournalName(newName);
+    const validationError = validateJournalName(trimmed);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+    if (!user) {
+      throw new Error('Sign in to rename journals.');
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .update({ journal_name: trimmed })
+      .eq('id', draftId)
+      .eq('user_id', user.id)
+      .select('journal_name')
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(this.formatDraftError(error.message));
+    }
+
+    if (!data) {
+      throw new Error('Journal not found or you do not have access.');
+    }
+
+    if (this.draftId() === draftId) {
+      const session = this.boundSession();
+      if (session) {
+        this.boundSession.set({ ...session, journalName: trimmed });
+      }
+    }
+
+    return data.journal_name;
+  }
+
+  async archiveJournal(draftId: string): Promise<void> {
+    await this.setArchivedAt(draftId, new Date().toISOString());
+  }
+
+  async restoreJournal(draftId: string): Promise<void> {
+    await this.setArchivedAt(draftId, null);
+  }
+
+  async deleteJournal(draftId: string): Promise<void> {
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+    if (!user) {
+      throw new Error('Sign in to delete journals.');
+    }
+
+    await this.removeDraftWithMedia(draftId, user.id);
   }
 
   scheduleSave(form: GatekeeperFormValue, uiState: GatekeeperDraftUiState): void {
@@ -313,8 +387,14 @@ export class GatekeeperDraftService {
       return;
     }
 
-    await this.supabase.client.from('gatekeeper_drafts').delete().eq('id', draftId);
-    this.clearActive();
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+    if (!user) {
+      return;
+    }
+
+    await this.removeDraftWithMedia(draftId, user.id, this.mediaState());
   }
 
   clearActive(): void {
@@ -563,6 +643,101 @@ export class GatekeeperDraftService {
         [step]: (current.pillars[step] ?? []).filter((ref) => ref.storage_path !== storagePath),
       },
     };
+  }
+
+  private async setArchivedAt(draftId: string, archivedAt: string | null): Promise<void> {
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+    if (!user) {
+      throw new Error('Sign in to manage journals.');
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .update({ archived_at: archivedAt })
+      .eq('id', draftId)
+      .eq('user_id', user.id)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(this.formatDraftError(error.message));
+    }
+
+    if (!data) {
+      throw new Error('Journal not found or you do not have access.');
+    }
+
+    if (this.draftId() === draftId && archivedAt) {
+      this.clearActive();
+    }
+  }
+
+  private async removeDraftWithMedia(
+    draftId: string,
+    userId: string,
+    mediaHint?: GatekeeperDraftMedia,
+  ): Promise<void> {
+    let media = mediaHint;
+    if (!media) {
+      const { data, error } = await this.supabase.client
+        .from('gatekeeper_drafts')
+        .select('media')
+        .eq('id', draftId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(this.formatDraftError(error.message));
+      }
+
+      if (!data) {
+        throw new Error('Journal not found or you do not have access.');
+      }
+
+      media = normalizeDraftMedia(data.media);
+    }
+
+    const paths = this.collectMediaStoragePaths(media);
+    if (paths.length > 0) {
+      const { error: storageError } = await this.supabase.client.storage.from('trade-screenshots').remove(paths);
+      if (storageError) {
+        throw new Error(storageError.message);
+      }
+    }
+
+    const { error: deleteError } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .delete()
+      .eq('id', draftId)
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      throw new Error(this.formatDraftError(deleteError.message));
+    }
+
+    if (this.draftId() === draftId) {
+      this.clearActive();
+    }
+  }
+
+  private collectMediaStoragePaths(media: GatekeeperDraftMedia): string[] {
+    const paths: string[] = [];
+
+    for (const refs of Object.values(media.htf)) {
+      if (refs) {
+        paths.push(...refs.map((ref) => ref.storage_path));
+      }
+    }
+
+    for (const refs of Object.values(media.pillars)) {
+      if (refs) {
+        paths.push(...refs.map((ref) => ref.storage_path));
+      }
+    }
+
+    return paths;
   }
 
   private async deleteStorageObject(storagePath: string): Promise<void> {

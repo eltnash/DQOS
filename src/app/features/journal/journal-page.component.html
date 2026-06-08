@@ -2,20 +2,69 @@
   <div>
     <h1 class="journal-header__title">Journal</h1>
     <p class="journal-header__subtitle">
-      Saved Gatekeeper sessions. Resume where you left off or start a new named journal.
+      Saved Gatekeeper sessions. Resume where you left off, rename, archive, or delete journals.
     </p>
   </div>
-  <p-button
-    type="button"
-    label="New journal"
-    icon="pi pi-plus"
-    (onClick)="startNewJournal()"
-  />
+  <div class="journal-header__actions">
+    <p-button
+      type="button"
+      [label]="showArchived() ? 'Hide archived' : 'Show archived'"
+      icon="pi pi-inbox"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="toggleShowArchived()"
+    />
+    <p-button type="button" label="New journal" icon="pi pi-plus" (onClick)="startNewJournal()" />
+  </div>
 </header>
 
 @if (error()) {
   <p-message severity="error" [text]="error()!" styleClass="journal-message" />
 }
+
+<p-toast position="top-right" />
+<p-confirmdialog />
+
+<p-dialog
+  header="Rename journal"
+  [visible]="renameDialogVisible()"
+  [modal]="true"
+  [closable]="!renameSaving()"
+  [draggable]="false"
+  [style]="{ width: 'min(100%, 28rem)' }"
+  (visibleChange)="renameDialogVisible.set($event)"
+  (onHide)="closeRenameDialog()"
+>
+  <label class="journal-rename__label" for="journal-rename-input">Journal name</label>
+  <input
+    id="journal-rename-input"
+    pInputText
+    type="text"
+    class="journal-rename__input"
+    [maxlength]="journalNameMaxLength"
+    [(ngModel)]="renameValue"
+    autocomplete="off"
+  />
+  <p class="journal-rename__hint">Must stay unique among your journals.</p>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      type="button"
+      label="Cancel"
+      severity="secondary"
+      [text]="true"
+      [disabled]="renameSaving()"
+      (onClick)="closeRenameDialog()"
+    />
+    <p-button
+      type="button"
+      label="Save name"
+      icon="pi pi-check"
+      [loading]="renameSaving()"
+      (onClick)="confirmRename()"
+    />
+  </ng-template>
+</p-dialog>
 
 @if (loading()) {
   <div class="journal-loading">
@@ -23,24 +72,41 @@
   </div>
 } @else if (journals().length === 0) {
   <section class="journal-empty">
-    <p class="journal-empty__text">No saved journals yet.</p>
-    <p class="journal-empty__hint">
-      Open Gatekeeper, give your session a unique journal name, and use Save progress on each step.
+    <p class="journal-empty__text">
+      @if (showArchived()) {
+        No archived journals.
+      } @else {
+        No saved journals yet.
+      }
     </p>
-    <p-button
-      type="button"
-      label="Start in Gatekeeper"
-      icon="pi pi-arrow-right"
-      iconPos="right"
-      (onClick)="startNewJournal()"
-    />
+    <p class="journal-empty__hint">
+      @if (showArchived()) {
+        Archived journals you hide from the main list will appear here.
+      } @else {
+        Open Gatekeeper, give your session a unique journal name, and use Save progress on each step.
+      }
+    </p>
+    @if (!showArchived()) {
+      <p-button
+        type="button"
+        label="Start in Gatekeeper"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        (onClick)="startNewJournal()"
+      />
+    }
   </section>
 } @else {
   <ul class="journal-list">
     @for (journal of journals(); track journal.id) {
-      <li class="journal-card">
+      <li class="journal-card" [class.journal-card--archived]="isArchived(journal)">
         <div class="journal-card__main">
-          <h2 class="journal-card__title">{{ journal.journal_name }}</h2>
+          <div class="journal-card__title-row">
+            <h2 class="journal-card__title">{{ journal.journal_name }}</h2>
+            @if (isArchived(journal)) {
+              <p-tag value="Archived" severity="secondary" />
+            }
+          </div>
           <p class="journal-card__meta data-mono">
             {{ journal.trading_date }}
             · {{ symbolLabel(journal.symbol) }}
@@ -57,12 +123,55 @@
             </span>
           </div>
         </div>
-        <p-button
-          type="button"
-          label="Resume"
-          icon="pi pi-play"
-          (onClick)="resumeJournal(journal)"
-        />
+        <div class="journal-card__actions">
+          @if (isArchived(journal)) {
+            <p-button
+              type="button"
+              label="Restore"
+              icon="pi pi-replay"
+              severity="secondary"
+              [loading]="actionBusyId() === journal.id"
+              (onClick)="confirmRestore(journal)"
+            />
+          } @else {
+            <p-button
+              type="button"
+              label="Resume"
+              icon="pi pi-play"
+              [loading]="actionBusyId() === journal.id"
+              (onClick)="resumeJournal(journal)"
+            />
+          }
+          <p-button
+            type="button"
+            label="Rename"
+            icon="pi pi-pencil"
+            severity="secondary"
+            [text]="true"
+            [disabled]="actionBusyId() === journal.id"
+            (onClick)="openRenameDialog(journal)"
+          />
+          @if (!isArchived(journal)) {
+            <p-button
+              type="button"
+              label="Archive"
+              icon="pi pi-inbox"
+              severity="secondary"
+              [text]="true"
+              [disabled]="actionBusyId() === journal.id"
+              (onClick)="confirmArchive(journal)"
+            />
+          }
+          <p-button
+            type="button"
+            label="Delete"
+            icon="pi pi-trash"
+            severity="danger"
+            [text]="true"
+            [disabled]="actionBusyId() === journal.id"
+            (onClick)="confirmDelete(journal)"
+          />
+        </div>
       </li>
     }
   </ul>

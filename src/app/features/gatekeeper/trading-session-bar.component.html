@@ -22,7 +22,20 @@
   </header>
 
   <div class="session-bar__section session-bar__section--journal-name">
-    <label class="session-bar__label" for="journal-name">Journal name</label>
+    <div class="session-bar__journal-row">
+      <label class="session-bar__label" for="journal-name">Journal name</label>
+      @if (journalNameLocked()) {
+        <p-button
+          type="button"
+          label="Rename"
+          icon="pi pi-pencil"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="openRenameDialog()"
+        />
+      }
+    </div>
     <input
       id="journal-name"
       pInputText
@@ -34,6 +47,48 @@
     />
     <p class="session-bar__hint">Must be unique. You cannot have two journals with the same name.</p>
   </div>
+
+  <p-dialog
+    header="Rename journal"
+    [visible]="renameDialogVisible()"
+    [modal]="true"
+    [closable]="!renameSaving()"
+    [draggable]="false"
+    [style]="{ width: 'min(100%, 28rem)' }"
+    (visibleChange)="renameDialogVisible.set($event)"
+    (onHide)="closeRenameDialog()"
+  >
+    <label class="session-bar__rename-label" for="session-rename-input">Journal name</label>
+    <input
+      id="session-rename-input"
+      pInputText
+      type="text"
+      class="session-bar__journal-input"
+      [maxlength]="journalNameMaxLength"
+      [(ngModel)]="renameDraftName"
+      [ngModelOptions]="{ standalone: true }"
+      autocomplete="off"
+    />
+    <p class="session-bar__hint">Must stay unique among your journals.</p>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        type="button"
+        label="Cancel"
+        severity="secondary"
+        [text]="true"
+        [disabled]="renameSaving()"
+        (onClick)="closeRenameDialog()"
+      />
+      <p-button
+        type="button"
+        label="Save name"
+        icon="pi pi-check"
+        [loading]="renameSaving()"
+        (onClick)="confirmRename()"
+      />
+    </ng-template>
+  </p-dialog>
 
   <div class="session-bar__grid">
     <div class="session-bar__field">

@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   inject,
   OnDestroy,
@@ -7,9 +8,11 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 
@@ -21,7 +24,8 @@ import {
   TIMEZONE_OPTIONS,
 } from '../../core/supabase/enum-options';
 import { EnumPillSelectComponent } from '../../shared/components/enum-pill-select/enum-pill-select.component';
-import type { GatekeeperDraftLoadResult } from './gatekeeper-draft.types';
+import { GatekeeperDraftService } from './gatekeeper-draft.service';
+import { JOURNAL_NAME_MAX_LENGTH, type GatekeeperDraftLoadResult } from './gatekeeper-draft.types';
 import type { TradingSessionChangeEvent, TradingSessionFormValue } from './trading-session.types';
 import {
   defaultBrowserTimezone,
@@ -34,9 +38,11 @@ import {
   selector: 'app-trading-session-bar',
   imports: [
     ReactiveFormsModule,
+    FormsModule,
     DatePickerModule,
     SelectModule,
     ButtonModule,
+    DialogModule,
     InputTextModule,
     EnumPillSelectComponent,
   ],
@@ -46,6 +52,9 @@ import {
 })
 export class TradingSessionBarComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly draftService = inject(GatekeeperDraftService);
+  private readonly messageService = inject(MessageService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private clockTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly sessionChange = output<TradingSessionChangeEvent>();
@@ -77,6 +86,11 @@ export class TradingSessionBarComponent implements OnInit, OnDestroy {
   protected readonly symbolOptions = ASSET_SYMBOL_OPTIONS;
 
   protected readonly liveClockLabel = signal('');
+  protected readonly journalNameLocked = signal(false);
+  protected readonly renameDialogVisible = signal(false);
+  protected readonly renameSaving = signal(false);
+  protected renameDraftName = '';
+  protected readonly journalNameMaxLength = JOURNAL_NAME_MAX_LENGTH;
 
   ngOnInit(): void {
     this.updateLiveClock();
@@ -108,6 +122,7 @@ export class TradingSessionBarComponent implements OnInit, OnDestroy {
     );
 
     this.form.controls.journal_name.disable({ emitEvent: false });
+    this.journalNameLocked.set(true);
     this.emitState();
   }
 
@@ -122,7 +137,62 @@ export class TradingSessionBarComponent implements OnInit, OnDestroy {
       symbol: 'EURUSD',
     });
     this.form.controls.journal_name.enable({ emitEvent: false });
+    this.journalNameLocked.set(false);
     this.emitState();
+  }
+
+  protected openRenameDialog(): void {
+    this.renameDraftName = this.form.controls.journal_name.getRawValue();
+    this.renameDialogVisible.set(true);
+  }
+
+  protected closeRenameDialog(): void {
+    if (this.renameSaving()) {
+      return;
+    }
+    this.renameDialogVisible.set(false);
+    this.renameDraftName = '';
+  }
+
+  protected async confirmRename(): Promise<void> {
+    const draftId = this.draftService.activeDraftId();
+    if (!draftId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Rename unavailable',
+        detail: 'Save progress once before renaming this journal.',
+        life: 5000,
+      });
+      return;
+    }
+
+    this.renameSaving.set(true);
+    this.cdr.markForCheck();
+
+    try {
+      const updatedName = await this.draftService.renameJournal(draftId, this.renameDraftName);
+      this.form.patchValue({ journal_name: updatedName });
+      this.form.controls.journal_name.disable({ emitEvent: false });
+      this.renameDialogVisible.set(false);
+      this.renameDraftName = '';
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Journal renamed',
+        detail: `Renamed to "${updatedName}".`,
+        life: 3500,
+      });
+      this.emitState();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Rename failed',
+        detail: err instanceof Error ? err.message : 'Could not rename journal',
+        life: 6000,
+      });
+    } finally {
+      this.renameSaving.set(false);
+      this.cdr.markForCheck();
+    }
   }
 
   protected resolvedTimezone(): string {

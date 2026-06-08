@@ -190,3 +190,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS gatekeeper_drafts_user_journal_name_unique
 
 COMMENT ON COLUMN public.gatekeeper_drafts.journal_name IS
   'User-chosen unique label for this in-progress Gatekeeper journal; shown on Journal tab';
+
+-- ---------------------------------------------------------------------------
+-- 9. Archive Gatekeeper journals (soft hide, restorable)
+-- ---------------------------------------------------------------------------
+ALTER TABLE public.gatekeeper_drafts
+  ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS gatekeeper_drafts_user_list_idx
+  ON public.gatekeeper_drafts (user_id, archived_at, updated_at DESC);
+
+COMMENT ON COLUMN public.gatekeeper_drafts.archived_at IS
+  'When set, journal is archived and hidden from the default Journal tab list';

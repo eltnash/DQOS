@@ -53,6 +53,33 @@ export interface GatekeeperJournalSummary {
   analysis_period: string;
   active_step: number;
   updated_at: string;
+  archived_at: string | null;
+}
+
+export interface ListJournalsOptions {
+  /** When true, return only archived journals; otherwise active journals only. */
+  archivedOnly?: boolean;
+}
+
+export const JOURNAL_NAME_MIN_LENGTH = 3;
+export const JOURNAL_NAME_MAX_LENGTH = 80;
+
+export function normalizeJournalName(name: string): string {
+  return name.trim();
+}
+
+export function validateJournalName(name: string): string | null {
+  const trimmed = normalizeJournalName(name);
+  if (trimmed.length < JOURNAL_NAME_MIN_LENGTH) {
+    return `Journal name must be at least ${JOURNAL_NAME_MIN_LENGTH} characters.`;
+  }
+  if (trimmed.length > JOURNAL_NAME_MAX_LENGTH) {
+    return `Journal name must be at most ${JOURNAL_NAME_MAX_LENGTH} characters.`;
+  }
+  if (!/\S/.test(trimmed)) {
+    return 'Journal name cannot be blank.';
+  }
+  return null;
 }
 
 export const EMPTY_DRAFT_MEDIA: GatekeeperDraftMedia = { htf: {}, pillars: {} };
