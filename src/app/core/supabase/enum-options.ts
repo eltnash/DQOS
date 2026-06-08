@@ -150,14 +150,14 @@ export const DAY_TYPE_OPTIONS: SelectOption<DayType>[] = [
     hint: 'Two-sided auction rotating around a center — normal, neutral, or non-trend character',
   },
   {
-    label: 'P-Shape (Short Covering)',
+    label: 'P-Shape (Upper Heavy)',
     value: 'P_Day',
-    hint: 'Short covering / squeeze profile — responsive fades at upper extremes often work',
+    hint: 'Volume concentrated in the upper part of the range with a thin lower tail — describes where acceptance built, not trend direction',
   },
   {
-    label: 'b-Shape (Long Liquidation)',
+    label: 'b-Shape (Lower Heavy)',
     value: 'b_Day',
-    hint: 'Long liquidation profile — responsive fades at lower extremes often work',
+    hint: 'Volume concentrated in the lower part of the range with a thin upper tail — describes where acceptance built, not trend direction',
   },
   {
     label: 'Trend / Elongated',
