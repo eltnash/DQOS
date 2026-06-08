@@ -27,6 +27,7 @@ import {
   type PillarStepState,
 } from '../../shared/components/readiness-meter/readiness-meter.types';
 import {
+  AUCTION_TYPE_PROFILE_REMINDER,
   dayTypeLabel,
   getPlaybookBehaviorOptions,
   getPlaybookConfirmationOptions,
@@ -113,6 +114,7 @@ export class GatekeeperWizardComponent {
 
   protected readonly playbookLabel = playbookLabel;
   protected readonly playbookDescription = playbookDescription;
+  protected readonly auctionTypeProfileReminder = AUCTION_TYPE_PROFILE_REMINDER;
   protected readonly dayTypeLabel = dayTypeLabel;
 
   protected readonly draftSaveStatus = this.draftService.status;
@@ -130,7 +132,7 @@ export class GatekeeperWizardComponent {
       number: 2,
       title: 'Auction Type',
       methodology:
-        'Read the developing volume profile shape — you don\'t need the final day type at the open. Is the auction rotating around value (balance) or migrating directionally (trend)? Your choice sets the playbook for the pillars below.',
+        'Classify whether the auction is rotating around value (balance) or migrating directionally (trend). Your choice sets the playbook for the pillars below.',
     },
     {
       key: 'location',

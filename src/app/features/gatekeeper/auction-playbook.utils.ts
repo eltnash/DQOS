@@ -14,6 +14,10 @@ import {
 
 export type AuctionPlaybook = 'fade' | 'trend';
 
+/** Auction Type step — developing vs prior session volume profile guidance. */
+export const AUCTION_TYPE_PROFILE_REMINDER =
+  'At the open, do not classify the developing day\'s volume profile. With little volume logged, POC, VAH, and VAL chase price instead of defining it. Anchor early reads to the prior session\'s completed profile (POC / VAH / VAL). Treat today\'s profile as decision grade only once structure has built: levels stop shifting with every print, and price reacts to them rather than the reverse. Update your day type read as the session matures.';
+
 const FADE_LOCATIONS: AuctionLocation[] = [
   'VAH',
   'VAL',

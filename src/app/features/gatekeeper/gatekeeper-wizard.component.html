@@ -112,7 +112,7 @@
         <section class="gatekeeper-form__panel" formGroupName="auction_type">
           <p-message
             severity="info"
-            text="You don't need the final day type at the open — update your read as the session develops. When volume profile shape and auction behavior tell the same story, confidence increases."
+            [text]="auctionTypeProfileReminder"
             styleClass="gatekeeper-form__oath"
           />
 
