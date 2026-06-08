@@ -58,6 +58,7 @@ export class GatekeeperPageComponent implements AfterViewInit {
   protected onSessionChange(event: { valid: boolean; state: TradingSessionState | null }): void {
     this.sessionValid.set(event.valid);
     this.sessionState.set(event.state);
+    this.draftService.bindSession(event.valid ? event.state : null);
 
     if (!event.valid || !event.state) {
       this.sessionLoadToken += 1;

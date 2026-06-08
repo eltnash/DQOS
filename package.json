@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "db:push": "npx supabase@2.30.4 db push",
+    "db:migrate:sql": "cat supabase/apply_all_pending_migrations.sql | pbcopy && open https://supabase.com/dashboard/project/pgxxsivodspkycdvcpur/sql/new"
   },
   "private": true,
   "packageManager": "npm@11.12.1",

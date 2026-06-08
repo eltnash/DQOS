@@ -43,6 +43,9 @@ export class GatekeeperDraftService {
   private readonly mediaService = inject(GatekeeperMediaService);
 
   private readonly draftId = signal<string | null>(null);
+  private readonly boundSession = signal<TradingSessionState | null>(null);
+  private initPromise: Promise<GatekeeperDraftLoadResult> | null = null;
+  private initPromiseSessionKey: string | null = null;
   private readonly mediaState = signal<GatekeeperDraftMedia>(EMPTY_DRAFT_MEDIA);
   private readonly saveStatus = signal<GatekeeperDraftSaveStatus>('idle');
   private readonly saveError = signal<string | null>(null);
@@ -62,6 +65,10 @@ export class GatekeeperDraftService {
     return this.mediaState();
   }
 
+  bindSession(sessionState: TradingSessionState | null): void {
+    this.boundSession.set(sessionState);
+  }
+
   async initForSession(sessionState: TradingSessionState): Promise<GatekeeperDraftLoadResult> {
     this.saveStatus.set('loading');
     this.saveError.set(null);
@@ -74,7 +81,7 @@ export class GatekeeperDraftService {
     if (!user) {
       this.clearActive();
       this.saveStatus.set('idle');
-      throw new Error('Sign in to save your Gatekeeper draft');
+      throw new Error('Sign in to save screenshots and drafts to the cloud.');
     }
 
     const session = sessionState.session;
@@ -93,7 +100,7 @@ export class GatekeeperDraftService {
     if (fetchError) {
       this.saveStatus.set('error');
       this.saveError.set(fetchError.message);
-      throw new Error(fetchError.message);
+      throw new Error(this.formatDraftError(fetchError.message));
     }
 
     if (existing) {
@@ -119,7 +126,7 @@ export class GatekeeperDraftService {
     if (insertError || !created) {
       this.saveStatus.set('error');
       this.saveError.set(insertError?.message ?? 'Could not create draft');
-      throw new Error(insertError?.message ?? 'Could not create draft');
+      throw new Error(this.formatDraftError(insertError?.message ?? 'Could not create draft'));
     }
 
     return this.applyLoadedDraft(created as GatekeeperDraftRow, false);
@@ -133,9 +140,10 @@ export class GatekeeperDraftService {
   }
 
   async persistScreenshot(scope: JournalScreenshotScope, itemId: string, file: File, isAnnotated = false): Promise<TimeframeScreenshotRef> {
+    await this.ensureDraftReady();
     const draftId = this.draftId();
     if (!draftId) {
-      throw new Error('No active Gatekeeper draft session');
+      throw new Error('Could not start a saved Gatekeeper session. Try refreshing the page.');
     }
 
     const validationError = this.mediaService.validateFile(file);
@@ -231,6 +239,57 @@ export class GatekeeperDraftService {
     this.mediaState.set(EMPTY_DRAFT_MEDIA);
     this.saveStatus.set('idle');
     this.saveError.set(null);
+    this.initPromise = null;
+    this.initPromiseSessionKey = null;
+  }
+
+  private async ensureDraftReady(): Promise<void> {
+    if (this.draftId()) {
+      return;
+    }
+
+    const session = this.boundSession();
+    if (!session) {
+      throw new Error(
+        'Complete the trading session bar first: select market session, time of day, and symbol before uploading screenshots.',
+      );
+    }
+
+    const sessionKey = this.buildSessionKey(session);
+    if (this.initPromise && this.initPromiseSessionKey === sessionKey) {
+      await this.initPromise;
+      return;
+    }
+
+    this.initPromiseSessionKey = sessionKey;
+    this.initPromise = this.initForSession(session);
+
+    try {
+      await this.initPromise;
+    } catch (err) {
+      throw new Error(this.formatDraftError(err));
+    } finally {
+      if (this.initPromiseSessionKey === sessionKey) {
+        this.initPromise = null;
+        this.initPromiseSessionKey = null;
+      }
+    }
+  }
+
+  private buildSessionKey(sessionState: TradingSessionState): string {
+    const session = sessionState.session;
+    return `${session.trading_date}|${sessionState.symbol}|${session.market_session}|${session.analysis_period}`;
+  }
+
+  private formatDraftError(err: unknown): string {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('gatekeeper_drafts') || message.toLowerCase().includes('schema cache')) {
+      return 'Cloud save is not set up yet. Apply the gatekeeper_drafts Supabase migration, then refresh.';
+    }
+    if (message.toLowerCase().includes('sign in') || message.toLowerCase().includes('not authenticated')) {
+      return 'Sign in to save screenshots and drafts to the cloud.';
+    }
+    return message;
   }
 
   private applyLoadedDraft(row: GatekeeperDraftRow, restored: boolean): GatekeeperDraftLoadResult {
