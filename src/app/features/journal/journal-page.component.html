@@ -1,0 +1,69 @@
+<header class="journal-header">
+  <div>
+    <h1 class="journal-header__title">Journal</h1>
+    <p class="journal-header__subtitle">
+      Saved Gatekeeper sessions. Resume where you left off or start a new named journal.
+    </p>
+  </div>
+  <p-button
+    type="button"
+    label="New journal"
+    icon="pi pi-plus"
+    (onClick)="startNewJournal()"
+  />
+</header>
+
+@if (error()) {
+  <p-message severity="error" [text]="error()!" styleClass="journal-message" />
+}
+
+@if (loading()) {
+  <div class="journal-loading">
+    <p-progressSpinner strokeWidth="4" ariaLabel="Loading journals" />
+  </div>
+} @else if (journals().length === 0) {
+  <section class="journal-empty">
+    <p class="journal-empty__text">No saved journals yet.</p>
+    <p class="journal-empty__hint">
+      Open Gatekeeper, give your session a unique journal name, and use Save progress on each step.
+    </p>
+    <p-button
+      type="button"
+      label="Start in Gatekeeper"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      (onClick)="startNewJournal()"
+    />
+  </section>
+} @else {
+  <ul class="journal-list">
+    @for (journal of journals(); track journal.id) {
+      <li class="journal-card">
+        <div class="journal-card__main">
+          <h2 class="journal-card__title">{{ journal.journal_name }}</h2>
+          <p class="journal-card__meta data-mono">
+            {{ journal.trading_date }}
+            · {{ symbolLabel(journal.symbol) }}
+            · {{ journal.market_session }}
+            · {{ journal.analysis_period }}
+          </p>
+          <div class="journal-card__tags">
+            <p-tag
+              [value]="'Step ' + journal.active_step + ': ' + stepLabel(journal.active_step)"
+              severity="info"
+            />
+            <span class="journal-card__updated">
+              Updated {{ journal.updated_at | date: 'medium' }}
+            </span>
+          </div>
+        </div>
+        <p-button
+          type="button"
+          label="Resume"
+          icon="pi pi-play"
+          (onClick)="resumeJournal(journal)"
+        />
+      </li>
+    }
+  </ul>
+}

@@ -3,6 +3,7 @@ import { Subject, debounceTime } from 'rxjs';
 
 import type {
   AnalyzedTimeframe,
+  AssetSymbol,
   PillarStepKey,
   TimeframeScreenshotRef,
 } from '../../core/models/database.types';
@@ -21,6 +22,7 @@ import type {
   GatekeeperDraftRow,
   GatekeeperDraftSaveStatus,
   GatekeeperDraftUiState,
+  GatekeeperJournalSummary,
 } from './gatekeeper-draft.types';
 import {
   DEFAULT_DRAFT_UI_STATE,
@@ -31,6 +33,9 @@ import type { JournalScreenshotScope } from './gatekeeper-screenshot-draft.servi
 import type { TradingSessionState } from './trading-session.types';
 
 const SAVE_DEBOUNCE_MS = 1500;
+
+const DRAFT_SELECT =
+  'id, user_id, journal_name, trading_date, symbol, session_context, wizard_form, media, ui_state, updated_at';
 
 interface PendingFormSave {
   form: GatekeeperFormValue;
@@ -45,7 +50,7 @@ export class GatekeeperDraftService {
   private readonly draftId = signal<string | null>(null);
   private readonly boundSession = signal<TradingSessionState | null>(null);
   private initPromise: Promise<GatekeeperDraftLoadResult> | null = null;
-  private initPromiseSessionKey: string | null = null;
+  private initPromiseKey: string | null = null;
   private readonly mediaState = signal<GatekeeperDraftMedia>(EMPTY_DRAFT_MEDIA);
   private readonly saveStatus = signal<GatekeeperDraftSaveStatus>('idle');
   private readonly saveError = signal<string | null>(null);
@@ -69,6 +74,40 @@ export class GatekeeperDraftService {
     this.boundSession.set(sessionState);
   }
 
+  async initById(draftId: string): Promise<GatekeeperDraftLoadResult> {
+    this.saveStatus.set('loading');
+    this.saveError.set(null);
+
+    const client = this.supabase.client;
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+
+    if (!user) {
+      this.clearActive();
+      throw new Error('Sign in to open saved journals.');
+    }
+
+    const { data, error } = await client
+      .from('gatekeeper_drafts')
+      .select(DRAFT_SELECT)
+      .eq('id', draftId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(this.formatDraftError(error.message));
+    }
+
+    if (!data) {
+      throw new Error('Journal not found or you do not have access.');
+    }
+
+    const result = this.applyLoadedDraft(data as GatekeeperDraftRow, true);
+    this.boundSession.set(this.sessionStateFromRow(data as GatekeeperDraftRow));
+    return result;
+  }
+
   async initForSession(sessionState: TradingSessionState): Promise<GatekeeperDraftLoadResult> {
     this.saveStatus.set('loading');
     this.saveError.set(null);
@@ -84,18 +123,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to save screenshots and drafts to the cloud.');
     }
 
-    const session = sessionState.session;
-    const query = client
+    const journalName = sessionState.journalName.trim();
+    const { data: existing, error: fetchError } = await client
       .from('gatekeeper_drafts')
-      .select('id, user_id, trading_date, symbol, session_context, wizard_form, media, ui_state, updated_at')
+      .select(DRAFT_SELECT)
       .eq('user_id', user.id)
-      .eq('trading_date', session.trading_date)
-      .eq('symbol', sessionState.symbol)
-      .eq('session_context->>market_session', session.market_session)
-      .eq('session_context->>analysis_period', session.analysis_period)
+      .eq('journal_name', journalName)
       .maybeSingle();
-
-    const { data: existing, error: fetchError } = await query;
 
     if (fetchError) {
       this.saveStatus.set('error');
@@ -107,8 +141,10 @@ export class GatekeeperDraftService {
       return this.applyLoadedDraft(existing as GatekeeperDraftRow, true);
     }
 
+    const session = sessionState.session;
     const insertPayload = {
       user_id: user.id,
+      journal_name: journalName,
       trading_date: session.trading_date,
       symbol: sessionState.symbol,
       session_context: session,
@@ -120,7 +156,7 @@ export class GatekeeperDraftService {
     const { data: created, error: insertError } = await client
       .from('gatekeeper_drafts')
       .insert(insertPayload)
-      .select('id, user_id, trading_date, symbol, session_context, wizard_form, media, ui_state, updated_at')
+      .select(DRAFT_SELECT)
       .single();
 
     if (insertError || !created) {
@@ -132,6 +168,41 @@ export class GatekeeperDraftService {
     return this.applyLoadedDraft(created as GatekeeperDraftRow, false);
   }
 
+  async listJournals(): Promise<GatekeeperJournalSummary[]> {
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .select('id, journal_name, trading_date, symbol, session_context, ui_state, updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw new Error(this.formatDraftError(error.message));
+    }
+
+    return (data ?? []).map((row) => {
+      const context = row.session_context as TradingSessionState['session'];
+      const uiState = row.ui_state as GatekeeperDraftUiState | null;
+      return {
+        id: row.id,
+        journal_name: row.journal_name,
+        trading_date: row.trading_date,
+        symbol: row.symbol as AssetSymbol,
+        market_session: context.market_session,
+        analysis_period: context.analysis_period,
+        active_step: uiState?.active_step ?? 1,
+        updated_at: row.updated_at,
+      };
+    });
+  }
+
   scheduleSave(form: GatekeeperFormValue, uiState: GatekeeperDraftUiState): void {
     if (!this.draftId()) {
       return;
@@ -139,7 +210,20 @@ export class GatekeeperDraftService {
     this.saveQueue.next({ form, uiState });
   }
 
-  async persistScreenshot(scope: JournalScreenshotScope, itemId: string, file: File, isAnnotated = false): Promise<TimeframeScreenshotRef> {
+  async saveNow(form: GatekeeperFormValue, uiState: GatekeeperDraftUiState): Promise<void> {
+    await this.ensureDraftReady();
+    await this.flushSave({ form, uiState });
+    if (this.saveStatus() === 'error') {
+      throw new Error(this.saveError() ?? 'Save failed');
+    }
+  }
+
+  async persistScreenshot(
+    scope: JournalScreenshotScope,
+    itemId: string,
+    file: File,
+    isAnnotated = false,
+  ): Promise<TimeframeScreenshotRef> {
     await this.ensureDraftReady();
     const draftId = this.draftId();
     if (!draftId) {
@@ -174,8 +258,7 @@ export class GatekeeperDraftService {
     const nextMedia = this.removeMediaRef(scope, storagePath);
     this.mediaState.set(nextMedia);
 
-    const ref = await this.persistScreenshot(scope, crypto.randomUUID(), file, true);
-    return ref;
+    return this.persistScreenshot(scope, crypto.randomUUID(), file, true);
   }
 
   async removePersistedScreenshot(scope: JournalScreenshotScope, storagePath: string): Promise<void> {
@@ -240,7 +323,15 @@ export class GatekeeperDraftService {
     this.saveStatus.set('idle');
     this.saveError.set(null);
     this.initPromise = null;
-    this.initPromiseSessionKey = null;
+    this.initPromiseKey = null;
+  }
+
+  private sessionStateFromRow(row: GatekeeperDraftRow): TradingSessionState {
+    return {
+      journalName: row.journal_name,
+      session: row.session_context,
+      symbol: row.symbol as AssetSymbol,
+    };
   }
 
   private async ensureDraftReady(): Promise<void> {
@@ -251,17 +342,17 @@ export class GatekeeperDraftService {
     const session = this.boundSession();
     if (!session) {
       throw new Error(
-        'Complete the trading session bar first: select market session, time of day, and symbol before uploading screenshots.',
+        'Complete the trading session bar first: journal name, market session, time of day, and symbol.',
       );
     }
 
-    const sessionKey = this.buildSessionKey(session);
-    if (this.initPromise && this.initPromiseSessionKey === sessionKey) {
+    const initKey = this.buildInitKey(session);
+    if (this.initPromise && this.initPromiseKey === initKey) {
       await this.initPromise;
       return;
     }
 
-    this.initPromiseSessionKey = sessionKey;
+    this.initPromiseKey = initKey;
     this.initPromise = this.initForSession(session);
 
     try {
@@ -269,20 +360,22 @@ export class GatekeeperDraftService {
     } catch (err) {
       throw new Error(this.formatDraftError(err));
     } finally {
-      if (this.initPromiseSessionKey === sessionKey) {
+      if (this.initPromiseKey === initKey) {
         this.initPromise = null;
-        this.initPromiseSessionKey = null;
+        this.initPromiseKey = null;
       }
     }
   }
 
-  private buildSessionKey(sessionState: TradingSessionState): string {
-    const session = sessionState.session;
-    return `${session.trading_date}|${sessionState.symbol}|${session.market_session}|${session.analysis_period}`;
+  private buildInitKey(sessionState: TradingSessionState): string {
+    return sessionState.journalName.trim();
   }
 
   private formatDraftError(err: unknown): string {
     const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('gatekeeper_drafts_user_journal_name_unique')) {
+      return 'A journal with this name already exists. Choose a different journal name.';
+    }
     if (message.includes('gatekeeper_drafts') || message.toLowerCase().includes('schema cache')) {
       return 'Cloud save is not set up yet. Apply the gatekeeper_drafts Supabase migration, then refresh.';
     }
@@ -306,7 +399,17 @@ export class GatekeeperDraftService {
     this.saveStatus.set('saved');
     this.saveError.set(null);
 
-    return { draftId: row.id, restored, wizardForm, media, uiState };
+    return {
+      draftId: row.id,
+      restored,
+      journalName: row.journal_name,
+      tradingDate: row.trading_date,
+      symbol: row.symbol as AssetSymbol,
+      sessionContext: row.session_context,
+      wizardForm,
+      media,
+      uiState,
+    };
   }
 
   private startSaveQueue(): void {
@@ -329,14 +432,29 @@ export class GatekeeperDraftService {
     this.saveStatus.set('saving');
     this.saveError.set(null);
 
-    const { error } = await this.supabase.client
-      .from('gatekeeper_drafts')
-      .update({
-        wizard_form: pending.form,
-        ui_state: pending.uiState,
-        media: this.mediaState(),
-      })
-      .eq('id', draftId);
+    const session = this.boundSession();
+    const payload: {
+      wizard_form: GatekeeperFormValue;
+      ui_state: GatekeeperDraftUiState;
+      media: GatekeeperDraftMedia;
+      trading_date?: string;
+      symbol?: AssetSymbol;
+      session_context?: TradingSessionState['session'];
+      journal_name?: string;
+    } = {
+      wizard_form: pending.form,
+      ui_state: pending.uiState,
+      media: this.mediaState(),
+    };
+
+    if (session) {
+      payload.trading_date = session.session.trading_date;
+      payload.symbol = session.symbol;
+      payload.session_context = session.session;
+      payload.journal_name = session.journalName.trim();
+    }
+
+    const { error } = await this.supabase.client.from('gatekeeper_drafts').update(payload).eq('id', draftId);
 
     if (error) {
       this.saveStatus.set('error');

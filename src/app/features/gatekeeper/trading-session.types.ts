@@ -3,6 +3,7 @@ import type { AssetSymbol, AnalysisPeriod, MarketSession, TradeSessionContext } 
 export type { AnalysisPeriod, MarketSession, TradeSessionContext };
 
 export interface TradingSessionFormValue {
+  journal_name: string;
   trading_date: Date | null;
   market_session: MarketSession | null;
   analysis_period: AnalysisPeriod | null;
@@ -12,6 +13,7 @@ export interface TradingSessionFormValue {
 }
 
 export interface TradingSessionState {
+  journalName: string;
   session: TradeSessionContext;
   symbol: AssetSymbol;
 }

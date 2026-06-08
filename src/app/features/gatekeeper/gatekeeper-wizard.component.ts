@@ -14,6 +14,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
+import { MessageService } from 'primeng/api';
 
 import type { AnalyzedTimeframe, AuctionLocation, DayType, PillarStepKey } from '../../core/models/database.types';
 import {
@@ -97,6 +98,7 @@ export class GatekeeperWizardComponent {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
   private readonly draftService = inject(GatekeeperDraftService);
+  private readonly messageService = inject(MessageService);
 
   readonly pillarsChange = output<{
     pillarSteps: PillarStepState[];
@@ -108,6 +110,7 @@ export class GatekeeperWizardComponent {
   protected readonly form = createGatekeeperForm(this.fb);
   protected readonly activeStep = signal(1);
   protected readonly activeTimeframeTab = signal<AnalyzedTimeframe>('W');
+  protected readonly savingProgress = signal(false);
   protected readonly executionTimeframe = EXECUTION_TIMEFRAME;
 
   protected readonly timeframeOptions = ANALYZED_TIMEFRAME_OPTIONS;
@@ -437,7 +440,41 @@ export class GatekeeperWizardComponent {
     this.cdr.markForCheck();
   }
 
-  protected goNext(): void {
+  protected async saveProgress(showToast = true): Promise<boolean> {
+    this.savingProgress.set(true);
+    this.cdr.markForCheck();
+
+    try {
+      await this.draftService.saveNow(this.form.getRawValue() as GatekeeperFormValue, {
+        active_step: this.activeStep(),
+        active_timeframe_tab: this.activeTimeframeTab(),
+      });
+
+      if (showToast) {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Progress saved',
+          detail: `Step ${this.activeStep()} saved to your journal.`,
+          life: 3500,
+        });
+      }
+
+      return true;
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Save failed',
+        detail: err instanceof Error ? err.message : 'Could not save progress',
+        life: 6000,
+      });
+      return false;
+    } finally {
+      this.savingProgress.set(false);
+      this.cdr.markForCheck();
+    }
+  }
+
+  protected async goNext(): Promise<void> {
     const key = this.currentStep().key;
     this.stepGroup(key).markAllAsTouched();
     if (key === 'context') {
@@ -452,8 +489,15 @@ export class GatekeeperWizardComponent {
       this.cdr.markForCheck();
       return;
     }
+
+    const saved = await this.saveProgress(false);
+    if (!saved) {
+      return;
+    }
+
     if (this.activeStep() < this.stepCount) {
       this.activeStep.update((n) => n + 1);
+      this.scheduleDraftSave();
       this.cdr.markForCheck();
     }
   }

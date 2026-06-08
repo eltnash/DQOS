@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, AfterViewInit, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  AfterViewInit,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
@@ -34,11 +42,15 @@ import { TradingSessionBarComponent } from './trading-session-bar.component';
 export class GatekeeperPageComponent implements AfterViewInit {
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly messageService = inject(MessageService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly sessionBarRef = viewChild(TradingSessionBarComponent);
   private readonly wizardRef = viewChild(GatekeeperWizardComponent);
   private readonly executionRef = viewChild(ExecutionBlockComponent);
 
   private sessionLoadToken = 0;
   private pendingSession: TradingSessionState | null = null;
+  private resumeJournalId: string | null = null;
 
   protected readonly pillarSteps = signal<PillarStepState[]>([]);
   protected readonly pillarsQualified = signal(false);
@@ -48,7 +60,16 @@ export class GatekeeperPageComponent implements AfterViewInit {
   protected readonly sessionState = signal<TradingSessionState | null>(null);
   protected readonly sessionValid = signal(false);
 
+  constructor() {
+    this.resumeJournalId = this.route.snapshot.queryParamMap.get('journalId');
+  }
+
   ngAfterViewInit(): void {
+    if (this.resumeJournalId) {
+      void this.openJournalById(this.resumeJournalId);
+      return;
+    }
+
     if (this.pendingSession) {
       void this.restoreDraftForSession(this.pendingSession);
       this.pendingSession = null;
@@ -62,8 +83,14 @@ export class GatekeeperPageComponent implements AfterViewInit {
 
     if (!event.valid || !event.state) {
       this.sessionLoadToken += 1;
-      this.draftService.clearActive();
-      this.wizardRef()?.resetWizard();
+      if (!this.resumeJournalId) {
+        this.draftService.clearActive();
+        this.wizardRef()?.resetWizard();
+      }
+      return;
+    }
+
+    if (this.resumeJournalId) {
       return;
     }
 
@@ -86,12 +113,60 @@ export class GatekeeperPageComponent implements AfterViewInit {
   protected async onTradeSubmitted(_result: GatekeeperSubmitResult): Promise<void> {
     await this.draftService.deleteActiveDraft();
     this.wizardRef()?.resetWizard();
+    this.sessionBarRef()?.resetForNewJournal();
     this.executionRef()?.resetExecutionForm();
     this.pillarSteps.set([]);
     this.pillarsQualified.set(false);
     this.readinessPct.set(0);
     this.qualifiedFormValue.set(null);
     this.isRetest.set(false);
+    this.resumeJournalId = null;
+    void this.router.navigate(['/gatekeeper']);
+  }
+
+  private async openJournalById(journalId: string): Promise<void> {
+    const token = ++this.sessionLoadToken;
+
+    try {
+      const result = await this.draftService.initById(journalId);
+      if (token !== this.sessionLoadToken) {
+        return;
+      }
+
+      this.sessionState.set({
+        journalName: result.journalName,
+        session: result.sessionContext,
+        symbol: result.symbol,
+      });
+      this.sessionValid.set(true);
+
+      const sessionBar = this.sessionBarRef();
+      const wizard = this.wizardRef();
+      sessionBar?.applyLoadedDraft(result);
+      if (wizard) {
+        await wizard.loadFromDraft(result);
+      }
+
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Journal opened',
+        detail: `"${result.journalName}" loaded at step ${result.uiState.active_step}.`,
+        life: 4000,
+      });
+    } catch (err) {
+      if (token !== this.sessionLoadToken) {
+        return;
+      }
+
+      const message = err instanceof Error ? err.message : 'Could not open journal';
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Journal unavailable',
+        detail: message,
+        life: 6000,
+      });
+      void this.router.navigate(['/journal']);
+    }
   }
 
   private async restoreDraftForSession(state: TradingSessionState): Promise<void> {
@@ -103,21 +178,26 @@ export class GatekeeperPageComponent implements AfterViewInit {
         return;
       }
 
+      const sessionBar = this.sessionBarRef();
       const wizard = this.wizardRef();
+
       if (!wizard) {
         this.pendingSession = state;
         return;
       }
 
-      await wizard.loadFromDraft(result);
-
       if (result.restored) {
+        sessionBar?.applyLoadedDraft(result);
+        await wizard.loadFromDraft(result);
         this.messageService.add({
           severity: 'info',
-          summary: 'Draft restored',
-          detail: 'Your in-progress Gatekeeper session was loaded from the cloud.',
+          summary: 'Journal restored',
+          detail: `"${result.journalName}" resumed at step ${result.uiState.active_step}.`,
           life: 4000,
         });
+      } else {
+        sessionBar?.applyLoadedDraft(result);
+        await wizard.loadFromDraft(result);
       }
     } catch (err) {
       if (token !== this.sessionLoadToken) {

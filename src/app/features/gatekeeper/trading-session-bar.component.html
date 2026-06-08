@@ -2,7 +2,9 @@
   <header class="session-bar__header">
     <div>
       <h2 class="session-bar__title">Trading session</h2>
-      <p class="session-bar__subtitle">All Gatekeeper work is anchored to this day, symbol, and session.</p>
+      <p class="session-bar__subtitle">
+        Name this journal uniquely — all Gatekeeper steps save under that name on the Journal tab.
+      </p>
     </div>
     <div class="session-bar__clock">
       <span class="session-bar__clock-label">Recorded time</span>
@@ -18,6 +20,20 @@
       />
     </div>
   </header>
+
+  <div class="session-bar__section session-bar__section--journal-name">
+    <label class="session-bar__label" for="journal-name">Journal name</label>
+    <input
+      id="journal-name"
+      pInputText
+      type="text"
+      formControlName="journal_name"
+      placeholder="e.g. Monday Asia Gold — VAH retest"
+      autocomplete="off"
+      class="session-bar__journal-input"
+    />
+    <p class="session-bar__hint">Must be unique. You cannot have two journals with the same name.</p>
+  </div>
 
   <div class="session-bar__grid">
     <div class="session-bar__field">

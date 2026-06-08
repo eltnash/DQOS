@@ -353,11 +353,28 @@
       label="Back"
       icon="pi pi-arrow-left"
       severity="secondary"
-      [disabled]="activeStep() === 1"
+      [disabled]="activeStep() === 1 || savingProgress()"
       (onClick)="goBack()"
     />
-    @if (activeStep() < stepCount) {
-      <p-button type="button" label="Next step" icon="pi pi-arrow-right" (onClick)="goNext()" />
-    }
+    <div class="gatekeeper-form__nav-actions">
+      <p-button
+        type="button"
+        label="Save progress"
+        icon="pi pi-save"
+        severity="secondary"
+        [loading]="savingProgress()"
+        (onClick)="saveProgress()"
+      />
+      @if (activeStep() < stepCount) {
+        <p-button
+          type="button"
+          label="Next step"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          [loading]="savingProgress()"
+          (onClick)="goNext()"
+        />
+      }
+    </div>
   </div>
 </form>

@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard, guestGuard } from './core/auth/auth.guard';
 import { FeaturePlaceholderComponent } from './shared/components/feature-placeholder/feature-placeholder.component';
+import { JournalPageComponent } from './features/journal/journal-page.component';
 import { GatekeeperPageComponent } from './features/gatekeeper/gatekeeper-page.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
@@ -33,12 +34,7 @@ export const routes: Routes = [
       },
       {
         path: 'journal',
-        component: FeaturePlaceholderComponent,
-        data: {
-          title: 'Journal Ledger',
-          subtitle: 'High-density trade history',
-          description: 'Dense grid and filter builder per docs/05_JOURNAL_LEDGER_PAGE/.',
-        },
+        component: JournalPageComponent,
       },
       {
         path: 'setups',
