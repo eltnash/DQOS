@@ -1,14 +1,16 @@
 import { Injectable, signal } from '@angular/core';
 
-import type { AnalyzedTimeframe, PillarStepKey } from '../../core/models/database.types';
+import type { AnalyzedTimeframe, PillarStepKey, TimeframeScreenshotRef } from '../../core/models/database.types';
 
 export interface JournalScreenshotItem {
   id: string;
-  file: File;
+  file?: File;
   previewUrl: string;
   fileName: string;
   mimeType: string;
   isAnnotated: boolean;
+  storagePath?: string;
+  persisted?: boolean;
 }
 
 /** @deprecated use JournalScreenshotItem */
@@ -39,6 +41,7 @@ export class GatekeeperScreenshotDraftService {
       fileName: file.name,
       mimeType: file.type || 'image/png',
       isAnnotated,
+      persisted: false,
     };
 
     this.drafts.update((current) => ({
@@ -49,6 +52,59 @@ export class GatekeeperScreenshotDraftService {
     return id;
   }
 
+  addPersistedItem(scope: JournalScreenshotScope, ref: TimeframeScreenshotRef, previewUrl: string): string {
+    const key = scopeKey(scope);
+    const id = crypto.randomUUID();
+    const item: JournalScreenshotItem = {
+      id,
+      previewUrl,
+      fileName: ref.file_name,
+      mimeType: ref.mime_type,
+      isAnnotated: ref.is_annotated,
+      storagePath: ref.storage_path,
+      persisted: true,
+    };
+
+    this.drafts.update((current) => ({
+      ...current,
+      [key]: [...(current[key] ?? []), item],
+    }));
+    this.revision.update((n) => n + 1);
+    return id;
+  }
+
+  markItemPersisted(
+    scope: JournalScreenshotScope,
+    itemId: string,
+    ref: TimeframeScreenshotRef,
+    previewUrl: string,
+  ): void {
+    const key = scopeKey(scope);
+    this.drafts.update((current) => {
+      const items = current[key] ?? [];
+      const nextItems = items.map((item) => {
+        if (item.id !== itemId) {
+          return item;
+        }
+        if (item.file && item.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+        return {
+          ...item,
+          file: undefined,
+          previewUrl,
+          fileName: ref.file_name,
+          mimeType: ref.mime_type,
+          isAnnotated: ref.is_annotated,
+          storagePath: ref.storage_path,
+          persisted: true,
+        };
+      });
+      return { ...current, [key]: nextItems };
+    });
+    this.revision.update((n) => n + 1);
+  }
+
   updateItem(scope: JournalScreenshotScope, itemId: string, file: File, isAnnotated = true): void {
     const key = scopeKey(scope);
     this.drafts.update((current) => {
@@ -57,7 +113,9 @@ export class GatekeeperScreenshotDraftService {
         if (item.id !== itemId) {
           return item;
         }
-        URL.revokeObjectURL(item.previewUrl);
+        if (item.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
         return {
           ...item,
           file,
@@ -65,6 +123,7 @@ export class GatekeeperScreenshotDraftService {
           fileName: file.name,
           mimeType: file.type || 'image/png',
           isAnnotated,
+          persisted: false,
         };
       });
       return { ...current, [key]: nextItems };
@@ -72,13 +131,18 @@ export class GatekeeperScreenshotDraftService {
     this.revision.update((n) => n + 1);
   }
 
-  removeItem(scope: JournalScreenshotScope, itemId: string): void {
+  removeItem(scope: JournalScreenshotScope, itemId: string): JournalScreenshotItem | null {
     const key = scopeKey(scope);
+    let removed: JournalScreenshotItem | null = null;
+
     this.drafts.update((current) => {
       const items = current[key] ?? [];
       const target = items.find((item) => item.id === itemId);
       if (target) {
-        URL.revokeObjectURL(target.previewUrl);
+        removed = target;
+        if (target.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(target.previewUrl);
+        }
       }
       const nextItems = items.filter((item) => item.id !== itemId);
       const next = { ...current };
@@ -90,6 +154,7 @@ export class GatekeeperScreenshotDraftService {
       return next;
     });
     this.revision.update((n) => n + 1);
+    return removed;
   }
 
   getItems(scope: JournalScreenshotScope): JournalScreenshotItem[] {
@@ -103,7 +168,11 @@ export class GatekeeperScreenshotDraftService {
   removeScope(scope: JournalScreenshotScope): void {
     const key = scopeKey(scope);
     const items = this.drafts()[key] ?? [];
-    items.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    items.forEach((item) => {
+      if (item.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
+    });
     this.drafts.update((current) => {
       const next = { ...current };
       delete next[key];
@@ -142,7 +211,11 @@ export class GatekeeperScreenshotDraftService {
 
   clearAll(): void {
     Object.values(this.drafts()).forEach((items) => {
-      items.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      items.forEach((item) => {
+        if (item.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
     });
     this.drafts.set({});
     this.revision.update((n) => n + 1);

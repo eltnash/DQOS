@@ -1,20 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 
-import type { AnalyzedTimeframe, PillarStepKey } from '../../core/models/database.types';
-import { GatekeeperMediaService } from '../../core/supabase/gatekeeper-media.service';
+import type { PillarStepKey } from '../../core/models/database.types';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { taggedNotesPlainText } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { GatekeeperSubmitPayload, GatekeeperSubmitResult } from './execution-block.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
+import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import { GatekeeperScreenshotDraftService } from './gatekeeper-screenshot-draft.service';
-import { mapFormToHtfContext } from './htf-context.utils';
-import { mapFormToPillarJournals } from './pillar-context.utils';
 
 @Injectable({ providedIn: 'root' })
 export class GatekeeperSubmitService {
   private readonly supabase = inject(SupabaseService);
-  private readonly media = inject(GatekeeperMediaService);
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
+  private readonly draftService = inject(GatekeeperDraftService);
 
   mapFormToAudit(form: GatekeeperFormValue): GatekeeperSubmitPayload['audit'] {
     const location = form.location.location;
@@ -25,6 +23,8 @@ export class GatekeeperSubmitService {
     if (!location || !behavior || !confirmation || invalidationPrice == null) {
       throw new Error('Incomplete pillar data');
     }
+
+    const { htf_context, pillar_journals } = this.draftService.mergeDraftMediaIntoAudit(form);
 
     return {
       location,
@@ -37,12 +37,15 @@ export class GatekeeperSubmitService {
       behavior_thesis: taggedNotesPlainText(form.behavior.notes_content),
       confirmation_thesis: taggedNotesPlainText(form.confirmation.notes_content),
       invalidation_thesis: taggedNotesPlainText(form.invalidation.notes_content),
-      htf_context: mapFormToHtfContext(form),
-      pillar_journals: mapFormToPillarJournals(form),
+      htf_context,
+      pillar_journals,
     };
   }
 
-  async submitQualifiedTrade(payload: GatekeeperSubmitPayload): Promise<GatekeeperSubmitResult> {
+  async submitQualifiedTrade(
+    payload: GatekeeperSubmitPayload,
+    form: GatekeeperFormValue,
+  ): Promise<GatekeeperSubmitResult> {
     if (payload.trade.readiness_pct_at_entry !== 100) {
       throw new Error('STRATEGY NOT FULLY QUALIFIED — readiness must be 100%');
     }
@@ -50,6 +53,13 @@ export class GatekeeperSubmitService {
     if (payload.audit.is_retest !== true) {
       throw new Error('Retest required — the first test provides context, not execution');
     }
+
+    const draftId = this.draftService.activeDraftId();
+    if (!draftId) {
+      throw new Error('No saved Gatekeeper session — refresh and try again');
+    }
+
+    this.assertDraftMediaComplete(form);
 
     const client = this.supabase.client;
     const {
@@ -62,6 +72,7 @@ export class GatekeeperSubmitService {
     const { data: trade, error: tradeError } = await client
       .from('trades')
       .insert({
+        id: draftId,
         user_id: user.id,
         status: 'OPEN',
         readiness_pct_at_entry: 100,
@@ -96,58 +107,34 @@ export class GatekeeperSubmitService {
       throw new Error(auditError?.message ?? 'Audit insert failed — trade rolled back');
     }
 
-    const htfDrafts = this.screenshotDrafts.getHtfDrafts();
-    const pillarDrafts = this.screenshotDrafts.getPillarDrafts();
+    const { error: draftDeleteError } = await client.from('gatekeeper_drafts').delete().eq('id', draftId);
 
-    const mapDraftItems = (
-      items: { file: File; fileName: string; mimeType: string; isAnnotated: boolean }[],
-    ) =>
-      items.map((item) => ({
-        file: item.file,
-        fileName: item.fileName,
-        mimeType: item.mimeType,
-        isAnnotated: item.isAnnotated,
-      }));
-
-    const htfUploadDrafts: Partial<Record<AnalyzedTimeframe, ReturnType<typeof mapDraftItems>[number][]>> =
-      {};
-    for (const tf of Object.keys(htfDrafts) as AnalyzedTimeframe[]) {
-      const items = htfDrafts[tf];
-      if (items?.length) {
-        htfUploadDrafts[tf] = mapDraftItems(items);
-      }
-    }
-
-    const pillarUploadDrafts: Partial<Record<PillarStepKey, ReturnType<typeof mapDraftItems>[number][]>> =
-      {};
-    for (const step of Object.keys(pillarDrafts) as PillarStepKey[]) {
-      const items = pillarDrafts[step];
-      if (items?.length) {
-        pillarUploadDrafts[step] = mapDraftItems(items);
-      }
-    }
-
-    try {
-      const enrichedContext = await this.media.attachHtfScreenshots(
-        trade.id,
-        payload.audit.htf_context,
-        htfUploadDrafts,
-      );
-      const enrichedPillars = await this.media.attachPillarScreenshots(
-        trade.id,
-        payload.audit.pillar_journals,
-        pillarUploadDrafts,
-      );
-      await this.media.updateAuditHtfContext(audit.id, enrichedContext);
-      await this.media.updateAuditPillarJournals(audit.id, enrichedPillars);
-      this.screenshotDrafts.clearAll();
-    } catch (err) {
+    if (draftDeleteError) {
       await client.from('execution_audits').delete().eq('id', audit.id);
       await client.from('trades').delete().eq('id', trade.id);
-      const message = err instanceof Error ? err.message : 'Screenshot upload failed';
-      throw new Error(`${message} — trade rolled back`);
+      throw new Error(draftDeleteError.message);
     }
 
+    this.screenshotDrafts.clearAll();
+    this.draftService.clearActive();
+
     return { tradeId: trade.id, auditId: audit.id };
+  }
+
+  private assertDraftMediaComplete(form: GatekeeperFormValue): void {
+    const { htf_context, pillar_journals } = this.draftService.mergeDraftMediaIntoAudit(form);
+
+    for (const entry of htf_context.timeframe_entries) {
+      if (!entry.screenshots.length) {
+        throw new Error(`Missing saved screenshot for ${entry.timeframe}`);
+      }
+    }
+
+    const steps: PillarStepKey[] = ['location', 'behavior', 'confirmation', 'invalidation'];
+    for (const step of steps) {
+      if (!pillar_journals[step].screenshots.length) {
+        throw new Error(`Missing saved screenshot for ${step} pillar`);
+      }
+    }
   }
 }

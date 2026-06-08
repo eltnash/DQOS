@@ -15,7 +15,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 
-import type { AnalyzedTimeframe, DayType } from '../../core/models/database.types';
+import type { AnalyzedTimeframe, DayType, PillarStepKey } from '../../core/models/database.types';
 import {
   ANALYZED_TIMEFRAME_KEYS,
   ANALYZED_TIMEFRAME_OPTIONS,
@@ -37,8 +37,10 @@ import {
   playbookLabel,
   type AuctionPlaybook,
 } from './auction-playbook.utils';
-import { createGatekeeperForm } from './gatekeeper-form.factory';
+import { createGatekeeperForm, syncGatekeeperFormValidators } from './gatekeeper-form.factory';
 import type { ExecutionPillarStepKey, GatekeeperFormValue, GatekeeperStepKey } from './gatekeeper-form.types';
+import { GatekeeperDraftService } from './gatekeeper-draft.service';
+import type { GatekeeperDraftLoadResult, GatekeeperDraftMedia } from './gatekeeper-draft.types';
 import { GatekeeperScreenshotDraftService } from './gatekeeper-screenshot-draft.service';
 import {
   EXECUTION_TIMEFRAME,
@@ -91,6 +93,7 @@ export class GatekeeperWizardComponent {
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
+  private readonly draftService = inject(GatekeeperDraftService);
 
   readonly pillarsChange = output<{
     pillarSteps: PillarStepState[];
@@ -111,6 +114,8 @@ export class GatekeeperWizardComponent {
   protected readonly playbookLabel = playbookLabel;
   protected readonly playbookDescription = playbookDescription;
   protected readonly dayTypeLabel = dayTypeLabel;
+
+  protected readonly draftSaveStatus = this.draftService.status;
 
   protected readonly steps: WizardStepMeta[] = [
     {
@@ -272,6 +277,7 @@ export class GatekeeperWizardComponent {
       this.formTick.update((n) => n + 1);
       this.ensureActiveTab();
       this.emitState();
+      this.scheduleDraftSave();
     });
 
     this.form.get('is_retest')?.valueChanges.subscribe(() => {
@@ -293,6 +299,7 @@ export class GatekeeperWizardComponent {
         ?.valueChanges.subscribe((enabled) => {
           if (!enabled) {
             this.screenshotDrafts.removeScope({ kind: 'htf', id: tf });
+            void this.draftService.clearScopeMedia({ kind: 'htf', id: tf });
           } else {
             this.activeTimeframeTab.set(tf);
           }
@@ -410,6 +417,7 @@ export class GatekeeperWizardComponent {
       return;
     }
     this.activeStep.set(stepNumber);
+    this.scheduleDraftSave();
     this.cdr.markForCheck();
   }
 
@@ -447,6 +455,51 @@ export class GatekeeperWizardComponent {
     this.activeStep.set(1);
     this.activeTimeframeTab.set('W');
     this.emitState();
+  }
+
+  async loadFromDraft(result: GatekeeperDraftLoadResult): Promise<void> {
+    this.screenshotDrafts.clearAll();
+    this.form.patchValue(result.wizardForm, { emitEvent: false });
+    syncGatekeeperFormValidators(this.form);
+    this.activeStep.set(result.uiState.active_step);
+    this.activeTimeframeTab.set(result.uiState.active_timeframe_tab);
+    await this.hydrateScreenshots(result.media);
+    this.formTick.update((n) => n + 1);
+    this.emitState();
+    this.cdr.markForCheck();
+  }
+
+  private async hydrateScreenshots(media: GatekeeperDraftMedia): Promise<void> {
+    for (const [tf, refs] of Object.entries(media.htf)) {
+      if (!refs?.length) {
+        continue;
+      }
+      for (const ref of refs) {
+        const previewUrl = await this.draftService.createSignedPreviewUrl(ref.storage_path);
+        this.screenshotDrafts.addPersistedItem({ kind: 'htf', id: tf as AnalyzedTimeframe }, ref, previewUrl);
+      }
+    }
+
+    for (const [step, refs] of Object.entries(media.pillars)) {
+      if (!refs?.length) {
+        continue;
+      }
+      for (const ref of refs) {
+        const previewUrl = await this.draftService.createSignedPreviewUrl(ref.storage_path);
+        this.screenshotDrafts.addPersistedItem({ kind: 'pillar', id: step as PillarStepKey }, ref, previewUrl);
+      }
+    }
+  }
+
+  private scheduleDraftSave(): void {
+    if (!this.draftService.activeDraftId()) {
+      return;
+    }
+
+    this.draftService.scheduleSave(this.form.getRawValue() as GatekeeperFormValue, {
+      active_step: this.activeStep(),
+      active_timeframe_tab: this.activeTimeframeTab(),
+    });
   }
 
   private clearIncompatiblePillarSelections(dayType: DayType): void {

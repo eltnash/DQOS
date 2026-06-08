@@ -18,6 +18,17 @@
 
   <p class="gatekeeper-form__methodology">{{ currentStep().methodology }}</p>
 
+  @if (draftSaveStatus() !== 'idle') {
+    <p class="gatekeeper-form__draft-status" [class.gatekeeper-form__draft-status--error]="draftSaveStatus() === 'error'">
+      @switch (draftSaveStatus()) {
+        @case ('loading') { Loading draft… }
+        @case ('saving') { Saving draft… }
+        @case ('saved') { Draft saved to cloud }
+        @case ('error') { Draft save failed — check your connection }
+      }
+    </p>
+  }
+
   <div class="gatekeeper-form__step-body">
     @switch (activeStep()) {
       @case (1) {

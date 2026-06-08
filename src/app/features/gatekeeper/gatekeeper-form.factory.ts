@@ -283,3 +283,16 @@ export function createGatekeeperForm(fb: FormBuilder) {
 
   return form;
 }
+
+export function syncGatekeeperFormValidators(form: FormGroup): void {
+  const context = form.get('context') as FormGroup;
+  const timeframes = context.get('analyzed_timeframes') as FormGroup;
+  const journals = context.get('timeframe_journals') as FormGroup;
+
+  ANALYZED_TIMEFRAME_KEYS.forEach((tf) => {
+    const enabled = timeframes.get(tf)?.value === true;
+    applyJournalValidators(journals.get(tf) as FormGroup, enabled, tf);
+  });
+
+  form.updateValueAndValidity({ emitEvent: false });
+}

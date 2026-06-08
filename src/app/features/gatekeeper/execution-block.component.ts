@@ -198,22 +198,25 @@ export class ExecutionBlockComponent {
 
     try {
       const audit = this.submitService.mapFormToAudit(auditForm);
-      const result = await this.submitService.submitQualifiedTrade({
-        trade: {
-          symbol: session.symbol,
-          direction: exec.direction,
-          day_type: dayType,
-          entry_price: exec.entry_price,
-          stop_price: exec.stop_price,
-          size: exec.size,
-          notes: exec.notes,
-          trading_date: session.session.trading_date,
-          session_context: session.session,
-          status: 'OPEN',
-          readiness_pct_at_entry: 100,
+      const result = await this.submitService.submitQualifiedTrade(
+        {
+          trade: {
+            symbol: session.symbol,
+            direction: exec.direction,
+            day_type: dayType,
+            entry_price: exec.entry_price,
+            stop_price: exec.stop_price,
+            size: exec.size,
+            notes: exec.notes,
+            trading_date: session.session.trading_date,
+            session_context: session.session,
+            status: 'OPEN',
+            readiness_pct_at_entry: 100,
+          },
+          audit,
         },
-        audit,
-      });
+        auditForm,
+      );
 
       this.messageService.add({
         severity: 'success',

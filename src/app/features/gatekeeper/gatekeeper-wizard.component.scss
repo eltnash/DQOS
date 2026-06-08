@@ -120,6 +120,16 @@
     line-height: 1.5;
   }
 
+  &__draft-status {
+    margin: -0.25rem 0 0;
+    font-size: 0.75rem;
+    color: #6ee7b7;
+
+    &--error {
+      color: #fca5a5;
+    }
+  }
+
   &__oath {
     width: 100%;
   }

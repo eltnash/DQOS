@@ -13,6 +13,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { ImageAnnotatorDialogComponent } from '../../../shared/components/image-annotator-dialog/image-annotator-dialog.component';
+import { GatekeeperDraftService } from '../gatekeeper-draft.service';
 import {
   GatekeeperScreenshotDraftService,
   type JournalScreenshotItem,
@@ -33,6 +34,7 @@ import {
 })
 export class JournalScreenshotsPanelComponent {
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
+  private readonly draftService = inject(GatekeeperDraftService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
@@ -142,9 +144,14 @@ export class JournalScreenshotsPanelComponent {
   }
 
   protected removeScreenshot(itemId: string): void {
-    this.screenshotDrafts.removeItem(this.scope(), itemId);
+    const removed = this.screenshotDrafts.removeItem(this.scope(), itemId);
     if (this.annotatingItemId() === itemId) {
       this.closeAnnotator();
+    }
+    if (removed?.storagePath) {
+      void this.draftService.removePersistedScreenshot(this.scope(), removed.storagePath).catch((err) => {
+        this.setUploadError(err instanceof Error ? err.message : 'Could not remove saved screenshot');
+      });
     }
     this.setUploadError(null);
   }
@@ -166,9 +173,34 @@ export class JournalScreenshotsPanelComponent {
     if (!itemId) {
       return;
     }
+
+    const existing = this.screenshotDrafts.getItem(this.scope(), itemId);
     this.screenshotDrafts.updateItem(this.scope(), itemId, file, true);
     this.closeAnnotator();
-    this.cdr.markForCheck();
+
+    void this.persistAnnotatedScreenshot(itemId, file, existing?.storagePath).finally(() => {
+      this.cdr.markForCheck();
+    });
+  }
+
+  private async persistAnnotatedScreenshot(
+    itemId: string,
+    file: File,
+    previousStoragePath?: string,
+  ): Promise<void> {
+    try {
+      let ref;
+      if (previousStoragePath) {
+        ref = await this.draftService.replacePersistedScreenshot(this.scope(), previousStoragePath, file);
+      } else {
+        ref = await this.draftService.persistScreenshot(this.scope(), itemId, file, true);
+      }
+      const previewUrl = await this.draftService.createSignedPreviewUrl(ref.storage_path);
+      this.screenshotDrafts.markItemPersisted(this.scope(), itemId, ref, previewUrl);
+      this.setUploadError(null);
+    } catch (err) {
+      this.setUploadError(err instanceof Error ? err.message : 'Could not save annotated screenshot');
+    }
   }
 
   private applyScreenshotFiles(files: File[]): void {
@@ -192,12 +224,31 @@ export class JournalScreenshotsPanelComponent {
       this.setUploadError(error);
       return false;
     }
-    this.screenshotDrafts.addItem(this.scope(), normalized);
+
+    const itemId = this.screenshotDrafts.addItem(this.scope(), normalized);
+    void this.uploadScreenshot(itemId, normalized).finally(() => {
+      if (markForCheck) {
+        this.cdr.markForCheck();
+      }
+    });
+
     if (markForCheck) {
       this.setUploadError(null);
       this.cdr.markForCheck();
     }
     return true;
+  }
+
+  private async uploadScreenshot(itemId: string, file: File): Promise<void> {
+    try {
+      const ref = await this.draftService.persistScreenshot(this.scope(), itemId, file, false);
+      const previewUrl = await this.draftService.createSignedPreviewUrl(ref.storage_path);
+      this.screenshotDrafts.markItemPersisted(this.scope(), itemId, ref, previewUrl);
+      this.setUploadError(null);
+    } catch (err) {
+      this.screenshotDrafts.removeItem(this.scope(), itemId);
+      this.setUploadError(err instanceof Error ? err.message : 'Could not save screenshot');
+    }
   }
 
   private setUploadError(message: string | null): void {
