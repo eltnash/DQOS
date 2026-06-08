@@ -37,6 +37,7 @@ import {
   playbookDescription,
   playbookForDayType,
   playbookLabel,
+  playbookTagSeverity,
   type AuctionPlaybook,
 } from './auction-playbook.utils';
 import { createGatekeeperForm, syncGatekeeperFormValidators } from './gatekeeper-form.factory';
@@ -115,6 +116,7 @@ export class GatekeeperWizardComponent {
 
   protected readonly playbookLabel = playbookLabel;
   protected readonly playbookDescription = playbookDescription;
+  protected readonly playbookTagSeverity = playbookTagSeverity;
   protected readonly auctionTypeProfileReminder = AUCTION_TYPE_PROFILE_REMINDER;
   protected readonly dayTypeLabel = dayTypeLabel;
   protected readonly formatLocationLabels = formatLocationLabels;

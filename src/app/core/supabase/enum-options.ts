@@ -162,12 +162,12 @@ export const DAY_TYPE_OPTIONS: SelectOption<DayType>[] = [
   {
     label: 'P-Shape (Upper Heavy)',
     value: 'P_Day',
-    hint: 'Volume concentrated in the upper part of the range with a thin lower tail — describes where acceptance built, not trend direction',
+    hint: 'Volume concentrated in the upper part of the range with a thin lower tail. Shape only — combine with HTF posture and retest behavior',
   },
   {
     label: 'b-Shape (Lower Heavy)',
     value: 'b_Day',
-    hint: 'Volume concentrated in the lower part of the range with a thin upper tail — describes where acceptance built, not trend direction',
+    hint: 'Volume concentrated in the lower part of the range with a thin upper tail. Shape only — combine with HTF posture and retest behavior',
   },
   {
     label: 'Trend / Elongated',

@@ -13,7 +13,7 @@ import {
   MARKET_BEHAVIOR_OPTIONS,
 } from '../../core/supabase/enum-options';
 
-export type AuctionPlaybook = 'fade' | 'trend';
+export type AuctionPlaybook = 'fade' | 'trend' | 'contextual';
 
 /** Auction Type step — developing vs prior session volume profile guidance. */
 export const AUCTION_TYPE_PROFILE_REMINDER =
@@ -37,7 +37,6 @@ const FADE_LOCATIONS: AuctionLocation[] = [
   'Single_Print',
   'Naked_POC',
   'HVN',
-  'LVN',
 ];
 
 const TREND_LOCATIONS: AuctionLocation[] = [
@@ -90,24 +89,87 @@ const TREND_CONFIRMATIONS: ConfirmationTrigger[] = [
   'Delta_Divergence',
 ];
 
+const CONTEXTUAL_LOCATIONS: AuctionLocation[] = [
+  ...new Set<AuctionLocation>([...FADE_LOCATIONS, ...TREND_LOCATIONS]),
+];
+
+const CONTEXTUAL_BEHAVIORS: MarketBehavior[] = [
+  ...new Set<MarketBehavior>([...FADE_BEHAVIORS, ...TREND_BEHAVIORS]),
+];
+
+const CONTEXTUAL_CONFIRMATIONS: ConfirmationTrigger[] = [
+  ...new Set<ConfirmationTrigger>([...FADE_CONFIRMATIONS, ...TREND_CONFIRMATIONS]),
+];
+
+function playbookLocations(playbook: AuctionPlaybook): readonly AuctionLocation[] {
+  if (playbook === 'contextual') {
+    return CONTEXTUAL_LOCATIONS;
+  }
+  return playbook === 'fade' ? FADE_LOCATIONS : TREND_LOCATIONS;
+}
+
+function playbookBehaviors(playbook: AuctionPlaybook): readonly MarketBehavior[] {
+  if (playbook === 'contextual') {
+    return CONTEXTUAL_BEHAVIORS;
+  }
+  return playbook === 'fade' ? FADE_BEHAVIORS : TREND_BEHAVIORS;
+}
+
+function playbookConfirmations(playbook: AuctionPlaybook): readonly ConfirmationTrigger[] {
+  if (playbook === 'contextual') {
+    return CONTEXTUAL_CONFIRMATIONS;
+  }
+  return playbook === 'fade' ? FADE_CONFIRMATIONS : TREND_CONFIRMATIONS;
+}
+
 export function playbookForDayType(dayType: DayType): AuctionPlaybook {
   switch (dayType) {
     case 'Trend_Day':
     case 'Double_Dist':
       return 'trend';
+    case 'P_Day':
+    case 'b_Day':
+      return 'contextual';
     default:
       return 'fade';
   }
 }
 
 export function playbookLabel(playbook: AuctionPlaybook): string {
-  return playbook === 'fade' ? 'Mean-reversion playbook' : 'Trend-following playbook';
+  if (playbook === 'fade') {
+    return 'Mean-reversion playbook';
+  }
+  if (playbook === 'trend') {
+    return 'Trend-following playbook';
+  }
+  return 'Shape + context playbook';
 }
 
-export function playbookDescription(playbook: AuctionPlaybook): string {
+export function playbookTagSeverity(playbook: AuctionPlaybook): 'info' | 'success' | 'warn' {
+  if (playbook === 'fade') {
+    return 'info';
+  }
+  if (playbook === 'trend') {
+    return 'success';
+  }
+  return 'warn';
+}
+
+export function playbookDescription(playbook: AuctionPlaybook, dayType?: DayType | null): string {
+  if (playbook === 'contextual') {
+    if (dayType === 'P_Day') {
+      return 'Upper-heavy acceptance shows where volume built, not an automatic fade. With HTF up, this can be continuation balance above prior value; into resistance it can invite rotation lower. Trade the retest at the heavy upper value for rejection, acceptance, or migration. Do not trade the letter alone.';
+    }
+    if (dayType === 'b_Day') {
+      return 'Lower-heavy acceptance shows where volume built, not an automatic fade. With HTF down, this can be continuation balance below prior value; into support it can invite rotation higher. Trade the retest at the heavy lower value for rejection, acceptance, or migration. Do not trade the letter alone.';
+    }
+    return 'Profile shape shows where acceptance built. Match your playbook to HTF posture and retest behavior. Do not assume mean reversion or trend by shape alone.';
+  }
+
   if (playbook === 'fade') {
     return 'The auction prefers rotation around value. Fade profile edges, prior highs/lows, and LVNs — lean on VWAP and POC as magnets with order flow confirmation.';
   }
+
   return 'The auction is migrating directionally. Join pullbacks to VWAP, broken structure, or LVNs — do not fade each extension; treat VWAP as dynamic support/resistance in trend.';
 }
 
@@ -115,7 +177,10 @@ export function invalidationPlaceholder(playbook: AuctionPlaybook): string {
   if (playbook === 'fade') {
     return 'e.g. Acceptance beyond VAH/VAL with value migration — fade thesis dead';
   }
-  return 'e.g. Acceptance back inside prior value / failed retest of broken IB edge';
+  if (playbook === 'trend') {
+    return 'e.g. Acceptance back inside prior value / failed retest of broken IB edge';
+  }
+  return 'e.g. Retest behavior flips — acceptance through your edge when you expected rejection, or rejection when you expected continuation';
 }
 
 export function dayTypeLabel(dayType: DayType): string {
@@ -142,24 +207,15 @@ export function filterOptions<T extends string>(
 }
 
 export function getPlaybookLocationOptions(playbook: AuctionPlaybook): SelectOption<AuctionLocation>[] {
-  return filterOptions(
-    AUCTION_LOCATION_OPTIONS,
-    playbook === 'fade' ? FADE_LOCATIONS : TREND_LOCATIONS,
-  );
+  return filterOptions(AUCTION_LOCATION_OPTIONS, playbookLocations(playbook));
 }
 
 export function getPlaybookBehaviorOptions(playbook: AuctionPlaybook): SelectOption<MarketBehavior>[] {
-  return filterOptions(
-    MARKET_BEHAVIOR_OPTIONS,
-    playbook === 'fade' ? FADE_BEHAVIORS : TREND_BEHAVIORS,
-  );
+  return filterOptions(MARKET_BEHAVIOR_OPTIONS, playbookBehaviors(playbook));
 }
 
 export function getPlaybookConfirmationOptions(
   playbook: AuctionPlaybook,
 ): SelectOption<ConfirmationTrigger>[] {
-  return filterOptions(
-    CONFIRMATION_TRIGGER_OPTIONS,
-    playbook === 'fade' ? FADE_CONFIRMATIONS : TREND_CONFIRMATIONS,
-  );
+  return filterOptions(CONFIRMATION_TRIGGER_OPTIONS, playbookConfirmations(playbook));
 }
