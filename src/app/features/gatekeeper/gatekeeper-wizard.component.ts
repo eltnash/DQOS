@@ -79,6 +79,8 @@ const PILLAR_STEP_LABELS: Record<ExecutionPillarStepKey, string> = {
 
 /** During development all steps stay clickable; set false for sequential unlock. */
 const WIZARD_UNLOCK_ALL_STEPS = true;
+/** During testing, allow Execution tab and fields without completing pillars first. */
+const EXECUTION_UNLOCK_FOR_TESTING = true;
 
 @Component({
   selector: 'app-gatekeeper-wizard',
@@ -356,7 +358,13 @@ export class GatekeeperWizardComponent {
     return this.form.get(key) as FormGroup;
   }
 
+  protected readonly executionUnlockForTesting = EXECUTION_UNLOCK_FOR_TESTING;
+
   protected isStepLocked(stepNumber: number): boolean {
+    if (stepNumber === 7 && EXECUTION_UNLOCK_FOR_TESTING) {
+      return false;
+    }
+
     if (stepNumber === 7) {
       return !this.pillarsQualified();
     }

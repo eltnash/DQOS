@@ -351,6 +351,7 @@
         <app-execution-step-panel
           [sessionState]="sessionState()"
           [pillarsQualified]="pillarsQualified()"
+          [unlockForTesting]="executionUnlockForTesting"
           [readinessPct]="readinessPct()"
           [auditDraft]="qualifiedAuditDraft()"
           (tradeSubmitted)="onTradeSubmitted($event)"

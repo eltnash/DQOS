@@ -67,6 +67,7 @@ export class ExecutionStepPanelComponent implements OnInit {
 
   readonly sessionState = input.required<TradingSessionState | null>();
   readonly pillarsQualified = input.required<boolean>();
+  readonly unlockForTesting = input(false);
   readonly readinessPct = input.required<number>();
   readonly auditDraft = input.required<GatekeeperFormValue | null>();
 
@@ -97,7 +98,7 @@ export class ExecutionStepPanelComponent implements OnInit {
     return formatSessionSummary(state.session, state.symbol);
   });
 
-  protected readonly isLocked = computed(() => !this.pillarsQualified());
+  protected readonly isLocked = computed(() => !this.unlockForTesting() && !this.pillarsQualified());
 
   protected readonly lockReason = computed(() => {
     if (this.pillarsQualified()) {
