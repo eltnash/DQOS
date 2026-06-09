@@ -35,8 +35,15 @@
         [pTooltip]="'Step ' + step.number + ': ' + step.label"
         tooltipPosition="top"
       >
-        <span class="journal-progress__step-num">{{ step.number }}</span>
-        <span class="journal-progress__step-label">{{ step.label }}</span>
+        <div class="journal-progress__step-content">
+          <span class="journal-progress__step-num">{{ step.number }}</span>
+          <span class="journal-progress__step-label">{{ step.label }}</span>
+        </div>
+        @if (step.complete) {
+          <span class="journal-progress__step-mark" aria-hidden="true">
+            <i class="pi pi-check"></i>
+          </span>
+        }
       </li>
     }
   </ol>
