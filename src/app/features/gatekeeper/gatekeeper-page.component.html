@@ -42,5 +42,6 @@
       [pillarSteps]="pillarSteps()"
       [isRetest]="isRetest()"
     />
+    <app-risk-reward-calculator [defaultSymbol]="sessionState()?.symbol ?? null" />
   </aside>
 </div>

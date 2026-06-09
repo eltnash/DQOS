@@ -1,0 +1,108 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.rr-calculator {
+  display: grid;
+  gap: 0.875rem;
+  padding: 1.25rem;
+  background: var(--dqos-bg-panel);
+  border: 1px solid var(--dqos-border);
+  border-radius: 12px;
+  box-sizing: border-box;
+
+  &__header {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: #9ca3af;
+    line-height: 1.4;
+  }
+
+  &__fields {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  &__label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+
+  &__results {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0.875rem 0.75rem;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    background: rgba(17, 24, 39, 0.6);
+
+    div {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    dt {
+      margin: 0;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    dd {
+      margin: 0;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #e5e7eb;
+      text-align: right;
+    }
+  }
+
+  &__results-total dd {
+    color: #fbbf24;
+  }
+
+  &__results-rr dd {
+    color: #34d399;
+    font-size: 1rem;
+  }
+}
+
+:host ::ng-deep {
+  .rr-calculator__select,
+  .rr-calculator__input {
+    width: 100%;
+  }
+
+  .rr-calculator .p-inputnumber,
+  .rr-calculator .p-select {
+    width: 100%;
+  }
+}
+
+:host ::ng-deep .rr-calculator-overlay {
+  z-index: 11000;
+}

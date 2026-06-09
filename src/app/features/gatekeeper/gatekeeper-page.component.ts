@@ -18,6 +18,7 @@ import {
   readinessPctFromCompleted,
   type PillarStepState,
 } from '../../shared/components/readiness-meter/readiness-meter.types';
+import { RiskRewardCalculatorComponent } from './risk-reward-calculator/risk-reward-calculator.component';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import { GatekeeperWizardComponent } from './gatekeeper-wizard.component';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
@@ -33,6 +34,7 @@ import { TradingSessionBarComponent } from './trading-session-bar.component';
     ReadinessMeterComponent,
     MessageModule,
     ToastModule,
+    RiskRewardCalculatorComponent,
   ],
   templateUrl: './gatekeeper-page.component.html',
   styleUrl: './gatekeeper-page.component.scss',
