@@ -53,9 +53,17 @@ export type MarketBehavior =
   | 'Responsive_Selling';
 export type ConfirmationTrigger =
   | 'Delta_Divergence'
+  | 'CVD_Alignment'
+  | 'Delta_Shift'
   | 'Volume_Absorption'
   | 'Excess_Tail'
   | 'VWAP_Reclaim'
+  | 'VWAP_Acceptance'
+  | 'VWAP_Rejection'
+  | 'Anchored_VWAP_Hold'
+  | 'POC_Rejection'
+  | 'VA_Edge_Rejection'
+  | 'Value_Area_Acceptance'
   | 'Market_Structure_Break';
 
 /** Timeframes reviewed before dropping to execution TF (15m). */

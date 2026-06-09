@@ -82,11 +82,59 @@ export const MARKET_BEHAVIOR_OPTIONS: SelectOption<MarketBehavior>[] = [
 ];
 
 export const CONFIRMATION_TRIGGER_OPTIONS: SelectOption<ConfirmationTrigger>[] = [
-  { label: 'Delta Divergence', value: 'Delta_Divergence', hint: 'CVD diverging from price at the edge' },
+  {
+    label: 'Delta Divergence',
+    value: 'Delta_Divergence',
+    hint: 'Price extends but CVD does not — participation fading at the edge',
+  },
+  {
+    label: 'CVD Alignment',
+    value: 'CVD_Alignment',
+    hint: 'CVD confirms price direction — aggression supports the anticipated move',
+  },
+  {
+    label: 'Delta Shift',
+    value: 'Delta_Shift',
+    hint: 'Per-bar delta flips at the level (e.g. sellers → buyers at support)',
+  },
   { label: 'Volume Absorption', value: 'Volume_Absorption', hint: 'High volume without progress' },
   { label: 'Excess Tail', value: 'Excess_Tail', hint: 'Profile tail showing rejection or acceptance' },
-  { label: 'VWAP Reclaim', value: 'VWAP_Reclaim', hint: 'Session VWAP reclaimed with intent' },
-  { label: 'Market Structure Break', value: 'Market_Structure_Break', hint: 'Structural shift confirming control' },
+  { label: 'VWAP Reclaim', value: 'VWAP_Reclaim', hint: 'Price reclaims session VWAP with intent' },
+  {
+    label: 'VWAP Acceptance',
+    value: 'VWAP_Acceptance',
+    hint: 'Price holds above/below VWAP — directional control, not mean reversion',
+  },
+  {
+    label: 'VWAP Rejection',
+    value: 'VWAP_Rejection',
+    hint: 'Failed push through VWAP — price rotates back toward value',
+  },
+  {
+    label: 'Anchored VWAP Hold',
+    value: 'Anchored_VWAP_Hold',
+    hint: 'Clean hold and reaction at an anchored VWAP level',
+  },
+  {
+    label: 'POC Rejection',
+    value: 'POC_Rejection',
+    hint: 'Rejection at POC — rotation back into the value area',
+  },
+  {
+    label: 'VA Edge Rejection',
+    value: 'VA_Edge_Rejection',
+    hint: 'VAH/VAL test fails — auction rotates back toward POC',
+  },
+  {
+    label: 'Value Area Acceptance',
+    value: 'Value_Area_Acceptance',
+    hint: 'Break and hold outside VAH/VAL — migration accepted',
+  },
+  {
+    label: 'Market Structure Break',
+    value: 'Market_Structure_Break',
+    hint: 'Structural shift confirming control',
+  },
 ];
 
 export const FUTURES_SYMBOL_OPTIONS: SelectOption<AssetSymbol>[] = [

@@ -77,16 +77,24 @@ const TREND_BEHAVIORS: MarketBehavior[] = [
 
 const FADE_CONFIRMATIONS: ConfirmationTrigger[] = [
   'Delta_Divergence',
+  'Delta_Shift',
   'Volume_Absorption',
   'Excess_Tail',
   'VWAP_Reclaim',
+  'VWAP_Rejection',
+  'POC_Rejection',
+  'VA_Edge_Rejection',
 ];
 
 const TREND_CONFIRMATIONS: ConfirmationTrigger[] = [
-  'VWAP_Reclaim',
-  'Market_Structure_Break',
+  'CVD_Alignment',
+  'Delta_Shift',
   'Volume_Absorption',
-  'Delta_Divergence',
+  'VWAP_Reclaim',
+  'VWAP_Acceptance',
+  'Anchored_VWAP_Hold',
+  'Value_Area_Acceptance',
+  'Market_Structure_Break',
 ];
 
 const CONTEXTUAL_LOCATIONS: AuctionLocation[] = [
