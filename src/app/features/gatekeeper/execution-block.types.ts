@@ -1,4 +1,4 @@
-import type { AssetSymbol, DayType, HtfContextSnapshot, PillarJournalsSnapshot, TradeDirection, TradeSessionContext } from '../../core/models/database.types';
+import type { AssetSymbol, DayType, HtfContextSnapshot, PillarJournalsSnapshot, PlatformOrderType, TradeDirection, TradeSessionContext } from '../../core/models/database.types';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
 
 /**
@@ -9,7 +9,9 @@ export interface ExecutionFormValue {
   /** Platform order / deal ticket (MT5: Ticket) */
   ticket: string | null;
   symbol: AssetSymbol;
-  /** MT5 Type — stored as LONG (buy) / SHORT (sell) */
+  /** MT5 Type — market, limit, stop, etc. */
+  order_type: PlatformOrderType;
+  /** Buy/sell side — explicit for market execution; derived for limit/stop types */
   direction: TradeDirection;
   /** MT5 Volume (lots) */
   volume: number | null;

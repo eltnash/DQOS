@@ -11,6 +11,7 @@ import type {
   MarketBehavior,
   MarketSession,
   MarketStructureBias,
+  PlatformOrderType,
   PillarFocusTimeframe,
   PriorWeekRangePosition,
   TradeDirection,
@@ -199,6 +200,16 @@ export const TIMEZONE_OPTIONS: SelectOption<string>[] = [
 export const TRADE_DIRECTION_OPTIONS: SelectOption<TradeDirection>[] = [
   { label: 'Buy', value: 'LONG', hint: 'MT5 buy / long' },
   { label: 'Sell', value: 'SHORT', hint: 'MT5 sell / short' },
+];
+
+export const PLATFORM_ORDER_TYPE_OPTIONS: SelectOption<PlatformOrderType>[] = [
+  { label: 'Market Execution', value: 'Market_Execution' },
+  { label: 'Buy Limit', value: 'Buy_Limit' },
+  { label: 'Sell Limit', value: 'Sell_Limit' },
+  { label: 'Buy Stop', value: 'Buy_Stop' },
+  { label: 'Sell Stop', value: 'Sell_Stop' },
+  { label: 'Buy Stop Limit', value: 'Buy_Stop_Limit' },
+  { label: 'Sell Stop Limit', value: 'Sell_Stop_Limit' },
 ];
 
 export const DAY_TYPE_OPTIONS: SelectOption<DayType>[] = [

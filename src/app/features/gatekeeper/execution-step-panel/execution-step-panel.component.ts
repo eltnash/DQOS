@@ -23,7 +23,11 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
 import type { AssetSymbol } from '../../../core/models/database.types';
-import { TRADE_DIRECTION_OPTIONS } from '../../../core/supabase/enum-options';
+import {
+  PLATFORM_ORDER_TYPE_OPTIONS,
+  TRADE_DIRECTION_OPTIONS,
+} from '../../../core/supabase/enum-options';
+import { EnumPillSelectComponent } from '../../../shared/components/enum-pill-select/enum-pill-select.component';
 import { GatekeeperDraftService } from '../gatekeeper-draft.service';
 import { GatekeeperSubmitService } from '../gatekeeper-submit.service';
 import { dayTypeLabel } from '../auction-playbook.utils';
@@ -37,6 +41,7 @@ import type { GatekeeperFormValue } from '../gatekeeper-form.types';
 import type { TradingSessionState } from '../trading-session.types';
 import { formatSessionSummary } from '../trading-session.utils';
 import { computeRiskMetrics, formatUsd, isStopPlacementValid } from '../execution-risk.utils';
+import { effectiveTradeDirection, tradeDirectionFromOrderType } from '../execution-order.utils';
 
 @Component({
   selector: 'app-execution-step-panel',
@@ -52,6 +57,7 @@ import { computeRiskMetrics, formatUsd, isStopPlacementValid } from '../executio
     MessageModule,
     TagModule,
     ConfirmDialogModule,
+    EnumPillSelectComponent,
   ],
   templateUrl: './execution-step-panel.component.html',
   styleUrl: './execution-step-panel.component.scss',
@@ -79,6 +85,7 @@ export class ExecutionStepPanelComponent implements OnInit {
   protected readonly riskMetrics = signal(
     computeRiskMetrics({
       symbol: 'ES',
+      order_type: 'Market_Execution',
       direction: 'LONG',
       entry_price: 0,
       stop_price: 0,
@@ -87,8 +94,14 @@ export class ExecutionStepPanelComponent implements OnInit {
     }),
   );
 
-  protected readonly directionOptions = TRADE_DIRECTION_OPTIONS;
+  protected readonly orderTypeOptions = PLATFORM_ORDER_TYPE_OPTIONS;
+  protected readonly marketSideOptions = TRADE_DIRECTION_OPTIONS;
   protected readonly dayTypeLabel = dayTypeLabel;
+
+  protected readonly isMarketExecution = computed(() => {
+    this.formTick();
+    return this.executionForm.controls.order_type.value === 'Market_Execution';
+  });
 
   protected readonly sessionSummary = computed(() => {
     const state = this.sessionState();
@@ -124,7 +137,8 @@ export class ExecutionStepPanelComponent implements OnInit {
   });
 
   protected readonly stopPlacementError = computed(() => {
-    const direction = this.executionForm.get('direction')?.value;
+    this.formTick();
+    const direction = effectiveTradeDirection(executionFormToDraftValue(this.executionForm));
     return direction === 'LONG'
       ? 'Stop must be below entry for a buy'
       : 'Stop must be above entry for a sell';
@@ -152,6 +166,16 @@ export class ExecutionStepPanelComponent implements OnInit {
 
       if (this.draftService.activeDraftId() && !this.isLocked()) {
         this.draftService.scheduleExecutionSave(value);
+      }
+    });
+
+    this.executionForm.controls.order_type.valueChanges.subscribe((orderType) => {
+      const direction = tradeDirectionFromOrderType(
+        orderType,
+        this.executionForm.controls.direction.value,
+      );
+      if (direction !== this.executionForm.controls.direction.value) {
+        this.executionForm.patchValue({ direction }, { emitEvent: true });
       }
     });
   }
@@ -198,6 +222,7 @@ export class ExecutionStepPanelComponent implements OnInit {
     this.executionForm.reset({
       ticket: null,
       symbol,
+      order_type: 'Market_Execution',
       direction: 'LONG',
       volume: null,
       entry_time: null,
@@ -258,7 +283,7 @@ export class ExecutionStepPanelComponent implements OnInit {
         {
           trade: {
             symbol: session.symbol,
-            direction: exec.direction,
+            direction: effectiveTradeDirection(exec),
             day_type: dayType,
             entry_price: exec.entry_price!,
             stop_price: exec.stop_price!,
@@ -304,6 +329,10 @@ export class ExecutionStepPanelComponent implements OnInit {
 
   private buildTradeNotes(exec: ExecutionFormValue): string | null {
     const parts: string[] = [];
+    const orderLabel =
+      PLATFORM_ORDER_TYPE_OPTIONS.find((option) => option.value === exec.order_type)?.label ??
+      exec.order_type;
+    parts.push(`Type: ${orderLabel}`);
     if (exec.ticket) {
       parts.push(`Ticket: ${exec.ticket}`);
     }

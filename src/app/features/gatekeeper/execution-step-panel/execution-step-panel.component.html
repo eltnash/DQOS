@@ -44,15 +44,24 @@
                   [disabled]="isLocked()"
                 />
               </td>
-              <td>
+              <td class="execution-table__type-cell">
                 <p-select
-                  formControlName="direction"
-                  [options]="directionOptions"
+                  formControlName="order_type"
+                  [options]="orderTypeOptions"
                   optionLabel="label"
                   optionValue="value"
                   [disabled]="isLocked()"
+                  appendTo="body"
+                  panelStyleClass="execution-table-overlay"
                   styleClass="execution-table__select"
                 />
+                @if (isMarketExecution()) {
+                  <app-enum-pill-select
+                    formControlName="direction"
+                    ariaLabel="Market side"
+                    [options]="marketSideOptions"
+                  />
+                }
               </td>
               <td>
                 <p-inputnumber
@@ -91,6 +100,8 @@
                   [showIcon]="true"
                   dateFormat="yy-mm-dd"
                   [disabled]="isLocked()"
+                  appendTo="body"
+                  panelStyleClass="execution-table-overlay"
                   styleClass="execution-table__date"
                 />
               </td>
@@ -150,6 +161,8 @@
                   [showIcon]="true"
                   dateFormat="yy-mm-dd"
                   [disabled]="isLocked()"
+                  appendTo="body"
+                  panelStyleClass="execution-table-overlay"
                   styleClass="execution-table__date"
                 />
               </td>

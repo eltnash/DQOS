@@ -1,5 +1,6 @@
 import { POINT_VALUE_USD } from './execution-block.constants';
 import type { ExecutionFormValue, ExecutionRiskMetrics } from './execution-block.types';
+import { effectiveTradeDirection } from './execution-order.utils';
 
 function roundTo(value: number, decimals: number): number {
   const factor = 10 ** decimals;
@@ -27,14 +28,15 @@ export function computeStopDistancePts(
 export function computeRiskMetrics(
   form: Pick<
     ExecutionFormValue,
-    'symbol' | 'direction' | 'entry_price' | 'stop_price' | 'volume' | 'take_profit_price'
+    'symbol' | 'order_type' | 'direction' | 'entry_price' | 'stop_price' | 'volume' | 'take_profit_price'
   >,
 ): ExecutionRiskMetrics {
   const entry = form.entry_price ?? 0;
   const stop = form.stop_price ?? 0;
   const volume = form.volume ?? 0;
+  const direction = effectiveTradeDirection(form);
 
-  const stopDistancePts = computeStopDistancePts(entry, stop, form.direction);
+  const stopDistancePts = computeStopDistancePts(entry, stop, direction);
 
   const pointValue = POINT_VALUE_USD[form.symbol];
   const risk_per_contract = stopDistancePts * pointValue;
@@ -43,7 +45,7 @@ export function computeRiskMetrics(
   let r_target: number | null = null;
   if (form.take_profit_price != null && stopDistancePts > 0) {
     const rewardPts =
-      form.direction === 'LONG'
+      direction === 'LONG'
         ? form.take_profit_price - entry
         : entry - form.take_profit_price;
     if (rewardPts > 0) {
@@ -63,7 +65,8 @@ export function isStopPlacementValid(form: ExecutionFormValue): boolean {
   if (!form.entry_price || !form.stop_price) {
     return false;
   }
-  if (form.direction === 'LONG') {
+  const direction = effectiveTradeDirection(form);
+  if (direction === 'LONG') {
     return form.stop_price < form.entry_price;
   }
   return form.stop_price > form.entry_price;

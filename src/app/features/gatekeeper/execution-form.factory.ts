@@ -6,14 +6,14 @@ import {
   Validators,
 } from '@angular/forms';
 
-import type { AssetSymbol, TradeDirection } from '../../core/models/database.types';
+import type { AssetSymbol, PlatformOrderType, TradeDirection } from '../../core/models/database.types';
 import { isStopPlacementValid } from './execution-risk.utils';
 import type { ExecutionFormValue } from './execution-block.types';
 
 export function stopPlacementValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.getRawValue() as ExecutionFormValue;
-    if (!value.entry_price || !value.stop_price || !value.direction) {
+    if (!value.entry_price || !value.stop_price || !value.order_type) {
       return null;
     }
     return isStopPlacementValid(value) ? null : { stopPlacement: true };
@@ -25,6 +25,7 @@ export function createExecutionForm(fb: FormBuilder) {
     {
       ticket: fb.control<string | null>(null, Validators.maxLength(64)),
       symbol: fb.nonNullable.control<AssetSymbol>('ES', Validators.required),
+      order_type: fb.nonNullable.control<PlatformOrderType>('Market_Execution', Validators.required),
       direction: fb.nonNullable.control<TradeDirection>('LONG', Validators.required),
       volume: fb.control<number | null>(null, [
         Validators.required,
@@ -59,6 +60,7 @@ export function executionFormToDraftValue(form: ExecutionFormControls): Executio
   return {
     ticket: raw.ticket?.trim() || null,
     symbol: raw.symbol,
+    order_type: raw.order_type,
     direction: raw.direction,
     volume: raw.volume,
     entry_time: raw.entry_time?.toISOString() ?? null,
@@ -84,6 +86,7 @@ export function patchExecutionFormFromDraft(
     {
       ticket: draft.ticket,
       symbol,
+      order_type: draft.order_type,
       direction: draft.direction,
       volume: draft.volume,
       entry_time: draft.entry_time ? new Date(draft.entry_time) : null,

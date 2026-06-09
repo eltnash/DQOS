@@ -83,6 +83,7 @@
   gap: 1rem;
   width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .execution-table {
@@ -92,7 +93,7 @@
   border-spacing: 0;
   border: 1px solid #374151;
   border-radius: 0.5rem;
-  overflow: hidden;
+  overflow: visible;
   background: #111827;
 
   &__caption {
@@ -125,6 +126,13 @@
     padding: 0.5rem 0.625rem;
     vertical-align: middle;
     border-bottom: 1px solid #2d3748;
+    overflow: visible;
+  }
+
+  &__type-cell {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 11rem;
   }
 
   tbody tr:last-child td {
@@ -171,4 +179,8 @@
   .execution-table .p-inputtext {
     width: 100%;
   }
+}
+
+:host ::ng-deep .execution-table-overlay {
+  z-index: 11000;
 }

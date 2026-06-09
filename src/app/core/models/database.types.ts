@@ -20,6 +20,16 @@ export type AssetSymbol =
   | 'XAUUSD'
   | 'XAGUSD';
 export type TradeDirection = 'LONG' | 'SHORT';
+
+/** MT5 order type shown in the platform Type dropdown. */
+export type PlatformOrderType =
+  | 'Market_Execution'
+  | 'Buy_Limit'
+  | 'Sell_Limit'
+  | 'Buy_Stop'
+  | 'Sell_Stop'
+  | 'Buy_Stop_Limit'
+  | 'Sell_Stop_Limit';
 export type TradeStatus = 'DRAFT' | 'OPEN' | 'CLOSED' | 'CANCELLED';
 export type DayType = 'D_Day' | 'P_Day' | 'b_Day' | 'Trend_Day' | 'Double_Dist';
 export type AuctionLocation =

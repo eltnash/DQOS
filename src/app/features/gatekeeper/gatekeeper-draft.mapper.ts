@@ -9,6 +9,7 @@ import type {
 } from '../../core/models/database.types';
 import { ANALYZED_TIMEFRAME_KEYS, HTF_ANALYSIS_TOOL_OPTIONS } from '../../core/supabase/enum-options';
 import { EMPTY_TAGGED_NOTES } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
+import { isPlatformOrderType } from './execution-order.utils';
 import type { ExecutionFormValue } from './execution-block.types';
 import type { GatekeeperFormValue, HtfNarrativeFormValue, LocationStepValue } from './gatekeeper-form.types';
 import type { GatekeeperDraftMedia } from './gatekeeper-draft.types';
@@ -207,6 +208,7 @@ export function defaultExecutionFormValue(symbol: AssetSymbol = 'EURUSD'): Execu
   return {
     ticket: null,
     symbol,
+    order_type: 'Market_Execution',
     direction: 'LONG',
     volume: null,
     entry_time: null,
@@ -237,6 +239,9 @@ export function normalizeExecutionFormValue(raw: unknown, symbol: AssetSymbol = 
   return {
     ticket: typeof value['ticket'] === 'string' ? value['ticket'] : null,
     symbol: (typeof value['symbol'] === 'string' ? value['symbol'] : symbol) as AssetSymbol,
+    order_type: isPlatformOrderType(value['order_type'])
+      ? value['order_type']
+      : 'Market_Execution',
     direction: value['direction'] === 'SHORT' ? 'SHORT' : 'LONG',
     volume:
       typeof value['volume'] === 'number'
