@@ -37,6 +37,7 @@ export class JournalScreenshotsPanelComponent {
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly fileInputRef = viewChild<ElementRef<HTMLInputElement>>('fileInput');
+  private readonly pendingUploads = new Map<string, Promise<void>>();
 
   readonly scope = input.required<JournalScreenshotScope>();
   readonly fileInputId = input.required<string>();
@@ -174,11 +175,10 @@ export class JournalScreenshotsPanelComponent {
       return;
     }
 
-    const existing = this.screenshotDrafts.getItem(this.scope(), itemId);
-    this.screenshotDrafts.updateItem(this.scope(), itemId, file, true);
+    const annotatedRevision = this.screenshotDrafts.updateItem(this.scope(), itemId, file, true);
     this.closeAnnotator();
 
-    void this.persistAnnotatedScreenshot(itemId, file, existing?.storagePath).finally(() => {
+    void this.persistAnnotatedScreenshot(itemId, file, annotatedRevision).finally(() => {
       this.cdr.markForCheck();
     });
   }
@@ -186,17 +186,34 @@ export class JournalScreenshotsPanelComponent {
   private async persistAnnotatedScreenshot(
     itemId: string,
     file: File,
-    previousStoragePath?: string,
+    expectedRevision: number,
   ): Promise<void> {
+    const pending = this.pendingUploads.get(itemId);
+    if (pending) {
+      await pending.catch(() => undefined);
+    }
+
+    const item = this.screenshotDrafts.getItem(this.scope(), itemId);
+    if (!item || (item.revision ?? 0) !== expectedRevision) {
+      return;
+    }
+
     try {
       let ref;
-      if (previousStoragePath) {
-        ref = await this.draftService.replacePersistedScreenshot(this.scope(), previousStoragePath, file);
+      if (item.storagePath) {
+        ref = await this.draftService.replacePersistedScreenshot(this.scope(), item.storagePath, file);
       } else {
         ref = await this.draftService.persistScreenshot(this.scope(), itemId, file, true);
       }
+
       const previewUrl = await this.draftService.createSignedPreviewUrl(ref.storage_path);
-      this.screenshotDrafts.markItemPersisted(this.scope(), itemId, ref, previewUrl);
+      this.screenshotDrafts.markItemPersisted(
+        this.scope(),
+        itemId,
+        ref,
+        previewUrl,
+        expectedRevision,
+      );
       this.setUploadError(null);
     } catch (err) {
       this.setUploadError(err instanceof Error ? err.message : 'Could not save annotated screenshot');
@@ -226,11 +243,7 @@ export class JournalScreenshotsPanelComponent {
     }
 
     const itemId = this.screenshotDrafts.addItem(this.scope(), normalized);
-    void this.uploadScreenshot(itemId, normalized).finally(() => {
-      if (markForCheck) {
-        this.cdr.markForCheck();
-      }
-    });
+    this.trackUpload(itemId, this.uploadScreenshot(itemId, normalized), markForCheck);
 
     if (markForCheck) {
       this.setUploadError(null);
@@ -240,15 +253,34 @@ export class JournalScreenshotsPanelComponent {
   }
 
   private async uploadScreenshot(itemId: string, file: File): Promise<void> {
+    const uploadRevision = this.screenshotDrafts.getItemRevision(this.scope(), itemId);
     try {
       const ref = await this.draftService.persistScreenshot(this.scope(), itemId, file, false);
       const previewUrl = await this.draftService.createSignedPreviewUrl(ref.storage_path);
-      this.screenshotDrafts.markItemPersisted(this.scope(), itemId, ref, previewUrl);
+      this.screenshotDrafts.markItemPersisted(
+        this.scope(),
+        itemId,
+        ref,
+        previewUrl,
+        uploadRevision,
+      );
       this.setUploadError(null);
     } catch (err) {
       this.screenshotDrafts.removeItem(this.scope(), itemId);
       this.setUploadError(err instanceof Error ? err.message : 'Could not save screenshot');
     }
+  }
+
+  private trackUpload(itemId: string, upload: Promise<void>, markForCheck = false): void {
+    this.pendingUploads.set(itemId, upload);
+    void upload.finally(() => {
+      if (this.pendingUploads.get(itemId) === upload) {
+        this.pendingUploads.delete(itemId);
+      }
+      if (markForCheck) {
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   private setUploadError(message: string | null): void {

@@ -11,6 +11,8 @@ export interface JournalScreenshotItem {
   isAnnotated: boolean;
   storagePath?: string;
   persisted?: boolean;
+  /** Bumped when local file changes; stale cloud uploads must not overwrite. */
+  revision?: number;
 }
 
 /** @deprecated use JournalScreenshotItem */
@@ -31,6 +33,10 @@ export class GatekeeperScreenshotDraftService {
 
   readonly revisionSnapshot = this.revision.asReadonly();
 
+  getItemRevision(scope: JournalScreenshotScope, itemId: string): number {
+    return this.getItem(scope, itemId)?.revision ?? 0;
+  }
+
   addItem(scope: JournalScreenshotScope, file: File, isAnnotated = false): string {
     const key = scopeKey(scope);
     const id = crypto.randomUUID();
@@ -42,6 +48,7 @@ export class GatekeeperScreenshotDraftService {
       mimeType: file.type || 'image/png',
       isAnnotated,
       persisted: false,
+      revision: 0,
     };
 
     this.drafts.update((current) => ({
@@ -78,6 +85,7 @@ export class GatekeeperScreenshotDraftService {
     itemId: string,
     ref: TimeframeScreenshotRef,
     previewUrl: string,
+    expectedRevision?: number,
   ): void {
     const key = scopeKey(scope);
     this.drafts.update((current) => {
@@ -85,6 +93,12 @@ export class GatekeeperScreenshotDraftService {
       const nextItems = items.map((item) => {
         if (item.id !== itemId) {
           return item;
+        }
+        if (expectedRevision !== undefined && (item.revision ?? 0) !== expectedRevision) {
+          return {
+            ...item,
+            storagePath: ref.storage_path,
+          };
         }
         if (item.file && item.previewUrl.startsWith('blob:')) {
           URL.revokeObjectURL(item.previewUrl);
@@ -105,14 +119,16 @@ export class GatekeeperScreenshotDraftService {
     this.revision.update((n) => n + 1);
   }
 
-  updateItem(scope: JournalScreenshotScope, itemId: string, file: File, isAnnotated = true): void {
+  updateItem(scope: JournalScreenshotScope, itemId: string, file: File, isAnnotated = true): number {
     const key = scopeKey(scope);
+    let nextRevision = 0;
     this.drafts.update((current) => {
       const items = current[key] ?? [];
       const nextItems = items.map((item) => {
         if (item.id !== itemId) {
           return item;
         }
+        nextRevision = (item.revision ?? 0) + 1;
         if (item.previewUrl.startsWith('blob:')) {
           URL.revokeObjectURL(item.previewUrl);
         }
@@ -124,11 +140,13 @@ export class GatekeeperScreenshotDraftService {
           mimeType: file.type || 'image/png',
           isAnnotated,
           persisted: false,
+          revision: nextRevision,
         };
       });
       return { ...current, [key]: nextItems };
     });
     this.revision.update((n) => n + 1);
+    return nextRevision;
   }
 
   removeItem(scope: JournalScreenshotScope, itemId: string): JournalScreenshotItem | null {
