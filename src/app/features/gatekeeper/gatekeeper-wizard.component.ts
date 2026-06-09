@@ -61,6 +61,7 @@ import { PillarStepPanelComponent } from './pillar-step-panel/pillar-step-panel.
 import { pillarFocusLabel } from './pillar-context.utils';
 import { HtfNarrativePanelComponent } from './htf-narrative-panel/htf-narrative-panel.component';
 import { ExecutionStepPanelComponent } from './execution-step-panel/execution-step-panel.component';
+import { GatekeeperStepTabsComponent } from './gatekeeper-step-tabs/gatekeeper-step-tabs.component';
 import { TimeframeJournalPanelComponent } from './timeframe-journal-panel.component';
 
 interface WizardStepMeta {
@@ -90,6 +91,7 @@ const EXECUTION_UNLOCK_FOR_TESTING = true;
     HtfNarrativePanelComponent,
     PillarStepPanelComponent,
     ExecutionStepPanelComponent,
+    GatekeeperStepTabsComponent,
     EnumPillSelectComponent,
     CheckboxModule,
     InputNumberModule,
@@ -203,6 +205,18 @@ export class GatekeeperWizardComponent {
   });
 
   protected readonly currentStep = computed(() => this.steps[this.activeStep() - 1]);
+
+  protected readonly stepTabs = computed(() => {
+    this.formTick();
+    this.screenshotDrafts.revisionSnapshot();
+    return this.steps.map((step) => ({
+      number: step.number,
+      label: step.title,
+      complete: this.isStepValid(step.key),
+      current: this.activeStep() === step.number,
+      locked: this.isStepLocked(step.number),
+    }));
+  });
 
   protected readonly selectedDayType = computed((): DayType | null => {
     this.formTick();

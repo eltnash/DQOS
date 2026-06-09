@@ -1,20 +1,9 @@
 <form class="gatekeeper-form" [formGroup]="form">
-  <nav class="gatekeeper-form__steps" aria-label="Qualification steps">
-    @for (step of steps; track step.key) {
-      <button
-        type="button"
-        class="gatekeeper-form__step"
-        [class.gatekeeper-form__step--active]="activeStep() === step.number"
-        [class.gatekeeper-form__step--complete]="isStepValid(step.key)"
-        [class.gatekeeper-form__step--locked]="isStepLocked(step.number)"
-        [disabled]="isStepLocked(step.number)"
-        (click)="goToStep(step.number)"
-      >
-        <span class="gatekeeper-form__step-num">{{ step.number }}</span>
-        <span>{{ step.title }}</span>
-      </button>
-    }
-  </nav>
+  <app-gatekeeper-step-tabs
+    [steps]="stepTabs()"
+    ariaLabel="Qualification steps"
+    (stepSelect)="goToStep($event)"
+  />
 
   <p class="gatekeeper-form__methodology">{{ currentStep().methodology }}</p>
 

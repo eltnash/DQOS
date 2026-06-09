@@ -1,0 +1,55 @@
+<nav class="gk-step-tabs" [attr.aria-label]="ariaLabel()">
+  @for (step of steps(); track step.number) {
+    @if (interactive()) {
+      <button
+        type="button"
+        class="gk-step-tabs__tab"
+        [class.gk-step-tabs__tab--done]="step.complete"
+        [class.gk-step-tabs__tab--active]="step.current"
+        [class.gk-step-tabs__tab--todo]="!step.complete && !step.current"
+        [class.gk-step-tabs__tab--locked]="step.locked"
+        [disabled]="step.locked"
+        [attr.aria-current]="step.current ? 'step' : null"
+        [pTooltip]="'Step ' + step.number + ': ' + step.label"
+        tooltipPosition="top"
+        (click)="onTabClick(step)"
+      >
+        <span class="gk-step-tabs__content">
+          <span class="gk-step-tabs__num">{{ step.number }}</span>
+          <span class="gk-step-tabs__label">{{ step.label }}</span>
+        </span>
+        @if (step.complete) {
+          <span class="gk-step-tabs__mark" aria-hidden="true">
+            <i class="pi pi-check"></i>
+          </span>
+        }
+      </button>
+    } @else {
+      <div
+        class="gk-step-tabs__tab"
+        [class.gk-step-tabs__tab--done]="step.complete"
+        [class.gk-step-tabs__tab--active]="step.current"
+        [class.gk-step-tabs__tab--todo]="!step.complete && !step.current"
+        [attr.aria-label]="
+          'Step ' +
+          step.number +
+          ': ' +
+          step.label +
+          (step.complete ? ', complete' : step.current ? ', current' : ', not complete')
+        "
+        [pTooltip]="'Step ' + step.number + ': ' + step.label"
+        tooltipPosition="top"
+      >
+        <span class="gk-step-tabs__content">
+          <span class="gk-step-tabs__num">{{ step.number }}</span>
+          <span class="gk-step-tabs__label">{{ step.label }}</span>
+        </span>
+        @if (step.complete) {
+          <span class="gk-step-tabs__mark" aria-hidden="true">
+            <i class="pi pi-check"></i>
+          </span>
+        }
+      </div>
+    }
+  }
+</nav>

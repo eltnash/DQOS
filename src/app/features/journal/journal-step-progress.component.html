@@ -18,33 +18,9 @@
     <span class="journal-progress__legend-item journal-progress__legend-item--todo">To do</span>
   </div>
 
-  <ol class="journal-progress__steps" aria-label="Gatekeeper step completion">
-    @for (step of progress().steps; track step.number) {
-      <li
-        class="journal-progress__step"
-        [class.journal-progress__step--done]="step.complete"
-        [class.journal-progress__step--active]="step.current"
-        [class.journal-progress__step--todo]="!step.complete && !step.current"
-        [attr.aria-label]="
-          'Step ' +
-          step.number +
-          ': ' +
-          step.label +
-          (step.complete ? ', complete' : step.current ? ', current' : ', not complete')
-        "
-        [pTooltip]="'Step ' + step.number + ': ' + step.label"
-        tooltipPosition="top"
-      >
-        <div class="journal-progress__step-content">
-          <span class="journal-progress__step-num">{{ step.number }}</span>
-          <span class="journal-progress__step-label">{{ step.label }}</span>
-        </div>
-        @if (step.complete) {
-          <span class="journal-progress__step-mark" aria-hidden="true">
-            <i class="pi pi-check"></i>
-          </span>
-        }
-      </li>
-    }
-  </ol>
+  <app-gatekeeper-step-tabs
+    [steps]="tabSteps()"
+    [interactive]="false"
+    ariaLabel="Gatekeeper step completion"
+  />
 </div>
