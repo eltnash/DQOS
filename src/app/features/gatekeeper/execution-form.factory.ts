@@ -25,7 +25,7 @@ export function createExecutionForm(fb: FormBuilder) {
     {
       ticket: fb.control<string | null>(null, Validators.maxLength(64)),
       symbol: fb.nonNullable.control<AssetSymbol>('ES', Validators.required),
-      order_type: fb.nonNullable.control<PlatformOrderType>('Market_Execution', Validators.required),
+      order_type: fb.nonNullable.control<PlatformOrderType>('Market_Execution_Buy', Validators.required),
       direction: fb.nonNullable.control<TradeDirection>('LONG', Validators.required),
       volume: fb.control<number | null>(null, [
         Validators.required,

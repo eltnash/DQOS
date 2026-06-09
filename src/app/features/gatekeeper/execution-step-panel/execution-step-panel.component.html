@@ -55,13 +55,6 @@
                   panelStyleClass="execution-table-overlay"
                   styleClass="execution-table__select"
                 />
-                @if (isMarketExecution()) {
-                  <app-enum-pill-select
-                    formControlName="direction"
-                    ariaLabel="Market side"
-                    [options]="marketSideOptions"
-                  />
-                }
               </td>
               <td>
                 <p-inputnumber

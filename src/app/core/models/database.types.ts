@@ -23,7 +23,8 @@ export type TradeDirection = 'LONG' | 'SHORT';
 
 /** MT5 order type shown in the platform Type dropdown. */
 export type PlatformOrderType =
-  | 'Market_Execution'
+  | 'Market_Execution_Buy'
+  | 'Market_Execution_Sell'
   | 'Buy_Limit'
   | 'Sell_Limit'
   | 'Buy_Stop'

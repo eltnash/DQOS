@@ -25,9 +25,7 @@ import { TextareaModule } from 'primeng/textarea';
 import type { AssetSymbol } from '../../../core/models/database.types';
 import {
   PLATFORM_ORDER_TYPE_OPTIONS,
-  TRADE_DIRECTION_OPTIONS,
 } from '../../../core/supabase/enum-options';
-import { EnumPillSelectComponent } from '../../../shared/components/enum-pill-select/enum-pill-select.component';
 import { GatekeeperDraftService } from '../gatekeeper-draft.service';
 import { GatekeeperSubmitService } from '../gatekeeper-submit.service';
 import { dayTypeLabel } from '../auction-playbook.utils';
@@ -57,7 +55,6 @@ import { effectiveTradeDirection, tradeDirectionFromOrderType } from '../executi
     MessageModule,
     TagModule,
     ConfirmDialogModule,
-    EnumPillSelectComponent,
   ],
   templateUrl: './execution-step-panel.component.html',
   styleUrl: './execution-step-panel.component.scss',
@@ -85,7 +82,7 @@ export class ExecutionStepPanelComponent implements OnInit {
   protected readonly riskMetrics = signal(
     computeRiskMetrics({
       symbol: 'ES',
-      order_type: 'Market_Execution',
+      order_type: 'Market_Execution_Buy',
       direction: 'LONG',
       entry_price: 0,
       stop_price: 0,
@@ -95,13 +92,7 @@ export class ExecutionStepPanelComponent implements OnInit {
   );
 
   protected readonly orderTypeOptions = PLATFORM_ORDER_TYPE_OPTIONS;
-  protected readonly marketSideOptions = TRADE_DIRECTION_OPTIONS;
   protected readonly dayTypeLabel = dayTypeLabel;
-
-  protected readonly isMarketExecution = computed(() => {
-    this.formTick();
-    return this.executionForm.controls.order_type.value === 'Market_Execution';
-  });
 
   protected readonly sessionSummary = computed(() => {
     const state = this.sessionState();
@@ -222,7 +213,7 @@ export class ExecutionStepPanelComponent implements OnInit {
     this.executionForm.reset({
       ticket: null,
       symbol,
-      order_type: 'Market_Execution',
+      order_type: 'Market_Execution_Buy',
       direction: 'LONG',
       volume: null,
       entry_time: null,

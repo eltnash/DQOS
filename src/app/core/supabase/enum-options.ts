@@ -203,7 +203,8 @@ export const TRADE_DIRECTION_OPTIONS: SelectOption<TradeDirection>[] = [
 ];
 
 export const PLATFORM_ORDER_TYPE_OPTIONS: SelectOption<PlatformOrderType>[] = [
-  { label: 'Market Execution', value: 'Market_Execution' },
+  { label: 'Market Execution Buy', value: 'Market_Execution_Buy' },
+  { label: 'Market Execution Sell', value: 'Market_Execution_Sell' },
   { label: 'Buy Limit', value: 'Buy_Limit' },
   { label: 'Sell Limit', value: 'Sell_Limit' },
   { label: 'Buy Stop', value: 'Buy_Stop' },
