@@ -53,22 +53,19 @@
         }
       </a>
     }
-
-    <a
-      class="account-sidebar__link account-sidebar__link--settings"
-      [routerLink]="['/accounts', accountId(), 'settings']"
-      routerLinkActive="account-sidebar__link--active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      <i class="pi pi-cog" aria-hidden="true"></i>
-      @if (!collapsed()) {
-        <span>Settings</span>
-      }
-    </a>
   </nav>
 
   @if (!collapsed()) {
     <div class="account-sidebar__footer">
+      <a
+        class="account-sidebar__link account-sidebar__link--settings"
+        [routerLink]="['/accounts', accountId(), 'settings']"
+        routerLinkActive="account-sidebar__link--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <i class="pi pi-cog" aria-hidden="true"></i>
+        <span>Settings</span>
+      </a>
       <p class="account-sidebar__user data-mono">{{ userEmail() }}</p>
       <button type="button" class="account-sidebar__action" (click)="signOut()">
         <i class="pi pi-sign-out" aria-hidden="true"></i>

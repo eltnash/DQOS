@@ -1,14 +1,30 @@
+:host {
+  display: block;
+}
+
 .shell {
   display: grid;
   min-height: 100vh;
+  min-height: 100dvh;
+  align-items: start;
   background: var(--dqos-bg-base);
   transition: grid-template-columns 0.2s ease;
 
+  > app-account-rail,
+  > app-account-sidebar {
+    display: block;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   &__main {
     padding: 1.5rem 2rem;
-    overflow-x: hidden;
-    overflow-y: auto;
-    min-height: 100vh;
     min-width: 0;
 
     > :not(router-outlet) {
