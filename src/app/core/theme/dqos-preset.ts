@@ -56,4 +56,16 @@ export const DqosDarkPreset = definePreset(Aura, {
       },
     },
   },
+  components: {
+    tooltip: {
+      colorScheme: {
+        dark: {
+          root: {
+            background: '{content.background}',
+            color: '{surface.800}',
+          },
+        },
+      },
+    },
+  },
 });

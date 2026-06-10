@@ -26,7 +26,7 @@ import {
 } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { TaggedNotesValue } from '../../shared/components/tagged-notes-editor/tagged-notes.types';
 import {
-  narrativeFieldKeysForTimeframe,
+  htfContextNarrativeFieldKeys,
   type TimeframeNarrativeFieldKey,
 } from './htf-timeframe-narrative.config';
 
@@ -183,7 +183,7 @@ function applyJournalValidators(block: FormGroup, enabled: boolean, tf: Analyzed
   block.get('notes_content')?.updateValueAndValidity({ emitEvent: false });
 
   const narrative = block.get('narrative') as FormGroup;
-  applyNarrativeFieldValidators(narrative, enabled, narrativeFieldKeysForTimeframe(tf));
+  applyNarrativeFieldValidators(narrative, enabled, htfContextNarrativeFieldKeys(tf));
   narrative.updateValueAndValidity({ emitEvent: false });
 }
 

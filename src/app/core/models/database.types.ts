@@ -149,8 +149,8 @@ export interface TimeframeJournalEntry {
 /** HTF narrative Q&A captured per analyzed timeframe. */
 export interface HtfNarrativeSnapshot {
   value_migration: string;
-  composite_va_position: CompositeValuePosition;
-  auction_regime: HtfAuctionRegime;
+  composite_va_position?: CompositeValuePosition;
+  auction_regime?: HtfAuctionRegime;
   prior_week_range_position?: PriorWeekRangePosition | null;
   tools_used: HtfAnalysisTool[];
   htf_trade_posture: string;

@@ -285,6 +285,25 @@ export const COMPOSITE_VALUE_POSITION_OPTIONS: SelectOption<CompositeValuePositi
   },
 ];
 
+/** Prior day / developing session value — not composite profile. */
+export const DEVELOPING_VALUE_POSITION_OPTIONS: SelectOption<CompositeValuePosition>[] = [
+  {
+    label: 'Above value area',
+    value: 'Above_VA',
+    hint: 'Price accepted above prior day / developing value — continuation or repair back into value',
+  },
+  {
+    label: 'Below value area',
+    value: 'Below_VA',
+    hint: 'Price accepted below prior day / developing value — sellers or responsive buyers in control',
+  },
+  {
+    label: 'Inside value area',
+    value: 'Inside_VA',
+    hint: 'Rotational balance in prior day / developing value — extremes may be faded until migration',
+  },
+];
+
 export const HTF_AUCTION_REGIME_OPTIONS: SelectOption<HtfAuctionRegime>[] = [
   {
     label: 'Breaking balance',

@@ -1,12 +1,14 @@
 <section class="htf-narrative" [formGroup]="narrativeGroup()">
-  <header class="htf-narrative__story">
-    @if (config().intro.heading) {
-      <h3 class="htf-narrative__heading">{{ config().intro.heading }}</h3>
-    }
-    @for (paragraph of config().intro.paragraphs; track paragraph) {
-      <p class="htf-narrative__paragraph">{{ paragraph }}</p>
-    }
-  </header>
+  @if (config().intro.heading || config().intro.paragraphs.length) {
+    <header class="htf-narrative__story">
+      @if (config().intro.heading) {
+        <h3 class="htf-narrative__heading">{{ config().intro.heading }}</h3>
+      }
+      @for (paragraph of config().intro.paragraphs; track paragraph) {
+        <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+      }
+    </header>
+  }
 
   <div class="htf-narrative__qa">
     @for (field of config().fields; track field.key) {
@@ -62,8 +64,8 @@
             }
             <app-enum-pill-select
               formControlName="composite_va_position"
-              ariaLabel="Composite value area position"
-              [options]="compositeVaOptions"
+              [ariaLabel]="field.label"
+              [options]="compositeVaOptionsFor(field)"
             />
           </div>
         }

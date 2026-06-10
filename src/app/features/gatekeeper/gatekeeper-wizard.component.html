@@ -26,7 +26,7 @@
         <section class="gatekeeper-form__panel" formGroupName="context">
           <p-message
             severity="info"
-            text="HTF chart journal — upload screenshots and tagged notes for each higher timeframe. The narrative Q&A below changes with the active timeframe tab."
+            text="HTF chart journal — upload screenshots and tagged notes for each higher timeframe. Narrative Q&A appears below for each selected tab except Daily."
             styleClass="gatekeeper-form__oath"
           />
 
@@ -81,10 +81,12 @@
                     [pasteActive]="true"
                   />
 
-                  <app-htf-narrative-panel
-                    [timeframe]="tf"
-                    [narrativeGroup]="narrativeGroup(tf)"
-                  />
+                  @if (tf !== 'D') {
+                    <app-htf-narrative-panel
+                      [timeframe]="tf"
+                      [narrativeGroup]="narrativeGroup(tf)"
+                    />
+                  }
                 }
               }
             </div>
@@ -141,7 +143,10 @@
           }
 
           @if (!isStepValid('auction_type') && auctionTypeGroup().touched) {
-            <p-message severity="warn" text="Select today's developing volume profile day type to unlock the execution pillars." />
+            <p-message
+              severity="warn"
+              text="Select today's developing volume profile day type to unlock the execution pillars."
+            />
           }
         </section>
       }

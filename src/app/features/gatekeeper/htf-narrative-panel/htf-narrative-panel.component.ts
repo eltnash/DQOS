@@ -39,7 +39,9 @@ export class HtfNarrativePanelComponent {
   protected readonly config = computed(() => timeframeNarrativeConfig(this.timeframe()));
   protected readonly timeframeTitle = computed(() => timeframeLabel(this.timeframe()));
 
-  protected readonly compositeVaOptions = COMPOSITE_VALUE_POSITION_OPTIONS;
+  protected compositeVaOptionsFor(field: TimeframeNarrativeFieldConfig) {
+    return field.compositeVaOptions ?? COMPOSITE_VALUE_POSITION_OPTIONS;
+  }
   protected readonly auctionRegimeOptions = HTF_AUCTION_REGIME_OPTIONS;
   protected readonly priorWeekRangeOptions = PRIOR_WEEK_RANGE_OPTIONS;
 
