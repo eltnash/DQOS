@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
 
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { accountTypeLabel, formatAccountBalance } from '../../core/accounts/account.utils';
@@ -18,7 +17,7 @@ interface SectionNavItem {
 
 @Component({
   selector: 'app-account-sidebar',
-  imports: [RouterLink, RouterLinkActive, ButtonModule, AccountRiskLocksComponent],
+  imports: [RouterLink, RouterLinkActive, AccountRiskLocksComponent],
   templateUrl: './account-sidebar.component.html',
   styleUrl: './account-sidebar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

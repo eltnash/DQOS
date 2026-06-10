@@ -29,15 +29,10 @@
       }
     </nav>
 
-    <p-button
-      type="button"
-      label="New account"
-      icon="pi pi-plus"
-      severity="secondary"
-      [outlined]="true"
-      styleClass="account-rail__new"
-      (onClick)="openCreate()"
-    />
+    <button type="button" class="account-rail__new-btn" (click)="openCreate()">
+      <i class="pi pi-plus" aria-hidden="true"></i>
+      <span>New account</span>
+    </button>
   } @else {
     <nav class="account-rail__icons" aria-label="Trading accounts">
       @for (account of accounts(); track account.id) {

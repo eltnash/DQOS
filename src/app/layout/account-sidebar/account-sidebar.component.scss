@@ -146,4 +146,35 @@
     color: #6b7280;
     word-break: break-all;
   }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--dqos-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #e5e7eb;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: #3f4654;
+      color: #f9fafb;
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(52, 211, 153, 0.55);
+      outline-offset: 2px;
+    }
+  }
 }

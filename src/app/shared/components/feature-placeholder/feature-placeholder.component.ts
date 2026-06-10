@@ -17,11 +17,11 @@ import { CardModule } from 'primeng/card';
             </p>
           </div>
         </div>
+      } @else {
+        <p-card [header]="pageTitle" [subheader]="pageSubtitle">
+          <p>{{ pageDescription }}</p>
+        </p-card>
       }
-
-      <p-card [header]="pageTitle" [subheader]="pageSubtitle">
-        <p>{{ pageDescription }}</p>
-      </p-card>
     </section>
   `,
   styles: `
