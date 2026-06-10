@@ -12,6 +12,7 @@ import {
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -98,6 +99,7 @@ const EXECUTION_RELAXED = environment.gatekeeperRelaxedExecution;
     InputTextModule,
     ButtonModule,
     MessageModule,
+    SelectButtonModule,
     TagModule,
   ],
   templateUrl: './gatekeeper-wizard.component.html',
@@ -379,6 +381,11 @@ export class GatekeeperWizardComponent {
   }
 
   protected readonly executionRelaxed = EXECUTION_RELAXED;
+
+  protected readonly retestAttemptOptions = [
+    { label: 'Yes', value: true },
+    { label: 'No', value: false },
+  ];
 
   protected isStepLocked(stepNumber: number): boolean {
     if (stepNumber === 7 && EXECUTION_RELAXED) {

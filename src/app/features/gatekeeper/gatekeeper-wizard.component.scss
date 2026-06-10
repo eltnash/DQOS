@@ -51,11 +51,21 @@
   }
 
   &__retest {
-    display: flex;
-    align-items: flex-start;
+    display: grid;
     gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    border: none;
     font-size: 0.875rem;
     color: #e5e7eb;
+  }
+
+  &__retest-question {
+    padding: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.45;
+    color: #f3f4f6;
   }
 
   &__fields {

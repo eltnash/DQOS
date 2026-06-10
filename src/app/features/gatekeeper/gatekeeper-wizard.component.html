@@ -161,12 +161,24 @@
             styleClass="gatekeeper-form__oath"
           />
 
-          <div class="gatekeeper-form__retest">
-            <p-checkbox formControlName="is_retest" [binary]="true" inputId="is-retest" />
-            <label for="is-retest">
-              This is a <strong>retest</strong> of proven behavior (not the initial test)
-            </label>
-          </div>
+          <fieldset class="gatekeeper-form__retest">
+            <legend class="gatekeeper-form__retest-question">
+              Was there an attempted retest of the location you see as significant on the current
+              timeframe or on lower timeframes?
+            </legend>
+            <p class="gatekeeper-form__hint gatekeeper-form__hint--lead">
+              The first touch informs structure; a retest is when price returns to that level after
+              leaving it — that is when execution is considered.
+            </p>
+            <p-selectbutton
+              formControlName="is_retest"
+              [options]="retestAttemptOptions"
+              optionLabel="label"
+              optionValue="value"
+              [allowEmpty]="false"
+              aria-label="Attempted retest of significant location"
+            />
+          </fieldset>
 
           <app-pillar-step-panel
             stepKey="location"
@@ -192,10 +204,14 @@
             }
           </div>
 
-          @if (!isStepValid('location') && stepGroup('location').touched) {
+          @if (!isStepValid('location') && (stepGroup('location').touched || form.controls.is_retest.touched)) {
             <p-message
               severity="warn"
-              text="Select at least one location, add at least one screenshot, and write tagged notes (minimum 20 characters)."
+              [text]="
+                !form.controls.is_retest.value
+                  ? 'Answer the retest question with Yes before continuing — execution requires an attempted retest, not the initial test alone.'
+                  : 'Select at least one location, add at least one screenshot, and write tagged notes (minimum 20 characters).'
+              "
             />
           }
         </section>
