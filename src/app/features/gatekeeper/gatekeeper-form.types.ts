@@ -60,6 +60,8 @@ export interface InvalidationStepValue extends PillarStepFormValue {
   invalidation_price: number | null;
 }
 
+export type OutcomeStepValue = PillarStepFormValue;
+
 export interface GatekeeperFormValue {
   context: ContextStepValue;
   auction_type: AuctionTypeStepValue;
@@ -68,6 +70,7 @@ export interface GatekeeperFormValue {
   behavior: BehaviorStepValue;
   confirmation: ConfirmationStepValue;
   invalidation: InvalidationStepValue;
+  outcome: OutcomeStepValue;
 }
 
 export type GatekeeperStepKey =
@@ -76,6 +79,7 @@ export type GatekeeperStepKey =
   | 'location'
   | 'behavior'
   | 'confirmation'
-  | 'invalidation';
+  | 'invalidation'
+  | 'outcome';
 
-export type ExecutionPillarStepKey = Exclude<GatekeeperStepKey, 'context' | 'auction_type'>;
+export type ExecutionPillarStepKey = Exclude<GatekeeperStepKey, 'context' | 'auction_type' | 'outcome'>;

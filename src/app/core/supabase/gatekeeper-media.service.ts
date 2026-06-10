@@ -106,17 +106,31 @@ export class GatekeeperMediaService {
         throw new Error(`Missing screenshot for ${step} pillar`);
       }
 
-      result[step] = {
-        ...journals[step],
-        screenshots: await this.uploadDrafts(
-          draftItems,
-          (fileName) => this.buildPillarStoragePath(user.id, tradeId, step, fileName),
-          step,
-        ),
-      };
+      result[step] = await this.attachPillarStepScreenshots(user.id, tradeId, step, journals[step], draftItems);
     }
 
     return result;
+  }
+
+  async attachPillarStepScreenshots(
+    userId: string,
+    tradeId: string,
+    step: PillarStepKey,
+    journal: PillarJournalsSnapshot[PillarStepKey],
+    draftItems: ScreenshotUploadDraft[],
+  ): Promise<PillarJournalsSnapshot[PillarStepKey]> {
+    if (!draftItems.length) {
+      throw new Error(`Missing screenshot for ${step} pillar`);
+    }
+
+    return {
+      ...journal,
+      screenshots: await this.uploadDrafts(
+        draftItems,
+        (fileName) => this.buildPillarStoragePath(userId, tradeId, step, fileName),
+        step,
+      ),
+    };
   }
 
   async updateAuditHtfContext(auditId: string, context: HtfContextSnapshot): Promise<void> {

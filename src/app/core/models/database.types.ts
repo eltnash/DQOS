@@ -86,7 +86,9 @@ export type TradingTimeframe = 'M15';
 /** LTF focus for each execution pillar (location, behavior, confirmation, invalidation). */
 export type PillarFocusTimeframe = 'M15' | 'M5' | 'M1';
 
-export type PillarStepKey = 'location' | 'behavior' | 'confirmation' | 'invalidation';
+export type QualificationPillarKey = 'location' | 'behavior' | 'confirmation' | 'invalidation';
+
+export type PillarStepKey = QualificationPillarKey | 'outcome';
 
 export type CompositeValuePosition = 'Above_VA' | 'Below_VA' | 'Inside_VA';
 
@@ -174,6 +176,7 @@ export interface PillarJournalsSnapshot {
   behavior: PillarStepJournal;
   confirmation: PillarStepJournal;
   invalidation: PillarStepJournal;
+  outcome: PillarStepJournal;
 }
 
 export type MarketSession = 'Asia' | 'London' | 'New_York';

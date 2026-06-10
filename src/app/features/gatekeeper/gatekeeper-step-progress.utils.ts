@@ -35,6 +35,7 @@ const STEP_KEYS: (GatekeeperStepKey | 'execution')[] = [
   'confirmation',
   'invalidation',
   'execution',
+  'outcome',
 ];
 
 function hasHtfMedia(media: GatekeeperDraftMedia, tf: AnalyzedTimeframe): boolean {
@@ -129,6 +130,18 @@ function isExecutionComplete(
   return executionForm.valid && isStopPlacementValid(executionFormToDraftValue(executionForm));
 }
 
+function isOutcomeComplete(
+  form: FormGroup,
+  media: GatekeeperDraftMedia,
+  executionForm: FormGroup,
+): boolean {
+  if (!isExecutionComplete(form, media, executionForm)) {
+    return false;
+  }
+
+  return (form.get('outcome') as FormGroup).valid && hasPillarMedia(media, 'outcome');
+}
+
 function isStepComplete(
   key: GatekeeperStepKey | 'execution',
   form: FormGroup,
@@ -150,6 +163,8 @@ function isStepComplete(
       return isInvalidationComplete(form, media);
     case 'execution':
       return isExecutionComplete(form, media, executionForm);
+    case 'outcome':
+      return isOutcomeComplete(form, media, executionForm);
   }
 }
 

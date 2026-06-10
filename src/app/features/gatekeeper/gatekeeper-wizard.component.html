@@ -20,7 +20,7 @@
   }
 
   <div class="gatekeeper-form__step-body">
-    @if (activeStep() !== 7) {
+    @if (activeStep() < 7) {
       @switch (activeStep()) {
       @case (1) {
         <section class="gatekeeper-form__panel" formGroupName="context">
@@ -334,7 +334,7 @@
         </section>
       }
       }
-    } @else {
+    } @else if (activeStep() === 7) {
       <div class="gatekeeper-form__panel">
         <app-execution-step-panel
           [sessionState]="sessionState()"
@@ -345,6 +345,31 @@
           (tradeSubmitted)="onTradeSubmitted($event)"
         />
       </div>
+    } @else {
+      <section class="gatekeeper-form__panel">
+        @if (submittedAudit()) {
+          <p-message
+            severity="success"
+            text="Execution recorded. Document the outcome of the move below, then finish the journal."
+            styleClass="gatekeeper-form__oath"
+          />
+        }
+
+        <app-pillar-step-panel
+          stepKey="outcome"
+          [stepGroup]="stepGroup('outcome')"
+          stepTitle="Outcome journal"
+          notesPlaceholder="How did the move resolve? Tag follow-through, target hit, stop hit, or thesis failure on your outcome chart."
+          [pasteActive]="true"
+        />
+
+        @if (!isStepValid('outcome') && stepGroup('outcome').touched) {
+          <p-message
+            severity="warn"
+            text="Add at least one outcome screenshot and write tagged notes (minimum 20 characters)."
+          />
+        }
+      </section>
     }
   </div>
 
@@ -366,7 +391,7 @@
         [loading]="savingProgress()"
         (onClick)="saveProgress()"
       />
-      @if (activeStep() < stepCount) {
+      @if (activeStep() < stepCount && activeStep() !== 7 && activeStep() !== 8) {
         <p-button
           type="button"
           label="Next step"
@@ -374,6 +399,16 @@
           iconPos="right"
           [loading]="savingProgress()"
           (onClick)="goNext()"
+        />
+      }
+      @if (activeStep() === 8) {
+        <p-button
+          type="button"
+          label="Save outcome & finish"
+          icon="pi pi-check"
+          iconPos="right"
+          [loading]="finishingOutcome()"
+          (onClick)="finishOutcome()"
         />
       }
     </div>

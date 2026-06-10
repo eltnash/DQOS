@@ -49,6 +49,7 @@ import type { ExecutionFormValue, GatekeeperSubmitResult } from './execution-blo
 import { isStopPlacementValid } from './execution-risk.utils';
 import type { TradingSessionState } from './trading-session.types';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
+import { GatekeeperSubmitService } from './gatekeeper-submit.service';
 import type { GatekeeperDraftLoadResult, GatekeeperDraftMedia } from './gatekeeper-draft.types';
 import { GatekeeperScreenshotDraftService } from './gatekeeper-screenshot-draft.service';
 import {
@@ -64,7 +65,7 @@ import { GatekeeperStepTabsComponent } from './gatekeeper-step-tabs/gatekeeper-s
 import { TimeframeJournalPanelComponent } from './timeframe-journal-panel.component';
 
 interface WizardStepMeta {
-  key: GatekeeperStepKey | 'execution';
+  key: GatekeeperStepKey | 'execution' | 'outcome';
   number: number;
   title: string;
   methodology: string;
@@ -107,6 +108,7 @@ export class GatekeeperWizardComponent {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
   private readonly draftService = inject(GatekeeperDraftService);
+  private readonly submitService = inject(GatekeeperSubmitService);
   private readonly messageService = inject(MessageService);
   private readonly executionPanelRef = viewChild(ExecutionStepPanelComponent);
 
@@ -125,6 +127,8 @@ export class GatekeeperWizardComponent {
   protected readonly activeStep = signal(1);
   protected readonly activeTimeframeTab = signal<AnalyzedTimeframe>('W');
   protected readonly savingProgress = signal(false);
+  protected readonly submittedAudit = signal<GatekeeperSubmitResult | null>(null);
+  protected readonly finishingOutcome = signal(false);
   protected readonly executionTimeframe = EXECUTION_TIMEFRAME;
 
   protected readonly timeframeOptions = ANALYZED_TIMEFRAME_OPTIONS;
@@ -189,6 +193,13 @@ export class GatekeeperWizardComponent {
       title: 'Execution',
       methodology:
         'Record your platform trade details (MT5-style). Ticket, entry, exit, costs, and profit — saved as part of this journal.',
+    },
+    {
+      key: 'outcome',
+      number: 8,
+      title: 'Outcome',
+      methodology:
+        'Document how the move resolved after execution — upload outcome charts and write tagged notes on follow-through, target hit, or thesis failure.',
     },
   ];
 
@@ -373,8 +384,16 @@ export class GatekeeperWizardComponent {
       return false;
     }
 
+    if (stepNumber === 8 && EXECUTION_UNLOCK_FOR_TESTING) {
+      return false;
+    }
+
     if (stepNumber === 7) {
       return !this.pillarsQualified();
+    }
+
+    if (stepNumber === 8) {
+      return !this.submittedAudit();
     }
 
     if (WIZARD_UNLOCK_ALL_STEPS || stepNumber <= 1) {
@@ -390,7 +409,7 @@ export class GatekeeperWizardComponent {
     return !this.isStepValid(priorStep.key);
   }
 
-  protected isStepValid(key: GatekeeperStepKey | 'execution'): boolean {
+  protected isStepValid(key: GatekeeperStepKey | 'execution' | 'outcome'): boolean {
     if (key === 'execution') {
       if (!this.pillarsQualified()) {
         return false;
@@ -450,6 +469,17 @@ export class GatekeeperWizardComponent {
       );
     }
 
+    if (key === 'outcome') {
+      if (!this.submittedAudit() && !EXECUTION_UNLOCK_FOR_TESTING) {
+        return false;
+      }
+
+      return (
+        this.stepGroup('outcome').valid &&
+        this.screenshotDrafts.hasDraft({ kind: 'pillar', id: 'outcome' })
+      );
+    }
+
     return this.stepGroup(key).valid;
   }
 
@@ -480,8 +510,12 @@ export class GatekeeperWizardComponent {
   protected goToStep(stepNumber: number): void {
     if (this.isStepLocked(stepNumber)) {
       const priorStep = this.steps.find((step) => step.number === stepNumber - 1);
-      if (priorStep && priorStep.key !== 'execution') {
-        this.stepGroup(priorStep.key).markAllAsTouched();
+      if (
+        priorStep &&
+        priorStep.key !== 'execution' &&
+        priorStep.key !== 'outcome'
+      ) {
+        this.stepGroup(priorStep.key as GatekeeperStepKey).markAllAsTouched();
       }
       this.cdr.markForCheck();
       return;
@@ -529,11 +563,11 @@ export class GatekeeperWizardComponent {
 
   protected async goNext(): Promise<void> {
     const key = this.currentStep().key;
-    if (key === 'execution') {
+    if (key === 'execution' || key === 'outcome') {
       return;
     }
 
-    this.stepGroup(key).markAllAsTouched();
+    this.stepGroup(key as GatekeeperStepKey).markAllAsTouched();
     if (key === 'context') {
       this.selectedTimeframes().forEach((tf) => {
         this.journalGroup(tf).markAllAsTouched();
@@ -542,7 +576,7 @@ export class GatekeeperWizardComponent {
     if (key === 'location') {
       this.form.controls.is_retest.markAsTouched();
     }
-    if (!this.isStepValid(key)) {
+    if (!this.isStepValid(key as GatekeeperStepKey | 'execution' | 'outcome')) {
       this.cdr.markForCheck();
       return;
     }
@@ -559,6 +593,51 @@ export class GatekeeperWizardComponent {
     }
   }
 
+  protected async finishOutcome(): Promise<void> {
+    this.stepGroup('outcome').markAllAsTouched();
+    if (!this.isStepValid('outcome')) {
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const submitted = this.submittedAudit();
+    if (!submitted) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Record execution first',
+        detail: 'Complete the Execution step before saving the outcome journal.',
+        life: 5000,
+      });
+      return;
+    }
+
+    this.finishingOutcome.set(true);
+    this.cdr.markForCheck();
+
+    try {
+      const form = this.form.getRawValue() as GatekeeperFormValue;
+      await this.submitService.saveOutcomeJournal(submitted.auditId, submitted.tradeId, form.outcome);
+      this.submitService.finalizeSubmittedJournal();
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Journal complete',
+        detail: 'Outcome saved. Full trade journal archived.',
+        life: 4500,
+      });
+      this.tradeSubmitted.emit(submitted);
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Outcome save failed',
+        detail: err instanceof Error ? err.message : 'Could not save outcome journal',
+        life: 6000,
+      });
+    } finally {
+      this.finishingOutcome.set(false);
+      this.cdr.markForCheck();
+    }
+  }
+
   protected goBack(): void {
     if (this.activeStep() > 1) {
       this.activeStep.update((n) => n - 1);
@@ -570,6 +649,7 @@ export class GatekeeperWizardComponent {
     this.form.reset();
     this.screenshotDrafts.clearAll();
     this.executionPanelRef()?.resetForm();
+    this.submittedAudit.set(null);
     this.activeStep.set(1);
     this.activeTimeframeTab.set('W');
     this.emitState();
@@ -660,7 +740,10 @@ export class GatekeeperWizardComponent {
   });
 
   protected onTradeSubmitted(result: GatekeeperSubmitResult): void {
-    this.tradeSubmitted.emit(result);
+    this.submittedAudit.set(result);
+    this.activeStep.set(8);
+    this.scheduleDraftSave();
+    this.cdr.markForCheck();
   }
 
   private isExecutionDraftComplete(snapshot: ExecutionFormValue): boolean {
