@@ -69,6 +69,9 @@ export const routes: Routes = [
               title: 'Setups Library',
               subtitle: 'Playbook & rules',
               description: 'Setup cards and rule drilldown per docs/06_SETUPS_LIBRARY_PAGE/.',
+              comingSoon: true,
+              comingSoonMessage:
+                'Setup cards, playbook rules, and drilldown views are on the way.',
             },
           },
           {
