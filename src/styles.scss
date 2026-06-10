@@ -22,6 +22,28 @@ body.dqos-dark {
   color: #e5e7eb;
   font-family: var(--dqos-font-ui);
   -webkit-font-smoothing: antialiased;
+
+  .p-tooltip .p-tooltip-text {
+    background: var(--dqos-bg-panel);
+    color: #e5e7eb;
+    border: 1px solid var(--dqos-border);
+  }
+
+  .p-tooltip-top .p-tooltip-arrow {
+    border-top-color: var(--dqos-bg-panel);
+  }
+
+  .p-tooltip-bottom .p-tooltip-arrow {
+    border-bottom-color: var(--dqos-bg-panel);
+  }
+
+  .p-tooltip-left .p-tooltip-arrow {
+    border-left-color: var(--dqos-bg-panel);
+  }
+
+  .p-tooltip-right .p-tooltip-arrow {
+    border-right-color: var(--dqos-bg-panel);
+  }
 }
 
 .data-mono,
