@@ -22,7 +22,7 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
-import type { AssetSymbol } from '../../../core/models/database.types';
+import type { AssetSymbol, DayType } from '../../../core/models/database.types';
 import {
   PLATFORM_ORDER_TYPE_OPTIONS,
 } from '../../../core/supabase/enum-options';
@@ -70,9 +70,12 @@ export class ExecutionStepPanelComponent implements OnInit {
 
   readonly sessionState = input.required<TradingSessionState | null>();
   readonly pillarsQualified = input.required<boolean>();
-  readonly unlockForTesting = input(false);
+  /** Dev: skip pillar / HTF qualification gates for this step. */
+  readonly relaxedQualification = input(false);
   readonly readinessPct = input.required<number>();
   readonly auditDraft = input.required<GatekeeperFormValue | null>();
+  /** True while the Execution wizard step is visible — used to restore draft fields after tab changes. */
+  readonly stepActive = input(false);
 
   readonly tradeSubmitted = output<GatekeeperSubmitResult>();
 
@@ -102,7 +105,9 @@ export class ExecutionStepPanelComponent implements OnInit {
     return formatSessionSummary(state.session, state.symbol);
   });
 
-  protected readonly isLocked = computed(() => !this.unlockForTesting() && !this.pillarsQualified());
+  protected readonly isLocked = computed(
+    () => !this.relaxedQualification() && !this.pillarsQualified(),
+  );
 
   protected readonly lockReason = computed(() => {
     if (this.pillarsQualified()) {
@@ -117,14 +122,48 @@ export class ExecutionStepPanelComponent implements OnInit {
       return false;
     }
     const value = executionFormToDraftValue(this.executionForm);
+    const formReady = this.executionForm.valid && isStopPlacementValid(value);
+
+    if (this.relaxedQualification()) {
+      return this.sessionState() !== null && formReady;
+    }
+
+    const auditReady = this.auditDraft()?.auction_type.day_type != null;
     return (
       this.sessionState() !== null &&
       this.pillarsQualified() &&
-      this.readinessPct() === 100 &&
-      this.executionForm.valid &&
-      isStopPlacementValid(value) &&
-      this.auditDraft() !== null
+      formReady &&
+      auditReady
     );
+  });
+
+  protected readonly submitBlockReason = computed(() => {
+    this.formTick();
+    if (this.isLocked()) {
+      return this.lockReason();
+    }
+    if (this.submitting() || this.canSubmit()) {
+      return null;
+    }
+
+    const value = executionFormToDraftValue(this.executionForm);
+    if (!this.sessionState()) {
+      return 'Set up your trading session in the bar above.';
+    }
+    if (!this.relaxedQualification() && !this.auditDraft()?.auction_type.day_type) {
+      return 'Select a volume profile day type on the Auction Type step.';
+    }
+    if (!this.pillarsQualified() && !this.relaxedQualification()) {
+      return 'Complete all qualification steps through Invalidation and confirm retest.';
+    }
+    if (!this.executionForm.valid) {
+      return 'Fill required fields: volume, entry price, and stop loss.';
+    }
+    if (!isStopPlacementValid(value)) {
+      return this.stopPlacementError();
+    }
+
+    return 'Complete remaining qualification steps before saving.';
   });
 
   protected readonly stopPlacementError = computed(() => {
@@ -155,7 +194,7 @@ export class ExecutionStepPanelComponent implements OnInit {
         this.riskMetrics.set(computeRiskMetrics(value));
       }
 
-      if (this.draftService.activeDraftId() && !this.isLocked()) {
+      if (!this.isLocked()) {
         this.draftService.scheduleExecutionSave(value);
       }
     });
@@ -169,14 +208,22 @@ export class ExecutionStepPanelComponent implements OnInit {
         this.executionForm.patchValue({ direction }, { emitEvent: true });
       }
     });
+
+    effect(() => {
+      if (!this.stepActive()) {
+        return;
+      }
+
+      const snapshot = this.draftService.peekExecutionSnapshot();
+      const session = this.sessionState();
+      if (snapshot && session) {
+        this.loadFromDraft(snapshot, session.symbol);
+      }
+    });
   }
 
   ngOnInit(): void {
-    const snapshot = this.draftService.peekExecutionSnapshot();
-    const session = this.sessionState();
-    if (snapshot && session) {
-      this.loadFromDraft(snapshot, session.symbol);
-    }
+    this.restoreFromDraftSnapshot();
   }
 
   isStepComplete(): boolean {
@@ -188,8 +235,16 @@ export class ExecutionStepPanelComponent implements OnInit {
   }
 
   flushDraftSave(): void {
-    if (this.draftService.activeDraftId() && !this.isLocked()) {
+    if (!this.isLocked()) {
       this.draftService.scheduleExecutionSave(this.getDraftValue());
+    }
+  }
+
+  private restoreFromDraftSnapshot(): void {
+    const snapshot = this.draftService.peekExecutionSnapshot();
+    const session = this.sessionState();
+    if (snapshot && session) {
+      this.loadFromDraft(snapshot, session.symbol);
     }
   }
 
@@ -239,7 +294,7 @@ export class ExecutionStepPanelComponent implements OnInit {
 
     const exec = executionFormToDraftValue(this.executionForm);
     const auditForm = this.auditDraft();
-    if (!auditForm?.auction_type.day_type) {
+    if (!auditForm) {
       return;
     }
 
@@ -260,15 +315,18 @@ export class ExecutionStepPanelComponent implements OnInit {
     auditForm: GatekeeperFormValue,
   ): Promise<void> {
     const session = this.sessionState();
-    const dayType = auditForm.auction_type.day_type;
-    if (!session || !dayType) {
+    if (!session) {
       return;
     }
+
+    const relaxed = this.relaxedQualification();
+    const dayType: DayType = auditForm.auction_type.day_type ?? 'D_Day';
 
     this.submitting.set(true);
 
     try {
-      const audit = this.submitService.mapFormToAudit(auditForm);
+      await this.draftService.ensureActiveDraft();
+      const audit = this.submitService.mapFormToAudit(auditForm, { relaxed });
       const isClosed = exec.exit_price != null && exec.exit_time != null;
       const result = await this.submitService.submitQualifiedTrade(
         {
@@ -293,6 +351,7 @@ export class ExecutionStepPanelComponent implements OnInit {
           audit,
         },
         auditForm,
+        { relaxed },
       );
 
       this.messageService.add({

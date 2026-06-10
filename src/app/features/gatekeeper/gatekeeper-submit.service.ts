@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 
 import type {
+  AuctionLocation,
+  ConfirmationTrigger,
+  MarketBehavior,
   PillarJournalsSnapshot,
   PillarStepJournal,
   TimeframeScreenshotRef,
@@ -24,25 +27,41 @@ export class GatekeeperSubmitService {
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly mediaService = inject(GatekeeperMediaService);
 
-  mapFormToAudit(form: GatekeeperFormValue): GatekeeperSubmitPayload['audit'] {
+  mapFormToAudit(
+    form: GatekeeperFormValue,
+    options?: { relaxed?: boolean },
+  ): GatekeeperSubmitPayload['audit'] {
+    const relaxed = options?.relaxed ?? false;
     const locations = form.location.locations;
     const behavior = form.behavior.behavior;
     const confirmation = form.confirmation.confirmation;
     const invalidationPrice = form.invalidation.invalidation_price;
 
-    if (locations.length === 0 || !behavior || !confirmation || invalidationPrice == null) {
+    if (
+      !relaxed &&
+      (locations.length === 0 || !behavior || !confirmation || invalidationPrice == null)
+    ) {
       throw new Error('Incomplete pillar data');
     }
+
+    const resolvedLocation: AuctionLocation = locations[0] ?? 'VAH';
+    const resolvedLocations: AuctionLocation[] =
+      locations.length > 0 ? locations : [resolvedLocation];
+    const resolvedBehavior: MarketBehavior = behavior ?? 'Acceptance';
+    const resolvedConfirmation: ConfirmationTrigger = confirmation ?? 'CVD_Alignment';
+    const resolvedInvalidationPrice = invalidationPrice ?? 0.000001;
+    const resolvedInvalidationLevel =
+      form.invalidation.invalidation_level.trim() || (relaxed ? 'Pending (dev)' : '');
 
     const { htf_context, pillar_journals } = this.draftService.mergeDraftMediaIntoAudit(form);
 
     return {
-      location: locations[0],
-      locations,
-      behavior,
-      confirmation,
-      invalidation_level: form.invalidation.invalidation_level.trim(),
-      invalidation_price: invalidationPrice,
+      location: resolvedLocation,
+      locations: resolvedLocations,
+      behavior: resolvedBehavior,
+      confirmation: resolvedConfirmation,
+      invalidation_level: resolvedInvalidationLevel,
+      invalidation_price: resolvedInvalidationPrice,
       is_retest: true,
       location_thesis: taggedNotesPlainText(form.location.notes_content),
       behavior_thesis: taggedNotesPlainText(form.behavior.notes_content),
@@ -56,12 +75,15 @@ export class GatekeeperSubmitService {
   async submitQualifiedTrade(
     payload: GatekeeperSubmitPayload,
     form: GatekeeperFormValue,
+    options?: { relaxed?: boolean },
   ): Promise<GatekeeperSubmitResult> {
-    if (payload.trade.readiness_pct_at_entry !== 100) {
+    const relaxed = options?.relaxed ?? false;
+
+    if (!relaxed && payload.trade.readiness_pct_at_entry !== 100) {
       throw new Error('STRATEGY NOT FULLY QUALIFIED — readiness must be 100%');
     }
 
-    if (payload.audit.is_retest !== true) {
+    if (!relaxed && payload.audit.is_retest !== true) {
       throw new Error('Retest required — the first test provides context, not execution');
     }
 
@@ -70,7 +92,9 @@ export class GatekeeperSubmitService {
       throw new Error('No saved Gatekeeper session — refresh and try again');
     }
 
-    this.assertDraftMediaComplete(form);
+    if (!relaxed) {
+      this.assertDraftMediaComplete(form);
+    }
 
     const client = this.supabase.client;
     const {

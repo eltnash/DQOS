@@ -313,11 +313,16 @@ export class GatekeeperDraftService {
   }
 
   scheduleExecutionSave(executionForm: ExecutionFormValue): void {
+    this.lastExecutionSnapshot = executionForm;
     if (!this.draftId()) {
       return;
     }
-    this.lastExecutionSnapshot = executionForm;
     this.saveQueue.next();
+  }
+
+  /** Ensures a cloud draft row exists for the bound session (needed before ledger submit). */
+  async ensureActiveDraft(): Promise<void> {
+    await this.ensureDraftReady();
   }
 
   async saveNow(form: GatekeeperFormValue, uiState: GatekeeperDraftUiState): Promise<void> {

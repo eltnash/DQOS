@@ -18,6 +18,7 @@ import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 
+import { environment } from '../../../environments/environment';
 import type { AnalyzedTimeframe, AuctionLocation, DayType, PillarStepKey } from '../../core/models/database.types';
 import {
   ANALYZED_TIMEFRAME_KEYS,
@@ -80,8 +81,8 @@ const PILLAR_STEP_LABELS: Record<ExecutionPillarStepKey, string> = {
 
 /** During development all steps stay clickable; set false for sequential unlock. */
 const WIZARD_UNLOCK_ALL_STEPS = true;
-/** During testing, allow Execution tab and fields without completing pillars first. */
-const EXECUTION_UNLOCK_FOR_TESTING = true;
+/** Dev: Execution tab, fields, and ledger save work without prior steps. */
+const EXECUTION_RELAXED = environment.gatekeeperRelaxedExecution;
 
 @Component({
   selector: 'app-gatekeeper-wizard',
@@ -377,14 +378,14 @@ export class GatekeeperWizardComponent {
     return this.form.get(key) as FormGroup;
   }
 
-  protected readonly executionUnlockForTesting = EXECUTION_UNLOCK_FOR_TESTING;
+  protected readonly executionRelaxed = EXECUTION_RELAXED;
 
   protected isStepLocked(stepNumber: number): boolean {
-    if (stepNumber === 7 && EXECUTION_UNLOCK_FOR_TESTING) {
+    if (stepNumber === 7 && EXECUTION_RELAXED) {
       return false;
     }
 
-    if (stepNumber === 8 && EXECUTION_UNLOCK_FOR_TESTING) {
+    if (stepNumber === 8 && EXECUTION_RELAXED) {
       return false;
     }
 
@@ -470,7 +471,7 @@ export class GatekeeperWizardComponent {
     }
 
     if (key === 'outcome') {
-      if (!this.submittedAudit() && !EXECUTION_UNLOCK_FOR_TESTING) {
+      if (!this.submittedAudit() && !EXECUTION_RELAXED) {
         return false;
       }
 
@@ -508,6 +509,8 @@ export class GatekeeperWizardComponent {
   }
 
   protected goToStep(stepNumber: number): void {
+    this.flushExecutionDraftIfLeaving();
+
     if (this.isStepLocked(stepNumber)) {
       const priorStep = this.steps.find((step) => step.number === stepNumber - 1);
       if (
@@ -640,8 +643,22 @@ export class GatekeeperWizardComponent {
 
   protected goBack(): void {
     if (this.activeStep() > 1) {
+      this.flushExecutionDraftIfLeaving();
       this.activeStep.update((n) => n - 1);
       this.cdr.markForCheck();
+    }
+  }
+
+  protected continueToOutcome(): void {
+    if (this.submittedAudit()) {
+      this.activeStep.set(8);
+      this.cdr.markForCheck();
+    }
+  }
+
+  private flushExecutionDraftIfLeaving(): void {
+    if (this.activeStep() === 7) {
+      this.executionPanelRef()?.flushDraftSave();
     }
   }
 
@@ -736,7 +753,11 @@ export class GatekeeperWizardComponent {
   }
 
   protected qualifiedAuditDraft = computed((): GatekeeperFormValue | null => {
-    return this.pillarsQualified() ? (this.form.getRawValue() as GatekeeperFormValue) : null;
+    const value = this.form.getRawValue() as GatekeeperFormValue;
+    if (this.pillarsQualified() || this.executionRelaxed) {
+      return value;
+    }
+    return null;
   });
 
   protected onTradeSubmitted(result: GatekeeperSubmitResult): void {

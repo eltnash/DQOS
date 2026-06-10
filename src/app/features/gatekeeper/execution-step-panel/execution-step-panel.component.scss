@@ -26,6 +26,13 @@
     line-height: 1.45;
   }
 
+  &__hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #9ca3af;
+    line-height: 1.45;
+  }
+
   &__body {
     &--locked {
       opacity: 0.55;

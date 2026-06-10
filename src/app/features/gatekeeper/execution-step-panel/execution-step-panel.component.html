@@ -259,10 +259,18 @@
         <p-message severity="error" [text]="stopPlacementError()" />
       }
 
+      @if (submitBlockReason(); as reason) {
+        <p-message severity="warn" [text]="reason" />
+      }
+
+      <p class="execution-step__hint">
+        Saving records the trade and advances you to the <strong>Outcome</strong> step to document how the move resolved.
+      </p>
+
       <footer class="execution-step__footer">
         <p-button
           type="submit"
-          label="Save trade to ledger"
+          label="Save trade & continue to outcome"
           icon="pi pi-bolt"
           severity="success"
           [disabled]="!canSubmit()"

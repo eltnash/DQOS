@@ -336,12 +336,21 @@
       }
     } @else if (activeStep() === 7) {
       <div class="gatekeeper-form__panel">
+        @if (submittedAudit()) {
+          <p-message
+            severity="success"
+            text="Trade saved to the ledger. You can review execution details below or continue to the Outcome step."
+            styleClass="gatekeeper-form__oath"
+          />
+        }
+
         <app-execution-step-panel
           [sessionState]="sessionState()"
           [pillarsQualified]="pillarsQualified()"
-          [unlockForTesting]="executionUnlockForTesting"
+          [relaxedQualification]="executionRelaxed"
           [readinessPct]="readinessPct()"
           [auditDraft]="qualifiedAuditDraft()"
+          [stepActive]="activeStep() === 7"
           (tradeSubmitted)="onTradeSubmitted($event)"
         />
       </div>
@@ -399,6 +408,15 @@
           iconPos="right"
           [loading]="savingProgress()"
           (onClick)="goNext()"
+        />
+      }
+      @if (activeStep() === 7 && submittedAudit()) {
+        <p-button
+          type="button"
+          label="Continue to outcome"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          (onClick)="continueToOutcome()"
         />
       }
       @if (activeStep() === 8) {
