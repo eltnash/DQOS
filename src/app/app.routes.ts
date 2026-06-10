@@ -85,6 +85,9 @@ export const routes: Routes = [
               title: 'Edge Discovery Lab',
               subtitle: 'Quantitative research',
               description: 'Insight feed and analytics workspace per docs/07_EDGE_DISCOVERY_LAB/.',
+              comingSoon: true,
+              comingSoonMessage:
+                'Insight feed, pattern discovery, and quantitative analytics are on the way.',
             },
           },
         ],
