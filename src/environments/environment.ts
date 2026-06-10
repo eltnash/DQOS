@@ -1,6 +1,9 @@
+/**
+ * Local `ng serve` — use your *dev* Supabase project here once created (Settings → API).
+ * Until then this may still point at production; Coolify dev/staging should use build args instead.
+ */
 export const environment = {
   production: false,
-  /** Allow saving execution without completing HTF / pillar qualification (dev only). */
   gatekeeperRelaxedExecution: true,
   supabaseUrl: 'https://pgxxsivodspkycdvcpur.supabase.co',
   supabaseAnonKey:
