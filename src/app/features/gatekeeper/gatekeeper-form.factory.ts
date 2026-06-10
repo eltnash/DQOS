@@ -269,6 +269,9 @@ export function createGatekeeperForm(fb: FormBuilder) {
         Validators.min(0.000001),
       ]),
     }),
+    outcome: fb.group({
+      ...createPillarStepBase(fb),
+    }),
   });
 
   const context = form.get('context') as FormGroup;

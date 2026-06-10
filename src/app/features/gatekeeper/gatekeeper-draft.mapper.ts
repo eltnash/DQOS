@@ -14,7 +14,7 @@ import type { ExecutionFormValue } from './execution-block.types';
 import type { GatekeeperFormValue, HtfNarrativeFormValue, LocationStepValue } from './gatekeeper-form.types';
 import type { GatekeeperDraftMedia } from './gatekeeper-draft.types';
 import { mapFormToHtfContext } from './htf-context.utils';
-import { mapFormToPillarJournals } from './pillar-context.utils';
+import { mapFormToPillarJournals, PILLAR_STEP_KEYS } from './pillar-context.utils';
 
 function defaultToolsUsed(): Record<string, boolean> {
   return HTF_ANALYSIS_TOOL_OPTIONS.reduce(
@@ -92,6 +92,10 @@ export function defaultGatekeeperFormValue(): GatekeeperFormValue {
       invalidation_level: '',
       invalidation_price: null,
     },
+    outcome: {
+      focus_timeframe: 'M15',
+      notes_content: { ...EMPTY_TAGGED_NOTES },
+    },
   };
 }
 
@@ -139,6 +143,7 @@ export function normalizeGatekeeperFormValue(raw: unknown): GatekeeperFormValue 
     behavior: { ...defaults.behavior, ...value.behavior },
     confirmation: { ...defaults.confirmation, ...value.confirmation },
     invalidation: { ...defaults.invalidation, ...value.invalidation },
+    outcome: { ...defaults.outcome, ...value.outcome },
   };
 }
 
@@ -171,10 +176,9 @@ function attachPillarScreenshots(
   journals: PillarJournalsSnapshot,
   media: GatekeeperDraftMedia,
 ): PillarJournalsSnapshot {
-  const steps: PillarStepKey[] = ['location', 'behavior', 'confirmation', 'invalidation'];
   const result = { ...journals };
 
-  for (const step of steps) {
+  for (const step of PILLAR_STEP_KEYS) {
     result[step] = {
       ...journals[step],
       screenshots: media.pillars[step] ?? journals[step].screenshots,

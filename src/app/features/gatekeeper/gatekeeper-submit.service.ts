@@ -1,18 +1,21 @@
 import { Injectable, inject } from '@angular/core';
 
-import type { PillarStepKey } from '../../core/models/database.types';
+import type { PillarJournalsSnapshot, PillarStepJournal } from '../../core/models/database.types';
+import { GatekeeperMediaService, type ScreenshotUploadDraft } from '../../core/supabase/gatekeeper-media.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { taggedNotesPlainText } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { GatekeeperSubmitPayload, GatekeeperSubmitResult } from './execution-block.types';
-import type { GatekeeperFormValue } from './gatekeeper-form.types';
+import type { GatekeeperFormValue, OutcomeStepValue } from './gatekeeper-form.types';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import { GatekeeperScreenshotDraftService } from './gatekeeper-screenshot-draft.service';
+import { QUALIFICATION_PILLAR_KEYS } from './pillar-context.utils';
 
 @Injectable({ providedIn: 'root' })
 export class GatekeeperSubmitService {
   private readonly supabase = inject(SupabaseService);
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
   private readonly draftService = inject(GatekeeperDraftService);
+  private readonly mediaService = inject(GatekeeperMediaService);
 
   mapFormToAudit(form: GatekeeperFormValue): GatekeeperSubmitPayload['audit'] {
     const locations = form.location.locations;
@@ -121,10 +124,78 @@ export class GatekeeperSubmitService {
       throw new Error(draftDeleteError.message);
     }
 
+    return { tradeId: trade.id, auditId: audit.id };
+  }
+
+  async saveOutcomeJournal(
+    auditId: string,
+    tradeId: string,
+    outcome: OutcomeStepValue,
+  ): Promise<void> {
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+    if (!user) {
+      throw new Error('Not authenticated');
+    }
+
+    const draftItems = this.toUploadDrafts(this.screenshotDrafts.getItems({ kind: 'pillar', id: 'outcome' }));
+    if (!draftItems.length) {
+      throw new Error('Add at least one outcome screenshot');
+    }
+
+    const { data: audit, error: fetchError } = await this.supabase.client
+      .from('execution_audits')
+      .select('pillar_journals')
+      .eq('id', auditId)
+      .single();
+
+    if (fetchError || !audit) {
+      throw new Error(fetchError?.message ?? 'Could not load audit for outcome');
+    }
+
+    const current = audit.pillar_journals as PillarJournalsSnapshot;
+    const outcomeJournal: PillarStepJournal = {
+      focus_timeframe: outcome.focus_timeframe,
+      notes: taggedNotesPlainText(outcome.notes_content),
+      note_tags: outcome.notes_content.tags,
+      screenshots: [],
+    };
+
+    const outcomeWithScreens = await this.mediaService.attachPillarStepScreenshots(
+      user.id,
+      tradeId,
+      'outcome',
+      outcomeJournal,
+      draftItems,
+    );
+
+    await this.mediaService.updateAuditPillarJournals(auditId, {
+      ...current,
+      outcome: outcomeWithScreens,
+    });
+  }
+
+  finalizeSubmittedJournal(): void {
     this.screenshotDrafts.clearAll();
     this.draftService.clearActive();
+  }
 
-    return { tradeId: trade.id, auditId: audit.id };
+  private toUploadDrafts(
+    items: ReturnType<GatekeeperScreenshotDraftService['getItems']>,
+  ): ScreenshotUploadDraft[] {
+    return items.map((item) => {
+      if (!item.file) {
+        throw new Error(`Outcome screenshot "${item.fileName}" is missing its file data`);
+      }
+
+      return {
+        file: item.file,
+        fileName: item.fileName,
+        mimeType: item.mimeType,
+        isAnnotated: item.isAnnotated,
+      };
+    });
   }
 
   private assertDraftMediaComplete(form: GatekeeperFormValue): void {
@@ -136,8 +207,7 @@ export class GatekeeperSubmitService {
       }
     }
 
-    const steps: PillarStepKey[] = ['location', 'behavior', 'confirmation', 'invalidation'];
-    for (const step of steps) {
+    for (const step of QUALIFICATION_PILLAR_KEYS) {
       if (!pillar_journals[step].screenshots.length) {
         throw new Error(`Missing saved screenshot for ${step} pillar`);
       }

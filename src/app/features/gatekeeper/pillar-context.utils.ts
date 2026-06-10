@@ -7,9 +7,17 @@ import type {
   PillarJournalsSnapshot,
   PillarStepJournal,
   PillarStepKey,
+  QualificationPillarKey,
 } from '../../core/models/database.types';
 
-const PILLAR_STEP_KEYS: PillarStepKey[] = ['location', 'behavior', 'confirmation', 'invalidation'];
+export const QUALIFICATION_PILLAR_KEYS: QualificationPillarKey[] = [
+  'location',
+  'behavior',
+  'confirmation',
+  'invalidation',
+];
+
+export const PILLAR_STEP_KEYS: PillarStepKey[] = [...QUALIFICATION_PILLAR_KEYS, 'outcome'];
 
 const FOCUS_LABELS: Record<PillarFocusTimeframe, string> = {
   M15: '15m',
@@ -45,6 +53,7 @@ export function mapFormToPillarJournals(form: GatekeeperFormValue): PillarJourna
     behavior: mapStepToJournal(form.behavior),
     confirmation: mapStepToJournal(form.confirmation),
     invalidation: mapStepToJournal(form.invalidation),
+    outcome: mapStepToJournal(form.outcome),
   };
 }
 
@@ -54,6 +63,7 @@ export function emptyPillarJournalsSnapshot(): PillarJournalsSnapshot {
     behavior: emptyPillarJournal(),
     confirmation: emptyPillarJournal(),
     invalidation: emptyPillarJournal(),
+    outcome: emptyPillarJournal(),
   };
 }
 
@@ -61,4 +71,3 @@ export function formatPillarStepSummary(step: PillarStepKey, journal: PillarStep
   return `${FOCUS_LABELS[journal.focus_timeframe]} · ${journal.notes.slice(0, 40)}${journal.notes.length > 40 ? '…' : ''}`;
 }
 
-export { PILLAR_STEP_KEYS };

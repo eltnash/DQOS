@@ -102,4 +102,5 @@ export const GATEKEEPER_STEP_LABELS = [
   'Confirmation',
   'Invalidation',
   'Execution',
+  'Outcome',
 ] as const;
