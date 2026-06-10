@@ -170,14 +170,27 @@
               The first touch informs structure; a retest is when price returns to that level after
               leaving it — that is when execution is considered.
             </p>
-            <p-selectbutton
-              formControlName="is_retest"
-              [options]="retestAttemptOptions"
-              optionLabel="label"
-              optionValue="value"
-              [allowEmpty]="false"
-              aria-label="Attempted retest of significant location"
-            />
+            <div
+              class="gatekeeper-form__retest-actions"
+              [class.gatekeeper-form__retest-actions--blocked]="retestDisqualified()"
+            >
+              <p-selectbutton
+                formControlName="is_retest"
+                [options]="retestAttemptOptions"
+                optionLabel="label"
+                optionValue="value"
+                [allowEmpty]="false"
+                aria-label="Attempted retest of significant location"
+                (onOptionClick)="onRetestOptionClick()"
+                (onChange)="onRetestOptionClick()"
+              />
+              @if (retestDisqualified()) {
+                <p class="gatekeeper-form__retest-warning" role="alert">
+                  <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                  <span>{{ retestRequiredMessage }}</span>
+                </p>
+              }
+            </div>
           </fieldset>
 
           <app-pillar-step-panel
@@ -204,14 +217,14 @@
             }
           </div>
 
-          @if (!isStepValid('location') && (stepGroup('location').touched || form.controls.is_retest.touched)) {
+          @if (
+            !isStepValid('location') &&
+            form.controls.is_retest.value &&
+            stepGroup('location').touched
+          ) {
             <p-message
               severity="warn"
-              [text]="
-                !form.controls.is_retest.value
-                  ? 'Answer the retest question with Yes before continuing — execution requires an attempted retest, not the initial test alone.'
-                  : 'Select at least one location, add at least one screenshot, and write tagged notes (minimum 20 characters).'
-              "
+              text="Select at least one location, add at least one screenshot, and write tagged notes (minimum 20 characters)."
             />
           }
         </section>

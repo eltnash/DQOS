@@ -335,8 +335,12 @@ export class GatekeeperWizardComponent {
       this.scheduleDraftSave();
     });
 
-    this.form.get('is_retest')?.valueChanges.subscribe(() => {
+    this.form.controls.is_retest.valueChanges.subscribe(() => {
+      this.retestInteracted.set(true);
+      this.form.controls.is_retest.markAsTouched();
       this.form.get('location.locations')?.updateValueAndValidity({ emitEvent: true });
+      this.formTick.update((n) => n + 1);
+      this.cdr.markForCheck();
     });
 
     this.stepGroup('auction_type')
@@ -386,6 +390,27 @@ export class GatekeeperWizardComponent {
     { label: 'Yes', value: true },
     { label: 'No', value: false },
   ];
+
+  protected readonly retestRequiredMessage =
+    'STRATEGY NOT FULLY QUALIFIED — DO NOT TRADE (retest required)';
+
+  private readonly retestInteracted = signal(false);
+
+  /** True after the user picks an answer and the session is not a retest (No). */
+  protected readonly retestDisqualified = computed(() => {
+    this.formTick();
+    if (!this.retestInteracted()) {
+      return false;
+    }
+    return !this.form.controls.is_retest.value;
+  });
+
+  protected onRetestOptionClick(): void {
+    this.retestInteracted.set(true);
+    this.form.controls.is_retest.markAsTouched();
+    this.formTick.update((n) => n + 1);
+    this.cdr.markForCheck();
+  }
 
   protected isStepLocked(stepNumber: number): boolean {
     if (stepNumber === 7 && EXECUTION_RELAXED) {
@@ -669,6 +694,7 @@ export class GatekeeperWizardComponent {
 
   resetWizard(): void {
     this.form.reset();
+    this.retestInteracted.set(false);
     this.screenshotDrafts.clearAll();
     this.executionPanelRef()?.resetForm();
     this.submittedAudit.set(null);
@@ -683,6 +709,7 @@ export class GatekeeperWizardComponent {
     syncGatekeeperFormValidators(this.form);
     this.activeStep.set(result.uiState.active_step);
     this.activeTimeframeTab.set(result.uiState.active_timeframe_tab);
+    this.retestInteracted.set(result.uiState.active_step >= 3);
     await this.hydrateScreenshots(result.media);
     this.formTick.update((n) => n + 1);
     this.emitState();

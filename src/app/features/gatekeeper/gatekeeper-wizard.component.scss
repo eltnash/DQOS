@@ -68,6 +68,52 @@
     color: #f3f4f6;
   }
 
+  &__retest-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--dqos-border);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.22);
+
+    &--blocked {
+      border-color: #ef4444;
+      background: rgba(127, 29, 29, 0.22);
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35);
+    }
+  }
+
+  &__retest-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0;
+    flex: 1 1 14rem;
+    min-width: min(100%, 14rem);
+    padding: 0.625rem 0.875rem;
+    border-radius: 8px;
+    border: 1px solid #f87171;
+    background: rgba(69, 10, 10, 0.65);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    color: #fff7ed;
+
+    span {
+      flex: 1;
+    }
+
+    .pi {
+      flex-shrink: 0;
+      font-size: 1.125rem;
+      color: #fca5a5;
+    }
+  }
+
+
   &__fields {
     display: grid;
     gap: 0.75rem;
@@ -248,4 +294,8 @@
       color: #a7f3d0;
     }
   }
+}
+
+:host ::ng-deep .gatekeeper-form__retest-actions .p-selectbutton.ng-invalid.ng-dirty {
+  outline: none;
 }
