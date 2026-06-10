@@ -2,9 +2,7 @@
 <p-confirmDialog />
 
 @if (loading()) {
-  <div class="gallery-page__loading">
-    <p-progressSpinner strokeWidth="4" ariaLabel="Loading gallery" />
-  </div>
+  <app-page-skeleton layout="cards" />
 } @else {
   <header class="gallery-page__header">
     <div>

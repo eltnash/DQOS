@@ -23,6 +23,27 @@ body.dqos-dark {
   font-family: var(--dqos-font-ui);
   -webkit-font-smoothing: antialiased;
 
+  /* Dialogs appended to body must sit above page overlays (e.g. Gatekeeper date pickers). */
+  .p-dialog-mask {
+    z-index: 12000 !important;
+  }
+
+  .p-dialog {
+    z-index: 12001 !important;
+  }
+
+  .p-confirmdialog-mask {
+    z-index: 12010 !important;
+  }
+
+  .p-confirmdialog {
+    z-index: 12011 !important;
+  }
+
+  .p-skeleton {
+    background: #1f2430;
+  }
+
   .p-tooltip .p-tooltip-text {
     background: var(--dqos-bg-panel);
     color: #e5e7eb;

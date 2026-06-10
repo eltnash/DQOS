@@ -1,3 +1,6 @@
+@if (loading()) {
+  <app-page-skeleton layout="form" />
+} @else {
 <section class="accounts-home">
   <p-card header="Trading accounts" subheader="One login, many isolated workspaces">
     <p class="accounts-home__lead">
@@ -12,3 +15,4 @@
     }
   </p-card>
 </section>
+}

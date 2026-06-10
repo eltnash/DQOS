@@ -1,3 +1,6 @@
+@if (booting()) {
+  <app-page-skeleton layout="form" />
+} @else {
 <app-account-risk-banner [accountId]="accountId()" />
 
 <header class="gk-header">
@@ -47,3 +50,4 @@
     <app-risk-reward-calculator [defaultSymbol]="sessionState()?.symbol ?? null" />
   </aside>
 </div>
+}

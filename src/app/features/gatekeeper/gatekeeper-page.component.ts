@@ -19,8 +19,11 @@ import {
   type PillarStepState,
 } from '../../shared/components/readiness-meter/readiness-meter.types';
 import { RiskRewardCalculatorComponent } from './risk-reward-calculator/risk-reward-calculator.component';
+import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
+import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
+import { PageSkeletonComponent } from '../../shared/components/page-skeleton/page-skeleton.component';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import { GatekeeperWizardComponent } from './gatekeeper-wizard.component';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
@@ -32,6 +35,7 @@ import { TradingSessionBarComponent } from './trading-session-bar.component';
   selector: 'app-gatekeeper-page',
   imports: [
     AccountRiskBannerComponent,
+    PageSkeletonComponent,
     TradingSessionBarComponent,
     GatekeeperWizardComponent,
     ReadinessMeterComponent,
@@ -50,8 +54,11 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly accountScope = inject(AccountScopeService);
+  private readonly accountService = inject(TradingAccountService);
+  private readonly riskService = inject(AccountRiskService);
 
   protected readonly accountId = this.accountScope.accountId;
+  protected readonly booting = signal(true);
   private readonly sessionBarRef = viewChild(TradingSessionBarComponent);
   private readonly wizardRef = viewChild(GatekeeperWizardComponent);
 
@@ -73,7 +80,14 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
   protected readonly sessionState = signal<TradingSessionState | null>(null);
   protected readonly sessionValid = signal(false);
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const accountId = this.accountScope.accountId();
+    if (accountId) {
+      await this.accountService.getAccount(accountId);
+      await this.riskService.evaluate(accountId);
+    }
+    this.booting.set(false);
+
     this.routeSub = this.route.queryParamMap.subscribe((params) => {
       if (!this.viewsReady) {
         return;

@@ -15,7 +15,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
@@ -39,6 +38,7 @@ import { GalleryUploadDialogComponent } from './components/gallery-upload-dialog
 import { VideoAddDialogComponent } from './components/video-add-dialog/video-add-dialog.component';
 import { VideoGridComponent } from './components/video-grid/video-grid.component';
 import { VideoPlayerDialogComponent } from './components/video-player-dialog/video-player-dialog.component';
+import { PageSkeletonComponent } from '../../shared/components/page-skeleton/page-skeleton.component';
 import { GalleryService } from './gallery.service';
 import type {
   GalleryMediaMode,
@@ -61,7 +61,7 @@ import type {
     DialogModule,
     InputTextModule,
     MessageModule,
-    ProgressSpinnerModule,
+    PageSkeletonComponent,
     SelectButtonModule,
     SelectModule,
     TextareaModule,

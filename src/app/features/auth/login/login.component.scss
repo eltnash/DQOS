@@ -6,6 +6,10 @@
   padding: 2rem;
   background: var(--dqos-bg-base);
 
+  &__boot {
+    width: min(100%, 42rem);
+  }
+
   &__panel {
     width: min(100%, 420px);
     padding: 2rem;

@@ -16,7 +16,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
@@ -31,6 +30,7 @@ import {
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
+import { PageSkeletonComponent } from '../../shared/components/page-skeleton/page-skeleton.component';
 import { GatekeeperDraftService } from '../gatekeeper/gatekeeper-draft.service';
 import type { AuctionStrategy } from '../../core/models/database.types';
 import {
@@ -59,7 +59,7 @@ import {
     DialogModule,
     InputTextModule,
     MessageModule,
-    ProgressSpinnerModule,
+    PageSkeletonComponent,
     SelectButtonModule,
     SelectModule,
     TagModule,

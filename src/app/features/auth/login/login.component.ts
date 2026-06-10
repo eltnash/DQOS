@@ -8,6 +8,7 @@ import { PasswordModule } from 'primeng/password';
 import { TabsModule } from 'primeng/tabs';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { PageSkeletonComponent } from '../../../shared/components/page-skeleton/page-skeleton.component';
 
 @Component({
   selector: 'app-login',
@@ -18,6 +19,7 @@ import { AuthService } from '../../../core/auth/auth.service';
     ButtonModule,
     MessageModule,
     TabsModule,
+    PageSkeletonComponent,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',

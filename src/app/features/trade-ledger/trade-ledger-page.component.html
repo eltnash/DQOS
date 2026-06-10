@@ -1,3 +1,6 @@
+@if (loading()) {
+  <app-page-skeleton layout="table" />
+} @else {
 <header class="ledger-header">
   <div>
     <h1 class="ledger-header__title">Trade history</h1>
@@ -18,11 +21,7 @@
   <p-message severity="error" [text]="message" styleClass="ledger-message" />
 }
 
-@if (loading()) {
-  <div class="ledger-loading">
-    <p-progressSpinner strokeWidth="4" ariaLabel="Loading trade history" />
-  </div>
-} @else if (rows().length === 0) {
+@if (rows().length === 0) {
   <section class="ledger-empty">
     <p class="ledger-empty__text">No execution trades recorded yet.</p>
     <p class="ledger-empty__hint">
@@ -167,4 +166,5 @@
       />
     </nav>
   </div>
+}
 }

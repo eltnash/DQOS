@@ -26,6 +26,7 @@ import { accountTypeLabel } from '../../core/accounts/account.utils';
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { formatRiskMetricsDetail } from '../../core/accounts/account-risk.utils';
 import { AccountRiskLocksComponent } from '../../shared/components/account-risk-locks/account-risk-locks.component';
+import { PageSkeletonComponent } from '../../shared/components/page-skeleton/page-skeleton.component';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { validateDrawdownHierarchy } from '../../core/accounts/drawdown-limits.utils';
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
@@ -55,6 +56,7 @@ function drawdownHierarchyValidator(control: AbstractControl): ValidationErrors 
     MessageModule,
     ConfirmDialogModule,
     AccountRiskLocksComponent,
+    PageSkeletonComponent,
   ],
   templateUrl: './account-settings-page.component.html',
   styleUrl: './account-settings-page.component.scss',
@@ -70,6 +72,7 @@ export class AccountSettingsPageComponent implements OnInit {
   private readonly accountScope = inject(AccountScopeService);
   private readonly confirmationService = inject(ConfirmationService);
 
+  protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly deleting = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -110,30 +113,35 @@ export class AccountSettingsPageComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     const accountId = this.route.parent?.snapshot.paramMap.get('accountId');
     if (!accountId) {
+      this.loading.set(false);
       return;
     }
 
-    const acc = await this.accountService.getAccount(accountId);
-    if (!acc) {
-      return;
+    try {
+      const acc = await this.accountService.getAccount(accountId);
+      if (!acc) {
+        return;
+      }
+
+      await this.riskService.evaluate(accountId);
+
+      const daily = acc.daily_drawdown_pct != null ? Number(acc.daily_drawdown_pct) : 5;
+      const weekly =
+        acc.weekly_drawdown_pct != null
+          ? Number(acc.weekly_drawdown_pct)
+          : Math.min(Number(acc.max_drawdown_pct ?? 10), Math.max(daily, daily * 2));
+      const max = acc.max_drawdown_pct != null ? Number(acc.max_drawdown_pct) : 10;
+
+      this.form.patchValue({
+        name: acc.name,
+        starting_capital: acc.starting_capital != null ? Number(acc.starting_capital) : 10_000,
+        daily_drawdown_pct: daily,
+        weekly_drawdown_pct: weekly,
+        max_drawdown_pct: max,
+      });
+    } finally {
+      this.loading.set(false);
     }
-
-    await this.riskService.evaluate(accountId);
-
-    const daily = acc.daily_drawdown_pct != null ? Number(acc.daily_drawdown_pct) : 5;
-    const weekly =
-      acc.weekly_drawdown_pct != null
-        ? Number(acc.weekly_drawdown_pct)
-        : Math.min(Number(acc.max_drawdown_pct ?? 10), Math.max(daily, daily * 2));
-    const max = acc.max_drawdown_pct != null ? Number(acc.max_drawdown_pct) : 10;
-
-    this.form.patchValue({
-      name: acc.name,
-      starting_capital: acc.starting_capital != null ? Number(acc.starting_capital) : 10_000,
-      daily_drawdown_pct: daily,
-      weekly_drawdown_pct: weekly,
-      max_drawdown_pct: max,
-    });
   }
 
   protected async save(): Promise<void> {

@@ -1,3 +1,51 @@
+<p-toast position="top-right" />
+<p-confirmdialog />
+
+<p-dialog
+  header="Rename journal"
+  [visible]="renameDialogVisible()"
+  [modal]="true"
+  [closable]="!renameSaving()"
+  [draggable]="false"
+  appendTo="body"
+  [style]="{ width: 'min(100%, 28rem)' }"
+  (visibleChange)="renameDialogVisible.set($event)"
+  (onHide)="closeRenameDialog()"
+>
+  <label class="journal-rename__label" for="journal-rename-input">Journal name</label>
+  <input
+    id="journal-rename-input"
+    pInputText
+    type="text"
+    class="journal-rename__input"
+    [maxlength]="journalNameMaxLength"
+    [(ngModel)]="renameValue"
+    autocomplete="off"
+  />
+  <p class="journal-rename__hint">Must stay unique among your journals.</p>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      type="button"
+      label="Cancel"
+      severity="secondary"
+      [text]="true"
+      [disabled]="renameSaving()"
+      (onClick)="closeRenameDialog()"
+    />
+    <p-button
+      type="button"
+      label="Save name"
+      icon="pi pi-check"
+      [loading]="renameSaving()"
+      (onClick)="confirmRename()"
+    />
+  </ng-template>
+</p-dialog>
+
+@if (loading()) {
+  <app-page-skeleton layout="table" />
+} @else {
 <app-account-risk-banner [accountId]="accountId()" />
 
 <header class="journal-header">
@@ -68,55 +116,7 @@
   <p-message severity="error" [text]="error()!" styleClass="journal-message" />
 }
 
-<p-toast position="top-right" />
-<p-confirmdialog />
-
-<p-dialog
-  header="Rename journal"
-  [visible]="renameDialogVisible()"
-  [modal]="true"
-  [closable]="!renameSaving()"
-  [draggable]="false"
-  [style]="{ width: 'min(100%, 28rem)' }"
-  (visibleChange)="renameDialogVisible.set($event)"
-  (onHide)="closeRenameDialog()"
->
-  <label class="journal-rename__label" for="journal-rename-input">Journal name</label>
-  <input
-    id="journal-rename-input"
-    pInputText
-    type="text"
-    class="journal-rename__input"
-    [maxlength]="journalNameMaxLength"
-    [(ngModel)]="renameValue"
-    autocomplete="off"
-  />
-  <p class="journal-rename__hint">Must stay unique among your journals.</p>
-
-  <ng-template pTemplate="footer">
-    <p-button
-      type="button"
-      label="Cancel"
-      severity="secondary"
-      [text]="true"
-      [disabled]="renameSaving()"
-      (onClick)="closeRenameDialog()"
-    />
-    <p-button
-      type="button"
-      label="Save name"
-      icon="pi pi-check"
-      [loading]="renameSaving()"
-      (onClick)="confirmRename()"
-    />
-  </ng-template>
-</p-dialog>
-
-@if (loading()) {
-  <div class="journal-loading">
-    <p-progressSpinner strokeWidth="4" ariaLabel="Loading journals" />
-  </div>
-} @else if (journals().length === 0) {
+@if (journals().length === 0) {
   <section class="journal-empty">
     <p class="journal-empty__text">
       @if (showArchived()) {
@@ -362,4 +362,5 @@
       </li>
     }
   </ul>
+}
 }

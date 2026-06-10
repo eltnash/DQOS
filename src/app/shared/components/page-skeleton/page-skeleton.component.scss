@@ -1,0 +1,100 @@
+.page-skeleton {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  animation: page-skeleton-fade-in 0.2s ease;
+
+  &__header {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  &__panel {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--dqos-border);
+    border-radius: 8px;
+    background: #12151c;
+  }
+
+  &__field-row {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--dqos-border);
+    border-radius: 8px;
+    background: #12151c;
+  }
+
+  &__table {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--dqos-border);
+    border-radius: 8px;
+    background: #12151c;
+  }
+
+  &__table-row {
+    padding: 0.35rem 0;
+  }
+
+  &__dashboard-hero {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    gap: 0.75rem;
+
+    &--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+
+      @media (max-width: 1100px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @media (max-width: 700px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    &--cards {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+  }
+}
+
+@keyframes page-skeleton-fade-in {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

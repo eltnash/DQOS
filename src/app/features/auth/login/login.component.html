@@ -1,4 +1,9 @@
 <div class="login">
+  @if (submitting()) {
+    <div class="login__boot">
+      <app-page-skeleton layout="form" />
+    </div>
+  } @else {
   <div class="login__panel">
     <header class="login__header">
       <h1 class="login__title">DQOS // AMT Lab</h1>
@@ -97,4 +102,5 @@
       </p-tabpanels>
     </p-tabs>
   </div>
+  }
 </div>

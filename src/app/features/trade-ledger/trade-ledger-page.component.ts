@@ -9,13 +9,12 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 import { PaginatorModule, type PaginatorState } from 'primeng/paginator';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-
 import { auctionStrategyShortLabel } from '../gatekeeper/auction-playbook.utils';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { GatekeeperDraftService } from '../gatekeeper/gatekeeper-draft.service';
 import type { AuctionStrategy } from '../../core/models/database.types';
 import { formatJournalIdShort } from '../../shared/utils/journal-id.utils';
+import { PageSkeletonComponent } from '../../shared/components/page-skeleton/page-skeleton.component';
 import { TradeLedgerService } from './trade-ledger.service';
 import {
   TRADE_LEDGER_PAGE_SIZE,
@@ -31,7 +30,7 @@ import {
 
 @Component({
   selector: 'app-trade-ledger-page',
-  imports: [RouterLink, MessageModule, PaginatorModule, ProgressSpinnerModule],
+  imports: [RouterLink, MessageModule, PaginatorModule, PageSkeletonComponent],
   templateUrl: './trade-ledger-page.component.html',
   styleUrl: './trade-ledger-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

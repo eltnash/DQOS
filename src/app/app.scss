@@ -2,3 +2,10 @@
   display: block;
   min-height: 100%;
 }
+
+.app-boot {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1.5rem 2rem;
+  background: var(--dqos-bg-base);
+}

@@ -1,3 +1,6 @@
+@if (loading()) {
+  <app-page-skeleton layout="form" />
+} @else {
 <section class="account-settings">
   <header class="account-settings__header">
     <h1 class="account-settings__title">Account settings</h1>
@@ -109,5 +112,6 @@
     />
   </section>
 </section>
+}
 
 <p-confirmDialog />

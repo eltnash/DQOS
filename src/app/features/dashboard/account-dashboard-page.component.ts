@@ -12,7 +12,6 @@ import { ActivatedRoute } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 
@@ -31,6 +30,7 @@ import { TradingAccountService } from '../../core/accounts/trading-account.servi
 import type { AuctionStrategy } from '../../core/models/database.types';
 import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
 import { AccountRiskLocksComponent } from '../../shared/components/account-risk-locks/account-risk-locks.component';
+import { PageSkeletonComponent } from '../../shared/components/page-skeleton/page-skeleton.component';
 import { DashboardAnalyticsService } from './dashboard-analytics.service';
 import type { ProfessionalDashboardSnapshot, StrategyAnalyticsBundle } from './dashboard.types';
 import { EdgeAssessmentSectionComponent } from './components/edge-assessment-section/edge-assessment-section.component';
@@ -53,7 +53,7 @@ import { buildDaySummaries } from './trading-metrics.utils';
     CardModule,
     MessageModule,
     ProgressBarModule,
-    ProgressSpinnerModule,
+    PageSkeletonComponent,
     SelectButtonModule,
     TagModule,
     AccountRiskBannerComponent,

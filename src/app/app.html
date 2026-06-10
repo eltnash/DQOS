@@ -1,1 +1,7 @@
-<router-outlet />
+@if (auth.loading()) {
+  <div class="app-boot">
+    <app-page-skeleton layout="form" />
+  </div>
+} @else {
+  <router-outlet />
+}

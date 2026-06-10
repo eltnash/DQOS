@@ -1,15 +1,27 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import {
+  ActivatedRoute,
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationStart,
+  Router,
+  RouterOutlet,
+} from '@angular/router';
 import { filter } from 'rxjs/operators';
 
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { ShellLayoutService } from '../../core/accounts/shell-layout.service';
+import {
+  PageSkeletonComponent,
+  type PageSkeletonLayout,
+} from '../../shared/components/page-skeleton/page-skeleton.component';
 import { AccountRailComponent } from '../account-rail/account-rail.component';
 import { AccountSidebarComponent } from '../account-sidebar/account-sidebar.component';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, AccountRailComponent, AccountSidebarComponent],
+  imports: [RouterOutlet, AccountRailComponent, AccountSidebarComponent, PageSkeletonComponent],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
 })
@@ -20,8 +32,12 @@ export class MainLayoutComponent {
   private readonly accountScope = inject(AccountScopeService);
 
   protected readonly accountId = signal<string | null>(null);
+  protected readonly navigating = signal(false);
+  protected readonly skeletonLayout = signal<PageSkeletonLayout>('form');
   protected readonly accountRailCollapsed = this.shellLayout.accountRailCollapsed;
   protected readonly sectionSidebarCollapsed = this.shellLayout.sectionSidebarCollapsed;
+
+  private currentPath = this.router.url.split('?')[0];
 
   protected readonly gridColumns = computed(() => {
     const rail = this.accountRailCollapsed() ? '48px' : '220px';
@@ -37,6 +53,28 @@ export class MainLayoutComponent {
 
   constructor() {
     this.syncAccountFromRoute();
+
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationStart) {
+        const nextPath = event.url.split('?')[0];
+        if (nextPath !== this.currentPath) {
+          this.navigating.set(true);
+          this.skeletonLayout.set(this.skeletonForPath(nextPath));
+        }
+        return;
+      }
+
+      if (
+        event instanceof NavigationEnd ||
+        event instanceof NavigationCancel ||
+        event instanceof NavigationError
+      ) {
+        const path =
+          event instanceof NavigationEnd ? event.urlAfterRedirects.split('?')[0] : this.currentPath;
+        this.currentPath = path;
+        this.navigating.set(false);
+      }
+    });
 
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -72,5 +110,18 @@ export class MainLayoutComponent {
     } else {
       this.accountScope.clear();
     }
+  }
+
+  private skeletonForPath(path: string): PageSkeletonLayout {
+    if (path.includes('/dashboard')) {
+      return 'dashboard';
+    }
+    if (path.includes('/journal') || path.includes('/trade-history')) {
+      return 'table';
+    }
+    if (path.includes('/gallery')) {
+      return 'cards';
+    }
+    return 'form';
   }
 }
