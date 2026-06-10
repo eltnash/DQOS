@@ -6,6 +6,7 @@ import type {
   AssetSymbol,
   PillarStepKey,
   TimeframeScreenshotRef,
+  TradeDirection,
 } from '../../core/models/database.types';
 import { GatekeeperMediaService } from '../../core/supabase/gatekeeper-media.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
@@ -31,6 +32,7 @@ import type {
 import {
   DEFAULT_DRAFT_UI_STATE,
   EMPTY_DRAFT_MEDIA,
+  JOURNAL_NAME_MAX_LENGTH,
   normalizeJournalName,
   validateJournalName,
 } from './gatekeeper-draft.types';
@@ -190,10 +192,14 @@ export class GatekeeperDraftService {
       return [];
     }
 
+    if (!options?.archivedOnly) {
+      await this.reconcileOrphanedTradeJournals(user.id);
+    }
+
     let query = this.supabase.client
       .from('gatekeeper_drafts')
       .select(
-        'id, journal_name, trading_date, symbol, session_context, wizard_form, media, ui_state, execution_form, updated_at, archived_at, submitted_at, completed_at',
+        'id, journal_name, trading_date, symbol, session_context, wizard_form, media, ui_state, execution_form, updated_at, archived_at, submitted_at, completed_at, recovered_from_trade',
       )
       .eq('user_id', user.id);
 
@@ -239,8 +245,199 @@ export class GatekeeperDraftService {
         archived_at: row.archived_at ?? null,
         submitted_at: row.submitted_at ?? null,
         completed_at: row.completed_at ?? null,
+        recovered_from_trade: row.recovered_from_trade === true,
       };
     });
+  }
+
+  /**
+   * Older builds deleted gatekeeper_drafts when execution was saved, leaving trades in the
+   * ledger with no journal row. Re-create minimal draft records so the Journal page can list them.
+   */
+  private async reconcileOrphanedTradeJournals(userId: string): Promise<void> {
+    const client = this.supabase.client;
+
+    const { data: trades, error: tradesError } = await client
+      .from('trades')
+      .select(
+        'id, symbol, direction, trading_date, session_context, opened_at, closed_at, entry_price, stop_price, exit_price, size, commissions, net_profit, notes, updated_at',
+      )
+      .eq('user_id', userId)
+      .in('status', ['OPEN', 'CLOSED']);
+
+    if (tradesError || !trades?.length) {
+      return;
+    }
+
+    const { data: drafts } = await client.from('gatekeeper_drafts').select('id').eq('user_id', userId);
+
+    const draftIds = new Set((drafts ?? []).map((row) => row.id));
+    const orphans = trades.filter((trade) => !draftIds.has(trade.id));
+
+    for (const trade of orphans) {
+      await this.insertRecoveredDraft(userId, trade);
+    }
+  }
+
+  private async insertRecoveredDraft(
+    userId: string,
+    trade: {
+      id: string;
+      symbol: string;
+      direction: TradeDirection;
+      trading_date: string;
+      session_context: TradingSessionState['session'];
+      opened_at: string;
+      closed_at: string | null;
+      entry_price: number | null;
+      stop_price: number | null;
+      exit_price: number | null;
+      size: number | null;
+      commissions: number;
+      net_profit: number | null;
+      notes: string | null;
+      updated_at: string;
+    },
+  ): Promise<void> {
+    const journalName = await this.uniqueRecoveredJournalName(
+      userId,
+      trade.trading_date,
+      trade.symbol,
+      trade.id,
+    );
+    const submittedAt = trade.opened_at;
+    const completedAt = trade.closed_at ?? trade.updated_at;
+
+    const { error } = await this.supabase.client.from('gatekeeper_drafts').insert({
+      id: trade.id,
+      user_id: userId,
+      journal_name: journalName,
+      trading_date: trade.trading_date,
+      symbol: trade.symbol,
+      session_context: trade.session_context,
+      wizard_form: defaultGatekeeperFormValue(),
+      media: EMPTY_DRAFT_MEDIA,
+      ui_state: { active_step: 8, active_timeframe_tab: 'W' as AnalyzedTimeframe },
+      execution_form: this.executionFormFromTrade(trade),
+      trade_id: trade.id,
+      submitted_at: submittedAt,
+      completed_at: completedAt,
+      recovered_from_trade: true,
+    });
+
+    if (error && !error.message.includes('duplicate key')) {
+      console.warn('[gatekeeper] Could not recover journal for trade', trade.id, error.message);
+    }
+  }
+
+  private async uniqueRecoveredJournalName(
+    userId: string,
+    tradingDate: string,
+    symbol: string,
+    tradeId: string,
+  ): Promise<string> {
+    const base = `Recovered ${tradingDate} ${symbol}`.slice(0, JOURNAL_NAME_MAX_LENGTH - 9);
+    const suffix = tradeId.slice(0, 8);
+    let candidate = `${base} ${suffix}`.trim();
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { data } = await this.supabase.client
+        .from('gatekeeper_drafts')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('journal_name', candidate)
+        .maybeSingle();
+
+      if (!data) {
+        return candidate;
+      }
+
+      candidate = `${base} ${suffix}-${attempt + 1}`.slice(0, JOURNAL_NAME_MAX_LENGTH);
+    }
+
+    return `Recovered ${suffix}`;
+  }
+
+  private executionFormFromTrade(trade: {
+    id: string;
+    symbol: string;
+    direction: TradeDirection;
+    opened_at: string;
+    closed_at: string | null;
+    entry_price: number | null;
+    stop_price: number | null;
+    exit_price: number | null;
+    size: number | null;
+    commissions: number;
+    net_profit: number | null;
+    notes: string | null;
+  }): ExecutionFormValue {
+    const parsed = this.parseTradeNotes(trade.notes);
+    const direction = trade.direction;
+
+    return {
+      ticket: parsed.ticket,
+      symbol: trade.symbol as AssetSymbol,
+      order_type: direction === 'LONG' ? 'Market_Execution_Buy' : 'Market_Execution_Sell',
+      direction,
+      volume: trade.size,
+      entry_time: trade.opened_at,
+      entry_price: trade.entry_price,
+      stop_price: trade.stop_price,
+      take_profit_price: null,
+      exit_time: trade.closed_at,
+      exit_price: trade.exit_price,
+      commission: trade.commissions,
+      fee: parsed.fee,
+      swap: parsed.swap,
+      profit: trade.net_profit,
+      comment: parsed.comment,
+    };
+  }
+
+  private parseTradeNotes(notes: string | null): {
+    ticket: string | null;
+    fee: number | null;
+    swap: number | null;
+    comment: string | null;
+  } {
+    if (!notes) {
+      return { ticket: null, fee: null, swap: null, comment: null };
+    }
+
+    const parts = notes.split('|').map((part) => part.trim());
+    let ticket: string | null = null;
+    let fee: number | null = null;
+    let swap: number | null = null;
+    const commentParts: string[] = [];
+
+    for (const part of parts) {
+      if (part.startsWith('Ticket:')) {
+        ticket = part.replace('Ticket:', '').trim() || null;
+      } else if (part.startsWith('Fee:')) {
+        const parsed = Number.parseFloat(part.replace('Fee:', '').trim());
+        if (Number.isFinite(parsed)) {
+          fee = parsed;
+        }
+      } else if (part.startsWith('Swap:')) {
+        const parsed = Number.parseFloat(part.replace('Swap:', '').trim());
+        if (Number.isFinite(parsed)) {
+          swap = parsed;
+        }
+      } else if (
+        !part.startsWith('Type:') &&
+        !part.startsWith('Volume:')
+      ) {
+        commentParts.push(part);
+      }
+    }
+
+    return {
+      ticket,
+      fee,
+      swap,
+      comment: commentParts.length > 0 ? commentParts.join(' | ') : null,
+    };
   }
 
   async renameJournal(draftId: string, newName: string): Promise<string> {

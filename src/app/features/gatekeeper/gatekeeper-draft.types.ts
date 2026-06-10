@@ -61,6 +61,8 @@ export interface GatekeeperJournalSummary {
   archived_at: string | null;
   submitted_at: string | null;
   completed_at: string | null;
+  /** Rebuilt from a ledger trade after the draft row was deleted by an older app version. */
+  recovered_from_trade?: boolean;
 }
 
 export interface ListJournalsOptions {

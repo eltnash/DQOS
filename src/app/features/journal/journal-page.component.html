@@ -103,6 +103,9 @@
         <div class="journal-card__body">
           <div class="journal-card__title-row">
             <h2 class="journal-card__title">{{ journal.journal_name }}</h2>
+            @if (journal.recovered_from_trade) {
+              <p-tag value="Recovered" severity="warn" />
+            }
             @if (isCompleted(journal)) {
               <p-tag value="Complete" severity="success" />
             } @else if (isArchived(journal)) {
