@@ -92,6 +92,10 @@ export class JournalPageComponent implements OnInit {
     return journal.archived_at !== null;
   }
 
+  protected isCompleted(journal: GatekeeperJournalSummary): boolean {
+    return journal.completed_at !== null;
+  }
+
   protected toggleShowArchived(): void {
     this.showArchived.update((value) => !value);
     void this.loadJournals();

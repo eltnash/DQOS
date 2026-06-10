@@ -620,13 +620,11 @@ export class GatekeeperWizardComponent {
     try {
       const form = this.form.getRawValue() as GatekeeperFormValue;
       await this.submitService.saveOutcomeJournal(submitted.auditId, submitted.tradeId, form.outcome);
-      this.submitService.finalizeSubmittedJournal();
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Journal complete',
-        detail: 'Outcome saved. Full trade journal archived.',
-        life: 4500,
+      await this.draftService.markDraftCompleted(submitted.tradeId, form, {
+        active_step: 8,
+        active_timeframe_tab: this.activeTimeframeTab(),
       });
+      this.submitService.finalizeSubmittedJournal();
       this.tradeSubmitted.emit(submitted);
     } catch (err) {
       this.messageService.add({

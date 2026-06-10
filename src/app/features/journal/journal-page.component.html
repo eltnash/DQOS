@@ -103,7 +103,9 @@
         <div class="journal-card__body">
           <div class="journal-card__title-row">
             <h2 class="journal-card__title">{{ journal.journal_name }}</h2>
-            @if (isArchived(journal)) {
+            @if (isCompleted(journal)) {
+              <p-tag value="Complete" severity="success" />
+            } @else if (isArchived(journal)) {
               <p-tag value="Archived" severity="secondary" />
             }
           </div>
@@ -116,8 +118,12 @@
           <app-journal-step-progress [progress]="journal.step_progress" />
           <div class="journal-card__tags">
             <p-tag
-              [value]="'Current: Step ' + journal.active_step + ' · ' + stepLabel(journal.active_step)"
-              severity="info"
+              [value]="
+                isCompleted(journal)
+                  ? 'Finished · all 8 steps'
+                  : 'Current: Step ' + journal.active_step + ' · ' + stepLabel(journal.active_step)
+              "
+              [severity]="isCompleted(journal) ? 'success' : 'info'"
             />
             <span class="journal-card__updated">
               Updated {{ journal.updated_at | date: 'medium' }}

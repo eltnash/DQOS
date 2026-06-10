@@ -126,9 +126,11 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   protected async onTradeSubmitted(_result: GatekeeperSubmitResult): Promise<void> {
-    await this.draftService.deleteActiveDraft();
+    const journalName = this.sessionState()?.journalName;
     this.wizardRef()?.resetWizard();
     this.sessionBarRef()?.resetForNewJournal();
+    this.sessionState.set(null);
+    this.sessionValid.set(false);
     this.pillarSteps.set([]);
     this.pillarsQualified.set(false);
     this.readinessPct.set(0);
@@ -137,7 +139,15 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
     this.activeJournalId = null;
     this.resumeJournalId = null;
     this.sessionDraftLoadKey = null;
-    void this.router.navigate(['/gatekeeper']);
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Journal saved',
+      detail: journalName
+        ? `"${journalName}" is in your journal list.`
+        : 'Your completed journal is in the journal list.',
+      life: 5000,
+    });
+    void this.router.navigate(['/journal']);
   }
 
   private async syncRouteState(journalId: string | null): Promise<void> {

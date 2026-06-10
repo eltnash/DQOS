@@ -59,6 +59,8 @@ export interface GatekeeperJournalSummary {
   step_progress: GatekeeperStepProgress;
   updated_at: string;
   archived_at: string | null;
+  submitted_at: string | null;
+  completed_at: string | null;
 }
 
 export interface ListJournalsOptions {

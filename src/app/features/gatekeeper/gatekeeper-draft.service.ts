@@ -193,7 +193,7 @@ export class GatekeeperDraftService {
     let query = this.supabase.client
       .from('gatekeeper_drafts')
       .select(
-        'id, journal_name, trading_date, symbol, session_context, wizard_form, media, ui_state, execution_form, updated_at, archived_at',
+        'id, journal_name, trading_date, symbol, session_context, wizard_form, media, ui_state, execution_form, updated_at, archived_at, submitted_at, completed_at',
       )
       .eq('user_id', user.id);
 
@@ -237,6 +237,8 @@ export class GatekeeperDraftService {
         }),
         updated_at: row.updated_at,
         archived_at: row.archived_at ?? null,
+        submitted_at: row.submitted_at ?? null,
+        completed_at: row.completed_at ?? null,
       };
     });
   }
@@ -287,6 +289,61 @@ export class GatekeeperDraftService {
 
   async restoreJournal(draftId: string): Promise<void> {
     await this.setArchivedAt(draftId, null);
+  }
+
+  async markDraftSubmitted(
+    draftId: string,
+    tradeId: string,
+    updates: {
+      wizardForm: GatekeeperFormValue;
+      executionForm?: ExecutionFormValue | null;
+      uiState: GatekeeperDraftUiState;
+    },
+  ): Promise<void> {
+    const payload: {
+      trade_id: string;
+      submitted_at: string;
+      wizard_form: GatekeeperFormValue;
+      ui_state: GatekeeperDraftUiState;
+      execution_form?: ExecutionFormValue;
+    } = {
+      trade_id: tradeId,
+      submitted_at: new Date().toISOString(),
+      wizard_form: updates.wizardForm,
+      ui_state: updates.uiState,
+    };
+
+    if (updates.executionForm) {
+      payload.execution_form = updates.executionForm;
+    }
+
+    const { error } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .update(payload)
+      .eq('id', draftId);
+
+    if (error) {
+      throw new Error(this.formatDraftError(error));
+    }
+  }
+
+  async markDraftCompleted(
+    draftId: string,
+    wizardForm: GatekeeperFormValue,
+    uiState: GatekeeperDraftUiState,
+  ): Promise<void> {
+    const { error } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .update({
+        wizard_form: wizardForm,
+        ui_state: uiState,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', draftId);
+
+    if (error) {
+      throw new Error(this.formatDraftError(error));
+    }
   }
 
   async deleteJournal(draftId: string): Promise<void> {

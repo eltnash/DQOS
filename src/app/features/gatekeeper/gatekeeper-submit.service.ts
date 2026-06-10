@@ -147,12 +147,16 @@ export class GatekeeperSubmitService {
       throw new Error(auditError?.message ?? 'Audit insert failed — trade rolled back');
     }
 
-    const { error: draftDeleteError } = await client.from('gatekeeper_drafts').delete().eq('id', draftId);
-
-    if (draftDeleteError) {
+    try {
+      await this.draftService.markDraftSubmitted(draftId, trade.id, {
+        wizardForm: form,
+        executionForm: this.draftService.peekExecutionSnapshot(),
+        uiState: { active_step: 8, active_timeframe_tab: 'W' },
+      });
+    } catch (markError) {
       await client.from('execution_audits').delete().eq('id', audit.id);
       await client.from('trades').delete().eq('id', trade.id);
-      throw new Error(draftDeleteError.message);
+      throw markError instanceof Error ? markError : new Error('Could not update journal after submit');
     }
 
     return { tradeId: trade.id, auditId: audit.id };
