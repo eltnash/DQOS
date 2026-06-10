@@ -1,0 +1,138 @@
+<div class="annotator" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+  <div class="annotator__backdrop" (click)="close()"></div>
+
+  <div class="annotator__panel">
+    <header class="annotator__header">
+      <h3 class="annotator__title">{{ title() }}</h3>
+      <div class="annotator__header-actions">
+        <p-button type="button" icon="pi pi-search-minus" [text]="true" (onClick)="zoomOut()" />
+        <p-button type="button" icon="pi pi-search-plus" [text]="true" (onClick)="zoomIn()" />
+        <p-button type="button" label="Reset view" [text]="true" (onClick)="resetView()" />
+        <p-button type="button" icon="pi pi-times" [text]="true" severity="secondary" (onClick)="close()" />
+      </div>
+    </header>
+
+    <div class="annotator__toolbar">
+      <div class="annotator__tools">
+        @for (option of toolOptions; track option.value) {
+          <button
+            type="button"
+            class="annotator__tool"
+            [class.annotator__tool--active]="tool() === option.value"
+            (click)="setTool(option.value)"
+          >
+            <i [class]="option.icon"></i>
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      <div class="annotator__colors">
+        @for (color of colorOptions; track color) {
+          <button
+            type="button"
+            class="annotator__swatch"
+            [class.annotator__swatch--active]="strokeColor() === color"
+            [style.background]="color"
+            (click)="setColor(color)"
+            [attr.aria-label]="'Color ' + color"
+          ></button>
+        }
+      </div>
+
+      <div class="annotator__edit-actions">
+        @if (selectedTextId()) {
+          <button type="button" class="annotator__action annotator__action--danger" (click)="deleteSelectedText()">
+            <i class="pi pi-trash"></i>
+            Delete text
+          </button>
+        }
+        <button type="button" class="annotator__action" (click)="undo()">
+          <i class="pi pi-undo"></i>
+          Undo
+        </button>
+        <button type="button" class="annotator__action" (click)="clearAll()">
+          <i class="pi pi-trash"></i>
+          Clear
+        </button>
+        <button type="button" class="annotator__action annotator__action--primary" (click)="save()">
+          <i class="pi pi-check"></i>
+          Save
+        </button>
+      </div>
+    </div>
+
+    <div
+      #viewport
+      class="annotator__viewport"
+      [class.annotator__viewport--pan]="tool() === 'pan'"
+      [class.annotator__viewport--select]="tool() === 'select'"
+      [class.annotator__viewport--draw]="tool() === 'draw'"
+      [class.annotator__viewport--text]="tool() === 'text'"
+      [class.annotator__viewport--eraser]="tool() === 'eraser'"
+      (wheel)="onWheel($event)"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerUp($event)"
+    >
+      <div class="annotator__stage" [style.transform]="stageTransform()">
+        <img
+          #image
+          class="annotator__image"
+          [src]="imageUrl()"
+          [alt]="title()"
+          crossorigin="anonymous"
+          (load)="onImageLoad()"
+          draggable="false"
+        />
+        <canvas #canvas class="annotator__canvas"></canvas>
+        <div class="annotator__text-layer">
+          @for (stamp of textStamps(); track stamp.id) {
+            <div
+              #textStamp
+              class="annotator__text-stamp"
+              [class.annotator__text-stamp--selected]="selectedTextId() === stamp.id"
+              [class.annotator__text-stamp--empty]="!stamp.text.trim()"
+              [attr.data-stamp-id]="stamp.id"
+              [style.left.px]="stamp.x"
+              [style.top.px]="stamp.y"
+              [style.color]="stamp.color"
+              [attr.contenteditable]="tool() === 'text' ? 'true' : 'false'"
+              spellcheck="false"
+              (input)="onTextInput(stamp.id, $event)"
+              (keydown)="onTextStampKeydown($event, stamp.id)"
+              (blur)="onTextStampBlur(stamp.id, $event)"
+              (pointerdown)="onTextStampPointerDown($event, stamp.id)"
+              (dblclick)="onTextStampDoubleClick(stamp.id)"
+            ></div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <p class="annotator__hint">
+      @if (saveError()) {
+        <span class="annotator__hint-error">{{ saveError() }}</span>
+      } @else {
+      @switch (tool()) {
+        @case ('select') {
+          Select text labels to move them · double-click to edit · Backspace/Delete removes selected or empty placeholders
+        }
+        @case ('text') {
+          Click the chart to add text · type on the image · Backspace on an empty box removes it
+        }
+        @case ('eraser') {
+          Drag over drawings to erase · scroll to zoom · Pan moves the chart
+        }
+        @case ('pan') {
+          Drag to move the chart · scroll to zoom
+        }
+        @default {
+          Draw on the chart · Eraser removes strokes · Select moves text labels
+        }
+      }
+      }
+    </p>
+  </div>
+</div>

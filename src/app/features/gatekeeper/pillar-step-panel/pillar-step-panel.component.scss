@@ -1,0 +1,52 @@
+:host {
+  display: block;
+}
+
+.pillar-panel {
+  display: grid;
+  gap: 1.25rem;
+
+  &__header {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  &__focus-badge {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #34d399;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__section {
+    display: grid;
+    gap: 0.5rem;
+
+    &--fields {
+      gap: 0.75rem;
+    }
+  }
+
+  &__label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #f3f4f6;
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    line-height: 1.4;
+  }
+}

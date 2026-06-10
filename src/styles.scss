@@ -28,3 +28,9 @@ body.dqos-dark {
 .p-inputnumber-input {
   font-family: var(--dqos-font-mono) !important;
 }
+
+/* Routed components render as siblings of router-outlet */
+router-outlet + * {
+  display: block;
+  width: 100%;
+}

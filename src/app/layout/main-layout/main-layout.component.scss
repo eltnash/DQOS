@@ -74,6 +74,16 @@
 
   &__main {
     padding: 1.5rem 2rem;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh;
+    min-width: 0;
+
+    > :not(router-outlet) {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
   }
 }

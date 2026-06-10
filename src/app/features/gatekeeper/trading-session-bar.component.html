@@ -1,0 +1,157 @@
+<section class="session-bar" [formGroup]="form">
+  <header class="session-bar__header">
+    <div>
+      <h2 class="session-bar__title">Trading session</h2>
+      <p class="session-bar__subtitle">
+        One journal = one trade. Name it uniquely — HTF context through execution all save under this name.
+      </p>
+    </div>
+    <div class="session-bar__clock">
+      <span class="session-bar__clock-label">Recorded time</span>
+      <span class="session-bar__clock-value data-mono">{{ liveClockLabel() }}</span>
+      <p-button
+        type="button"
+        label="Set to now"
+        icon="pi pi-clock"
+        severity="secondary"
+        [text]="true"
+        size="small"
+        (onClick)="syncRecordedTimeToNow()"
+      />
+    </div>
+  </header>
+
+  <div class="session-bar__section session-bar__section--journal-name">
+    <div class="session-bar__journal-row">
+      <label class="session-bar__label" for="journal-name">Journal name</label>
+      @if (journalNameLocked()) {
+        <p-button
+          type="button"
+          label="Rename"
+          icon="pi pi-pencil"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="openRenameDialog()"
+        />
+      }
+    </div>
+    <input
+      id="journal-name"
+      pInputText
+      type="text"
+      formControlName="journal_name"
+      placeholder="e.g. Monday Asia Gold — VAH retest"
+      autocomplete="off"
+      class="session-bar__journal-input"
+    />
+    <p class="session-bar__hint">Must be unique. You cannot have two journals with the same name.</p>
+  </div>
+
+  <p-dialog
+    header="Rename journal"
+    [visible]="renameDialogVisible()"
+    [modal]="true"
+    [closable]="!renameSaving()"
+    [draggable]="false"
+    [style]="{ width: 'min(100%, 28rem)' }"
+    (visibleChange)="renameDialogVisible.set($event)"
+    (onHide)="closeRenameDialog()"
+  >
+    <label class="session-bar__rename-label" for="session-rename-input">Journal name</label>
+    <input
+      id="session-rename-input"
+      pInputText
+      type="text"
+      class="session-bar__journal-input"
+      [maxlength]="journalNameMaxLength"
+      [(ngModel)]="renameDraftName"
+      [ngModelOptions]="{ standalone: true }"
+      autocomplete="off"
+    />
+    <p class="session-bar__hint">Must stay unique among your journals.</p>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        type="button"
+        label="Cancel"
+        severity="secondary"
+        [text]="true"
+        [disabled]="renameSaving()"
+        (onClick)="closeRenameDialog()"
+      />
+      <p-button
+        type="button"
+        label="Save name"
+        icon="pi pi-check"
+        [loading]="renameSaving()"
+        (onClick)="confirmRename()"
+      />
+    </ng-template>
+  </p-dialog>
+
+  <div class="session-bar__grid">
+    <div class="session-bar__field">
+      <label for="trading-date">Trading day</label>
+      <p-datepicker
+        inputId="trading-date"
+        formControlName="trading_date"
+        [showIcon]="true"
+        dateFormat="yy-mm-dd"
+        [showButtonBar]="true"
+        styleClass="session-bar__date"
+      />
+    </div>
+
+    <div class="session-bar__field">
+      <label for="timezone">Timezone</label>
+      <p-select
+        inputId="timezone"
+        formControlName="timezone"
+        [options]="timezoneOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+
+    <div class="session-bar__field">
+      <label for="recorded-at">Analysis timestamp</label>
+      <p-datepicker
+        inputId="recorded-at"
+        formControlName="analysis_recorded_at"
+        [showTime]="true"
+        hourFormat="24"
+        [showIcon]="true"
+        dateFormat="yy-mm-dd"
+        styleClass="session-bar__date"
+      />
+    </div>
+  </div>
+
+  <div class="session-bar__section">
+    <label class="session-bar__label">Market session</label>
+    <app-enum-pill-select
+      formControlName="market_session"
+      ariaLabel="Market session"
+      [options]="marketSessionOptions"
+    />
+  </div>
+
+  <div class="session-bar__section">
+    <label class="session-bar__label">Time of day</label>
+    <app-enum-pill-select
+      formControlName="analysis_period"
+      ariaLabel="Analysis time of day"
+      [options]="analysisPeriodOptions"
+    />
+  </div>
+
+  <div class="session-bar__section">
+    <label class="session-bar__label">Symbol (FX, commodities, futures)</label>
+    <app-enum-pill-select
+      formControlName="symbol"
+      ariaLabel="Trading symbol"
+      [options]="symbolOptions"
+    />
+  </div>
+</section>

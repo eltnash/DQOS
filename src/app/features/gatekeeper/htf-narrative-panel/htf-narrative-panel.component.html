@@ -1,0 +1,178 @@
+<section class="htf-narrative" [formGroup]="narrativeGroup()">
+  <header class="htf-narrative__story">
+    @if (config().intro.heading) {
+      <h3 class="htf-narrative__heading">{{ config().intro.heading }}</h3>
+    }
+    @for (paragraph of config().intro.paragraphs; track paragraph) {
+      <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+    }
+  </header>
+
+  <div class="htf-narrative__qa">
+    @for (field of config().fields; track field.key) {
+      @switch (field.type) {
+        @case ('textarea') {
+          <div class="htf-narrative__question">
+            <div class="htf-narrative__question-header">
+              <label class="htf-narrative__label" [for]="fieldInputId(field)">{{ field.label }}</label>
+              @if (hasAnswer(field.key)) {
+                <span class="htf-narrative__saved">Saved</span>
+              }
+              <button
+                type="button"
+                class="htf-narrative__clear"
+                [disabled]="!hasAnswer(field.key)"
+                (click)="clearAnswer(field.key)"
+              >
+                Clear
+              </button>
+            </div>
+            @if (field.prompt) {
+              <p class="htf-narrative__prompt">{{ field.prompt }}</p>
+            }
+            <textarea
+              pTextarea
+              [id]="fieldInputId(field)"
+              [formControlName]="field.key"
+              rows="4"
+              [placeholder]="field.placeholder ?? ''"
+              class="htf-narrative__textarea"
+            ></textarea>
+          </div>
+        }
+
+        @case ('composite_va') {
+          <div class="htf-narrative__question">
+            <div class="htf-narrative__question-header">
+              <span class="htf-narrative__label">{{ field.label }}</span>
+              @if (hasAnswer(field.key)) {
+                <span class="htf-narrative__saved">Saved</span>
+              }
+              <button
+                type="button"
+                class="htf-narrative__clear"
+                [disabled]="!hasAnswer(field.key)"
+                (click)="clearAnswer(field.key)"
+              >
+                Clear
+              </button>
+            </div>
+            @if (field.prompt) {
+              <p class="htf-narrative__prompt">{{ field.prompt }}</p>
+            }
+            <app-enum-pill-select
+              formControlName="composite_va_position"
+              ariaLabel="Composite value area position"
+              [options]="compositeVaOptions"
+            />
+          </div>
+        }
+
+        @case ('prior_week_range') {
+          <div class="htf-narrative__question">
+            <div class="htf-narrative__question-header">
+              <span class="htf-narrative__label">{{ field.label }}</span>
+              @if (hasAnswer(field.key)) {
+                <span class="htf-narrative__saved">Saved</span>
+              }
+              <button
+                type="button"
+                class="htf-narrative__clear"
+                [disabled]="!hasAnswer(field.key)"
+                (click)="clearAnswer(field.key)"
+              >
+                Clear
+              </button>
+            </div>
+            @if (field.prompt) {
+              <p class="htf-narrative__prompt">{{ field.prompt }}</p>
+            }
+            <app-enum-pill-select
+              formControlName="prior_week_range_position"
+              ariaLabel="Prior week range position"
+              [options]="priorWeekRangeOptions"
+            />
+          </div>
+        }
+
+        @case ('auction_regime') {
+          <div class="htf-narrative__question">
+            <div class="htf-narrative__question-header">
+              <span class="htf-narrative__label">{{ field.label }}</span>
+              @if (hasAnswer(field.key)) {
+                <span class="htf-narrative__saved">Saved</span>
+              }
+              <button
+                type="button"
+                class="htf-narrative__clear"
+                [disabled]="!hasAnswer(field.key)"
+                (click)="clearAnswer(field.key)"
+              >
+                Clear
+              </button>
+            </div>
+            @if (field.prompt) {
+              <p class="htf-narrative__prompt">{{ field.prompt }}</p>
+            }
+            <app-enum-pill-select
+              formControlName="auction_regime"
+              ariaLabel="Auction regime"
+              [options]="auctionRegimeOptions"
+            />
+          </div>
+        }
+
+        @case ('tools') {
+          @if (config().toolsReference) {
+            <div class="htf-narrative__reference">
+              @if (config().toolsReference?.heading) {
+                <h4 class="htf-narrative__subheading">{{ config().toolsReference?.heading }}</h4>
+              }
+              @for (paragraph of config().toolsReference?.paragraphs ?? []; track paragraph) {
+                <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+              }
+            </div>
+          }
+
+          <div class="htf-narrative__question" formGroupName="tools_used">
+            <div class="htf-narrative__question-header">
+              <span class="htf-narrative__label">{{ field.label }}</span>
+              @if (hasAnyToolSelected()) {
+                <span class="htf-narrative__saved">Saved</span>
+              }
+              <button
+                type="button"
+                class="htf-narrative__clear"
+                [disabled]="!hasAnyToolSelected()"
+                (click)="clearTools()"
+              >
+                Clear
+              </button>
+            </div>
+            <div class="htf-narrative__tool-grid">
+              @for (tool of toolOptions(); track tool.key) {
+                <label class="htf-narrative__tool-card" [title]="tool.hint ?? ''">
+                  <p-checkbox [formControlName]="tool.key" [binary]="true" [inputId]="'htf-tool-' + timeframe() + '-' + tool.key" />
+                  <span class="htf-narrative__tool-text">
+                    <span>{{ tool.label }}</span>
+                    @if (tool.hint) {
+                      <small>{{ tool.hint }}</small>
+                    }
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+      }
+    }
+  </div>
+
+  @if (config().bridge; as bridge) {
+    <div class="htf-narrative__story htf-narrative__story--bridge">
+      @for (paragraph of bridge.paragraphs; track paragraph) {
+        <p class="htf-narrative__paragraph">{{ paragraph }}</p>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,77 @@
+<div class="tagged-notes">
+  <div class="tagged-notes__toolbar">
+    @if (hasSelection()) {
+      <div class="tagged-notes__tag-action">
+        <span class="tagged-notes__toolbar-label">Tag this selection</span>
+        <button
+          type="button"
+          class="tagged-notes__selection-pill"
+          [disabled]="disabled"
+          (mousedown)="$event.preventDefault()"
+          (click)="tagSelection()"
+        >
+          {{ selectedPreview() }}
+        </button>
+      </div>
+    } @else {
+      <p class="tagged-notes__hint">
+        Select any word or sentence in your notes — it becomes the tag when you click it.
+      </p>
+    }
+    @if (tagError(); as error) {
+      <p class="tagged-notes__error">{{ error }}</p>
+    }
+  </div>
+
+  <textarea
+    #textarea
+    pTextarea
+    class="tagged-notes__textarea"
+    [id]="inputId()"
+    [placeholder]="placeholder()"
+    [disabled]="disabled"
+    rows="6"
+    (input)="onTextInput($event)"
+    (select)="onSelectionChange()"
+    (mouseup)="onSelectionChange()"
+    (keyup)="onSelectionChange()"
+    (blur)="onBlur()"
+  ></textarea>
+
+  @if (state().tags.length > 0) {
+    <div class="tagged-notes__preview">
+      <span class="tagged-notes__preview-label">Tagged preview</span>
+      <div class="tagged-notes__rendered">
+        @for (segment of previewSegments(); track $index) {
+          @if (segment.type === 'text') {
+            <span class="tagged-notes__plain">{{ segment.content }}</span>
+          } @else {
+            <mark class="tagged-notes__inline-pill" [attr.data-tag-id]="segment.tagId">
+              {{ segment.content }}
+            </mark>
+          }
+        }
+      </div>
+    </div>
+
+    <div class="tagged-notes__tag-index" aria-label="Tagged keywords">
+      <span class="tagged-notes__preview-label">Tags for search &amp; AI</span>
+      <div class="tagged-notes__tag-list">
+        @for (tag of state().tags; track tag.id) {
+          <span class="tagged-notes__tag-chip">
+            <span class="tagged-notes__tag-chip-label">{{ tag.label }}</span>
+            <button
+              type="button"
+              class="tagged-notes__tag-remove"
+              [disabled]="disabled"
+              [attr.aria-label]="'Remove tag ' + tag.label"
+              (click)="removeTag(tag.id)"
+            >
+              ×
+            </button>
+          </span>
+        }
+      </div>
+    </div>
+  }
+</div>

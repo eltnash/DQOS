@@ -6,11 +6,13 @@
     </div>
 
     <nav class="shell__nav">
-      @for (item of navItems; track item.route) {
+      @for (item of navItems; track item.path) {
         <a
           class="shell__nav-link"
-          [routerLink]="item.route"
+          [routerLink]="item.path"
+          [relativeTo]="route"
           routerLinkActive="shell__nav-link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
         >
           <i [class]="item.icon"></i>
           <span>{{ item.label }}</span>

@@ -1,0 +1,47 @@
+<header class="gk-header">
+  <div class="gk-header__intro">
+    <h1 class="gk-header__title">Gatekeeper</h1>
+    <p class="gk-header__subtitle">
+      HTF context through execution — seven steps, one journal per trade
+    </p>
+  </div>
+</header>
+
+<app-trading-session-bar (sessionChange)="onSessionChange($event)" />
+
+@if (!sessionValid()) {
+  <p-message
+    severity="warn"
+    text="Enter a unique journal name and complete market session, time of day, and symbol before saving progress or uploading screenshots."
+    styleClass="gk-oath"
+  />
+}
+
+<p-message
+  severity="warn"
+  icon="pi pi-shield"
+  text="The level is not the trade. First test = context. Retest = execution."
+  styleClass="gk-oath"
+/>
+
+<p-toast position="top-right" />
+
+<div class="gk-layout">
+  <section class="gk-layout__wizard">
+    <app-gatekeeper-wizard
+      #wizard
+      [sessionState]="sessionState()"
+      (pillarsChange)="onPillarsChange($event)"
+      (tradeSubmitted)="onTradeSubmitted($event)"
+    />
+  </section>
+
+  <aside class="gk-layout__rail">
+    <app-readiness-meter
+      [compact]="true"
+      [pillarSteps]="pillarSteps()"
+      [isRetest]="isRetest()"
+    />
+    <app-risk-reward-calculator [defaultSymbol]="sessionState()?.symbol ?? null" />
+  </aside>
+</div>

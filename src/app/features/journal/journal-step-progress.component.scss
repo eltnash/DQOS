@@ -1,0 +1,80 @@
+.journal-progress {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.journal-progress__summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.journal-progress__count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #d1d5db;
+}
+
+.journal-progress__pct {
+  font-size: 0.6875rem;
+  color: #6b7280;
+}
+
+:host ::ng-deep .journal-progress__bar {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #1f2937;
+
+  .p-progressbar-value {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #16a34a, #4ade80);
+  }
+}
+
+.journal-progress__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.journal-progress__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #9ca3af;
+
+  &::before {
+    content: '';
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 0.2rem;
+  }
+
+  &--done::before {
+    background: #22c55e;
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.45);
+  }
+
+  &--active::before {
+    background: #0f172a;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35);
+  }
+
+  &--todo::before {
+    background: #111827;
+    border: 1px dashed #4b5563;
+  }
+}
+
+@media (max-width: 719px) {
+  .journal-progress__legend {
+    gap: 0.5rem;
+  }
+}

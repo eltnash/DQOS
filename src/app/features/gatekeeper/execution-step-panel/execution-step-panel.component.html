@@ -1,0 +1,276 @@
+<section class="execution-step" aria-labelledby="execution-step-title">
+  <header class="execution-step__header">
+    <div>
+      <h3 id="execution-step-title" class="execution-step__title">Platform trade record</h3>
+      <p class="execution-step__subtitle">
+        MT5-style fields — copy from your platform after the trade. Saved with this journal.
+      </p>
+    </div>
+    @if (sessionSummary(); as summary) {
+      <p-tag severity="info" [value]="summary" />
+    }
+  </header>
+
+  @if (isLocked()) {
+    <p-message severity="warn" icon="pi pi-lock" [text]="lockReason()!" />
+  }
+
+  @if (auditDraft()?.auction_type?.day_type; as dayType) {
+    <p-tag severity="secondary" [value]="'Auction: ' + dayTypeLabel(dayType)" />
+  }
+
+  <div class="execution-step__body" [class.execution-step__body--locked]="isLocked()">
+    <form [formGroup]="executionForm" (ngSubmit)="onSubmit()">
+      <div class="execution-table-wrap">
+        <table class="execution-table">
+          <caption class="execution-table__caption">Trade identity</caption>
+          <thead>
+            <tr>
+              <th scope="col">Ticket</th>
+              <th scope="col">Type</th>
+              <th scope="col">Volume</th>
+              <th scope="col">Symbol</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input
+                  pInputText
+                  type="text"
+                  formControlName="ticket"
+                  placeholder="Order ID"
+                  class="execution-table__input data-mono"
+                  [disabled]="isLocked()"
+                />
+              </td>
+              <td class="execution-table__type-cell">
+                <p-select
+                  formControlName="order_type"
+                  [options]="orderTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  [disabled]="isLocked()"
+                  appendTo="body"
+                  panelStyleClass="execution-table-overlay"
+                  styleClass="execution-table__select"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="volume"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="4"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <span class="execution-table__symbol data-mono">{{ executionForm.controls.symbol.value }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="execution-table">
+          <caption class="execution-table__caption">Entry</caption>
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Price</th>
+              <th scope="col">S / L</th>
+              <th scope="col">T / P</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p-datepicker
+                  formControlName="entry_time"
+                  [showTime]="true"
+                  hourFormat="24"
+                  [showIcon]="true"
+                  dateFormat="yy-mm-dd"
+                  [disabled]="isLocked()"
+                  appendTo="body"
+                  panelStyleClass="execution-table-overlay"
+                  styleClass="execution-table__date"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="entry_price"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="6"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="stop_price"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="6"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="take_profit_price"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="6"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="execution-table">
+          <caption class="execution-table__caption">Exit &amp; result</caption>
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Price</th>
+              <th scope="col">Commission</th>
+              <th scope="col">Fee</th>
+              <th scope="col">Swap</th>
+              <th scope="col">Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p-datepicker
+                  formControlName="exit_time"
+                  [showTime]="true"
+                  hourFormat="24"
+                  [showIcon]="true"
+                  dateFormat="yy-mm-dd"
+                  [disabled]="isLocked()"
+                  appendTo="body"
+                  panelStyleClass="execution-table-overlay"
+                  styleClass="execution-table__date"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="exit_price"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="6"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="commission"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="fee"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="swap"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+              <td>
+                <p-inputnumber
+                  formControlName="profit"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  [disabled]="isLocked()"
+                  inputStyleClass="execution-table__input data-mono"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="execution-table execution-table--comment">
+          <caption class="execution-table__caption">Comment</caption>
+          <tbody>
+            <tr>
+              <td>
+                <textarea
+                  pTextarea
+                  formControlName="comment"
+                  rows="3"
+                  class="execution-table__comment"
+                  placeholder="Platform comment or trade notes"
+                  [disabled]="isLocked()"
+                ></textarea>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      @if (riskMetrics(); as risk) {
+        <dl class="execution-step__risk">
+          <div>
+            <dt>Stop distance</dt>
+            <dd class="data-mono">{{ risk.stopDistancePts }} pts</dd>
+          </div>
+          <div>
+            <dt>Risk / lot</dt>
+            <dd class="data-mono">{{ risk.risk_per_contract | currency: 'USD' : 'symbol' : '1.2-2' }}</dd>
+          </div>
+          <div class="execution-step__risk-total">
+            <dt>Total risk</dt>
+            <dd class="data-mono">{{ risk.total_risk | currency: 'USD' : 'symbol' : '1.2-2' }}</dd>
+          </div>
+          @if (risk.r_target !== null) {
+            <div>
+              <dt>R target</dt>
+              <dd class="data-mono">{{ risk.r_target }}R</dd>
+            </div>
+          }
+        </dl>
+      }
+
+      @if (executionForm.errors?.['stopPlacement'] && executionForm.touched) {
+        <p-message severity="error" [text]="stopPlacementError()" />
+      }
+
+      <footer class="execution-step__footer">
+        <p-button
+          type="submit"
+          label="Save trade to ledger"
+          icon="pi pi-bolt"
+          severity="success"
+          [disabled]="!canSubmit()"
+          [loading]="submitting()"
+        />
+      </footer>
+    </form>
+  </div>
+</section>
+
+<p-confirmdialog />

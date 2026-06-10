@@ -1,0 +1,144 @@
+<section class="rr-calculator" aria-labelledby="rr-calculator-title">
+  <header class="rr-calculator__header">
+    <h3 id="rr-calculator-title" class="rr-calculator__title">Risk / Reward</h3>
+    <p class="rr-calculator__subtitle">
+      Calibrated tick values — {{ calibration().dollarPerTick | currency: 'USD' }} / {{ calibration().unitLabel }}
+    </p>
+  </header>
+
+  <div class="rr-calculator__fields">
+    <label class="rr-calculator__label">
+      Symbol
+      <p-select
+        [ngModel]="symbol()"
+        (ngModelChange)="onSymbolChange($event)"
+        [options]="symbolOptions"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body"
+        panelStyleClass="rr-calculator-overlay"
+        styleClass="rr-calculator__select"
+      />
+    </label>
+
+    <label class="rr-calculator__label">
+      Side
+      <p-select
+        [ngModel]="direction()"
+        (ngModelChange)="onDirectionChange($event)"
+        [options]="directionOptions"
+        optionLabel="label"
+        optionValue="value"
+        appendTo="body"
+        panelStyleClass="rr-calculator-overlay"
+        styleClass="rr-calculator__select"
+      />
+    </label>
+
+    <label class="rr-calculator__label">
+      Entry
+      <p-inputnumber
+        [ngModel]="entryPrice()"
+        (ngModelChange)="entryPrice.set($event)"
+        mode="decimal"
+        [minFractionDigits]="priceDecimals()"
+        [maxFractionDigits]="priceDecimals()"
+        inputStyleClass="rr-calculator__input data-mono"
+      />
+    </label>
+
+    <label class="rr-calculator__label">
+      Stop
+      <p-inputnumber
+        [ngModel]="stopPrice()"
+        (ngModelChange)="stopPrice.set($event)"
+        mode="decimal"
+        [minFractionDigits]="priceDecimals()"
+        [maxFractionDigits]="priceDecimals()"
+        inputStyleClass="rr-calculator__input data-mono"
+      />
+    </label>
+
+    <label class="rr-calculator__label">
+      Target
+      <p-inputnumber
+        [ngModel]="targetPrice()"
+        (ngModelChange)="targetPrice.set($event)"
+        mode="decimal"
+        [minFractionDigits]="priceDecimals()"
+        [maxFractionDigits]="priceDecimals()"
+        inputStyleClass="rr-calculator__input data-mono"
+      />
+    </label>
+
+    <label class="rr-calculator__label">
+      Size (lots / contracts)
+      <p-inputnumber
+        [ngModel]="volume()"
+        (ngModelChange)="volume.set($event)"
+        mode="decimal"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="4"
+        [min]="0.01"
+        inputStyleClass="rr-calculator__input data-mono"
+      />
+    </label>
+  </div>
+
+  @if (metrics(); as result) {
+    @if (!result.stop_valid) {
+      <p-message
+        severity="warn"
+        [text]="direction() === 'LONG' ? 'Stop must be below entry for a buy.' : 'Stop must be above entry for a sell.'"
+      />
+    } @else if (targetPrice() != null && !result.target_valid) {
+      <p-message
+        severity="warn"
+        [text]="direction() === 'LONG' ? 'Target must be above entry for a buy.' : 'Target must be below entry for a sell.'"
+      />
+    }
+
+    <dl class="rr-calculator__results">
+      <p class="rr-calculator__results-note">
+        Per-lot rows assume <strong>1.0 lot</strong>. Total risk/reward = per-lot × your size ({{
+          volume() ?? 0
+        }}
+        lots).
+      </p>
+      <div>
+        <dt>Stop distance</dt>
+        <dd class="data-mono">
+          {{ result.stopDistancePts }} price · {{ result.stop_unit_count }} {{ result.unit_label }}
+        </dd>
+      </div>
+      <div>
+        <dt>Risk at 1.0 lot</dt>
+        <dd class="data-mono">{{ formatUsd(result.risk_per_contract) }}</dd>
+      </div>
+      <div class="rr-calculator__results-total">
+        <dt>Total risk</dt>
+        <dd class="data-mono">{{ formatUsd(result.total_risk) }}</dd>
+      </div>
+      @if (result.target_valid) {
+        <div>
+          <dt>Target distance</dt>
+          <dd class="data-mono">
+            {{ result.rewardDistancePts }} price · {{ result.reward_unit_count }} {{ result.unit_label }}
+          </dd>
+        </div>
+        <div>
+          <dt>Reward at 1.0 lot</dt>
+          <dd class="data-mono">{{ formatUsd(result.reward_per_contract) }}</dd>
+        </div>
+        <div class="rr-calculator__results-total">
+          <dt>Total reward</dt>
+          <dd class="data-mono">{{ formatUsd(result.total_reward) }}</dd>
+        </div>
+        <div class="rr-calculator__results-rr">
+          <dt>R : R</dt>
+          <dd class="data-mono">{{ rrLabel() }}</dd>
+        </div>
+      }
+    </dl>
+  }
+</section>

@@ -1,0 +1,30 @@
+<section class="journal-panel" [formGroup]="journalGroup()">
+  <header class="journal-panel__header">
+    <h3 class="journal-panel__title">{{ title() }}</h3>
+    <p class="journal-panel__intro">{{ copy().intro }}</p>
+  </header>
+
+  @if (copy().focusPoints?.length) {
+    <ul class="journal-panel__focus-list">
+      @for (point of copy().focusPoints; track point) {
+        <li>{{ point }}</li>
+      }
+    </ul>
+  }
+
+  <app-journal-screenshots-panel
+    [scope]="screenshotScope()"
+    [fileInputId]="'screenshot-file-' + timeframe()"
+    [title]="'Chart screenshots'"
+    [uploadHint]="copy().uploadHint"
+  />
+
+  <div class="journal-panel__notes">
+    <label class="journal-panel__label" [for]="'notes-' + timeframe()">{{ copy().notesLabel }}</label>
+    <app-tagged-notes-editor
+      formControlName="notes_content"
+      [inputId]="'notes-' + timeframe()"
+      [placeholder]="copy().notesPlaceholder"
+    />
+  </div>
+</section>

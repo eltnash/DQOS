@@ -1,0 +1,26 @@
+<div class="journal-progress">
+  <div class="journal-progress__summary">
+    <span class="journal-progress__count">
+      {{ progress().completedCount }} of {{ progress().totalSteps }} steps complete
+    </span>
+    <span class="journal-progress__pct data-mono">{{ progress().progressPct }}%</span>
+  </div>
+
+  <p-progressBar
+    [value]="progress().progressPct"
+    [showValue]="false"
+    styleClass="journal-progress__bar"
+  />
+
+  <div class="journal-progress__legend" aria-hidden="true">
+    <span class="journal-progress__legend-item journal-progress__legend-item--done">Done</span>
+    <span class="journal-progress__legend-item journal-progress__legend-item--active">Current</span>
+    <span class="journal-progress__legend-item journal-progress__legend-item--todo">To do</span>
+  </div>
+
+  <app-gatekeeper-step-tabs
+    [steps]="tabSteps()"
+    [interactive]="false"
+    ariaLabel="Gatekeeper step completion"
+  />
+</div>
