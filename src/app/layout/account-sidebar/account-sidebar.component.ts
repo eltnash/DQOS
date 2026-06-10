@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
+import { AccountRiskService } from '../../core/accounts/account-risk.service';
+import { formatRiskAlertDetail } from '../../core/accounts/account-risk.utils';
 import { accountTypeLabel, formatAccountBalance } from '../../core/accounts/account.utils';
 import { ShellLayoutService } from '../../core/accounts/shell-layout.service';
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
@@ -23,6 +25,7 @@ interface SectionNavItem {
 })
 export class AccountSidebarComponent {
   private readonly accountService = inject(TradingAccountService);
+  private readonly riskService = inject(AccountRiskService);
   private readonly shellLayout = inject(ShellLayoutService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -39,6 +42,12 @@ export class AccountSidebarComponent {
 
   protected readonly formatBalance = formatAccountBalance;
   protected readonly typeLabel = accountTypeLabel;
+  protected readonly riskBlocked = computed(() => this.riskService.status().blocked);
+  protected readonly riskDetail = computed(() => {
+    const status = this.riskService.status();
+    const currency = this.account()?.currency ?? 'USD';
+    return status.blocked ? formatRiskAlertDetail(status, currency) : null;
+  });
 
   protected readonly navItems = computed((): SectionNavItem[] => {
     const locked = !this.configured();

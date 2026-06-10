@@ -1,3 +1,5 @@
+<app-account-risk-banner [accountId]="accountId()" />
+
 <header class="journal-header">
   <div>
     <h1 class="journal-header__title">Journal</h1>
@@ -14,7 +16,13 @@
       [outlined]="true"
       (onClick)="toggleShowArchived()"
     />
-    <p-button type="button" label="New journal" icon="pi pi-plus" (onClick)="startNewJournal()" />
+    <p-button
+      type="button"
+      label="New journal"
+      icon="pi pi-plus"
+      [disabled]="recordingBlocked()"
+      (onClick)="startNewJournal()"
+    />
   </div>
 </header>
 

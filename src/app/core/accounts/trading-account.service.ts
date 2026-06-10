@@ -1,5 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 
+import {
+  collectAuditMediaPaths,
+  collectDraftMediaPaths,
+} from './account-media-cleanup.utils';
 import type { TradingAccount, TradingAccountType } from '../models/database.types';
 import { SupabaseService } from '../supabase/supabase.service';
 
@@ -190,6 +194,90 @@ export class TradingAccountService {
     const next = updated as TradingAccount;
     this.activeAccount.set(next);
     this.upsertCache(next);
+  }
+
+  async deleteAccount(accountId: string): Promise<void> {
+    const {
+      data: { user },
+    } = await this.supabase.client.auth.getUser();
+    if (!user) {
+      throw new Error('Sign in to delete an account.');
+    }
+
+    const account = await this.getAccount(accountId);
+    if (!account) {
+      throw new Error('Account not found.');
+    }
+
+    const { data: drafts, error: draftsError } = await this.supabase.client
+      .from('gatekeeper_drafts')
+      .select('media')
+      .eq('account_id', accountId)
+      .eq('user_id', user.id);
+
+    if (draftsError) {
+      throw new Error(draftsError.message);
+    }
+
+    const { data: trades, error: tradesError } = await this.supabase.client
+      .from('trades')
+      .select('id')
+      .eq('account_id', accountId)
+      .eq('user_id', user.id);
+
+    if (tradesError) {
+      throw new Error(tradesError.message);
+    }
+
+    const tradeIds = (trades ?? []).map((row) => row.id);
+    const storagePaths = new Set<string>();
+
+    for (const draft of drafts ?? []) {
+      for (const path of collectDraftMediaPaths(draft.media)) {
+        storagePaths.add(path);
+      }
+    }
+
+    if (tradeIds.length > 0) {
+      const { data: audits, error: auditsError } = await this.supabase.client
+        .from('execution_audits')
+        .select('htf_context, pillar_journals')
+        .in('trade_id', tradeIds);
+
+      if (auditsError) {
+        throw new Error(auditsError.message);
+      }
+
+      for (const audit of audits ?? []) {
+        for (const path of collectAuditMediaPaths(audit.htf_context, audit.pillar_journals)) {
+          storagePaths.add(path);
+        }
+      }
+    }
+
+    const { error: deleteError } = await this.supabase.client
+      .from('trading_accounts')
+      .delete()
+      .eq('id', accountId)
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      throw new Error(deleteError.message);
+    }
+
+    if (storagePaths.size > 0) {
+      const { error: storageError } = await this.supabase.client.storage
+        .from('trade-screenshots')
+        .remove([...storagePaths]);
+      if (storageError) {
+        console.warn('[accounts] Could not remove all screenshots', storageError.message);
+      }
+    }
+
+    this.accountsCache.update((list) => list.filter((row) => row.id !== accountId));
+    if (this.activeAccount()?.id === accountId) {
+      this.activeAccount.set(null);
+    }
   }
 
   setActiveAccount(account: TradingAccount | null): void {

@@ -58,6 +58,17 @@
     }
   }
 
+  &__risk-alert {
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.625rem;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    color: #fcd34d;
+    font-size: 0.6875rem;
+    line-height: 1.45;
+  }
+
   &__layout-tools {
     display: flex;
     gap: 0.5rem;

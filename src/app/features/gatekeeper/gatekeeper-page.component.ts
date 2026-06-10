@@ -20,6 +20,7 @@ import {
 } from '../../shared/components/readiness-meter/readiness-meter.types';
 import { RiskRewardCalculatorComponent } from './risk-reward-calculator/risk-reward-calculator.component';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
+import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import { GatekeeperWizardComponent } from './gatekeeper-wizard.component';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
@@ -30,6 +31,7 @@ import { TradingSessionBarComponent } from './trading-session-bar.component';
 @Component({
   selector: 'app-gatekeeper-page',
   imports: [
+    AccountRiskBannerComponent,
     TradingSessionBarComponent,
     GatekeeperWizardComponent,
     ReadinessMeterComponent,
@@ -48,6 +50,8 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly accountScope = inject(AccountScopeService);
+
+  protected readonly accountId = this.accountScope.accountId;
   private readonly sessionBarRef = viewChild(TradingSessionBarComponent);
   private readonly wizardRef = viewChild(GatekeeperWizardComponent);
 

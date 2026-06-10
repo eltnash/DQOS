@@ -28,7 +28,10 @@ import {
   auctionStrategyLabel,
   auctionStrategyTagSeverity,
 } from '../gatekeeper/auction-playbook.utils';
+import { AccountRiskService } from '../../core/accounts/account-risk.service';
+import { formatRiskBlockMessage } from '../../core/accounts/account-risk.utils';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
+import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
 import { GatekeeperDraftService } from '../gatekeeper/gatekeeper-draft.service';
 import type { AuctionStrategy } from '../../core/models/database.types';
 import {
@@ -63,6 +66,7 @@ import {
     TagModule,
     ToastModule,
     JournalStepProgressComponent,
+    AccountRiskBannerComponent,
   ],
   templateUrl: './journal-page.component.html',
   styleUrl: './journal-page.component.scss',
@@ -72,9 +76,13 @@ import {
 export class JournalPageComponent implements OnInit {
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly accountScope = inject(AccountScopeService);
+  private readonly riskService = inject(AccountRiskService);
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+
+  protected readonly accountId = this.accountScope.accountId;
+  protected readonly recordingBlocked = computed(() => this.riskService.status().blocked);
   private readonly cdr = inject(ChangeDetectorRef);
 
   private readonly rawJournals = signal<GatekeeperJournalSummary[]>([]);
@@ -196,6 +204,16 @@ export class JournalPageComponent implements OnInit {
   }
 
   protected startNewJournal(): void {
+    if (this.recordingBlocked()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Recording paused',
+        detail: formatRiskBlockMessage(this.riskService.status()),
+        life: 8000,
+      });
+      return;
+    }
+
     this.draftService.clearActive();
     this.navigateToGatekeeper();
   }

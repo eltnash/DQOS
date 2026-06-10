@@ -13,6 +13,7 @@ import { SupabaseService } from '../../core/supabase/supabase.service';
 import { taggedNotesPlainText } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { GatekeeperSubmitPayload, GatekeeperSubmitResult } from './execution-block.types';
 import type { GatekeeperFormValue, OutcomeStepValue } from './gatekeeper-form.types';
+import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import {
@@ -28,6 +29,7 @@ export class GatekeeperSubmitService {
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly mediaService = inject(GatekeeperMediaService);
   private readonly accountService = inject(TradingAccountService);
+  private readonly riskService = inject(AccountRiskService);
 
   mapFormToAudit(
     form: GatekeeperFormValue,
@@ -115,6 +117,8 @@ export class GatekeeperSubmitService {
       throw new Error('No trading account selected');
     }
 
+    await this.riskService.assertCanRecord(accountId);
+
     const { data: trade, error: tradeError } = await client
       .from('trades')
       .insert({
@@ -175,6 +179,7 @@ export class GatekeeperSubmitService {
     if (payload.trade.status === 'CLOSED') {
       await this.accountService.recalculateBalance(accountId);
     }
+    await this.riskService.evaluate(accountId);
 
     return { tradeId: trade.id, auditId: audit.id };
   }

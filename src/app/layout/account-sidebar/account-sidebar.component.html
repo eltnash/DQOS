@@ -20,6 +20,10 @@
     </button>
   </div>
 
+  @if (!collapsed() && riskDetail(); as alert) {
+    <p class="account-sidebar__risk-alert">{{ alert }}</p>
+  }
+
   @if (!collapsed()) {
     <div class="account-sidebar__layout-tools">
       <button type="button" class="account-sidebar__tool" (click)="collapseAll()">Collapse all</button>

@@ -6,6 +6,10 @@
     </p>
   </header>
 
+  @if (riskDetail(); as alert) {
+    <p-message severity="warn" [text]="alert" styleClass="account-settings__message" />
+  }
+
   @if (error(); as message) {
     <p-message severity="error" [text]="message" styleClass="account-settings__message" />
   }
@@ -56,10 +60,28 @@
 
     <p-button
       type="submit"
-      label="Save & unlock sections"
+      label="Save settings"
       icon="pi pi-check"
       [loading]="saving()"
       styleClass="account-settings__submit"
     />
   </form>
+
+  <section class="account-settings__danger">
+    <h2 class="account-settings__danger-title">Danger zone</h2>
+    <p class="account-settings__danger-copy">
+      Permanently delete this account and all associated journals, trade history, and screenshots.
+    </p>
+    <p-button
+      type="button"
+      label="Delete account"
+      icon="pi pi-trash"
+      severity="danger"
+      [outlined]="true"
+      [loading]="deleting()"
+      (onClick)="confirmDelete()"
+    />
+  </section>
 </section>
+
+<p-confirmDialog />

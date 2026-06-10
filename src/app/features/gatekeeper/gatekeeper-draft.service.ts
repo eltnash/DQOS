@@ -10,6 +10,7 @@ import type {
   TimeframeScreenshotRef,
   TradeDirection,
 } from '../../core/models/database.types';
+import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { GatekeeperMediaService } from '../../core/supabase/gatekeeper-media.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
@@ -60,6 +61,7 @@ export class GatekeeperDraftService {
   private readonly supabase = inject(SupabaseService);
   private readonly mediaService = inject(GatekeeperMediaService);
   private readonly accountService = inject(TradingAccountService);
+  private readonly riskService = inject(AccountRiskService);
 
   private readonly draftId = signal<string | null>(null);
   private readonly boundAccountId = signal<string | null>(null);
@@ -156,6 +158,8 @@ export class GatekeeperDraftService {
     }
 
     const accountId = this.requireAccountId();
+    await this.riskService.assertCanRecord(accountId);
+
     const journalName = sessionState.journalName.trim();
     const { data: existing, error: fetchError } = await client
       .from('gatekeeper_drafts')
@@ -1148,6 +1152,7 @@ export class GatekeeperDraftService {
 
     if (accountId) {
       await this.accountService.recalculateBalance(accountId);
+      await this.riskService.evaluate(accountId);
     }
   }
 

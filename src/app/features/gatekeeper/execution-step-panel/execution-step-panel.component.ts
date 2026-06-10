@@ -22,6 +22,8 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
+import { AccountRiskService } from '../../../core/accounts/account-risk.service';
+import { formatRiskBlockMessage } from '../../../core/accounts/account-risk.utils';
 import type { AssetSymbol, DayType } from '../../../core/models/database.types';
 import {
   PLATFORM_ORDER_TYPE_OPTIONS,
@@ -67,6 +69,7 @@ export class ExecutionStepPanelComponent implements OnInit {
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
+  private readonly riskService = inject(AccountRiskService);
 
   readonly sessionState = input.required<TradingSessionState | null>();
   readonly pillarsQualified = input.required<boolean>();
@@ -117,9 +120,11 @@ export class ExecutionStepPanelComponent implements OnInit {
     return 'Complete HTF context, auction type, all four pillars, and confirm retest before recording execution.';
   });
 
+  protected readonly recordingBlocked = computed(() => this.riskService.status().blocked);
+
   protected readonly canSubmit = computed(() => {
     this.formTick();
-    if (this.isLocked() || this.submitting()) {
+    if (this.isLocked() || this.submitting() || this.recordingBlocked()) {
       return false;
     }
     const value = executionFormToDraftValue(this.executionForm);
@@ -142,6 +147,9 @@ export class ExecutionStepPanelComponent implements OnInit {
 
   protected readonly submitBlockReason = computed(() => {
     this.formTick();
+    if (this.recordingBlocked()) {
+      return formatRiskBlockMessage(this.riskService.status());
+    }
     if (this.isLocked()) {
       return this.lockReason();
     }
