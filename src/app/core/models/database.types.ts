@@ -32,6 +32,22 @@ export type PlatformOrderType =
   | 'Buy_Stop_Limit'
   | 'Sell_Stop_Limit';
 export type TradeStatus = 'DRAFT' | 'OPEN' | 'CLOSED' | 'CANCELLED';
+export type TradingAccountType = 'demo' | 'live';
+
+export interface TradingAccount {
+  id: string;
+  user_id: string;
+  name: string;
+  account_type: TradingAccountType;
+  currency: string;
+  starting_capital: number | null;
+  current_balance: number | null;
+  max_drawdown_pct: number | null;
+  daily_drawdown_pct: number | null;
+  configured_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 export type DayType = 'D_Day' | 'P_Day' | 'b_Day' | 'Trend_Day' | 'Double_Dist';
 /** Trader auction read on Behavior step — rejection vs acceptance at the level. */
 export type AuctionStrategy = 'Level_Rejection' | 'Level_Acceptance';
@@ -204,6 +220,7 @@ export interface Profile {
 export interface Trade {
   id: string;
   user_id: string;
+  account_id: string | null;
   setup_id: string | null;
   status: TradeStatus;
   symbol: AssetSymbol;

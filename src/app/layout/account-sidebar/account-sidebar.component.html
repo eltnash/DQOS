@@ -1,0 +1,76 @@
+<aside class="account-sidebar" [class.account-sidebar--collapsed]="collapsed()">
+  <div class="account-sidebar__header">
+    @if (!collapsed()) {
+      @if (account(); as acc) {
+        <div class="account-sidebar__account">
+          <span class="account-sidebar__account-name">{{ acc.name }}</span>
+          <span class="account-sidebar__account-meta data-mono">
+            {{ formatBalance(acc) }} · {{ typeLabel(acc.account_type) }}
+          </span>
+        </div>
+      }
+    }
+    <button
+      type="button"
+      class="account-sidebar__collapse"
+      [attr.aria-label]="collapsed() ? 'Expand sections panel' : 'Collapse sections panel'"
+      (click)="toggleCollapse()"
+    >
+      <i [class]="collapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  @if (!collapsed()) {
+    <div class="account-sidebar__layout-tools">
+      <button type="button" class="account-sidebar__tool" (click)="collapseAll()">Collapse all</button>
+      <button type="button" class="account-sidebar__tool" (click)="expandAll()">Expand all</button>
+    </div>
+  }
+
+  <nav class="account-sidebar__nav" aria-label="Account sections">
+    @for (item of navItems(); track item.segment) {
+      <a
+        class="account-sidebar__link"
+        [class.account-sidebar__link--locked]="item.locked"
+        [routerLink]="item.locked ? null : navLink(item)"
+        routerLinkActive="account-sidebar__link--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="onNavClick(item, $event)"
+        [attr.aria-disabled]="item.locked ? true : null"
+      >
+        <i [class]="item.icon" aria-hidden="true"></i>
+        @if (!collapsed()) {
+          <span>{{ item.label }}</span>
+          @if (item.locked) {
+            <i class="pi pi-lock account-sidebar__lock" aria-hidden="true"></i>
+          }
+        }
+      </a>
+    }
+
+    <a
+      class="account-sidebar__link account-sidebar__link--settings"
+      [routerLink]="['/accounts', accountId(), 'settings']"
+      routerLinkActive="account-sidebar__link--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <i class="pi pi-cog" aria-hidden="true"></i>
+      @if (!collapsed()) {
+        <span>Settings</span>
+      }
+    </a>
+  </nav>
+
+  @if (!collapsed()) {
+    <div class="account-sidebar__footer">
+      <p class="account-sidebar__user data-mono">{{ userEmail() }}</p>
+      <p-button
+        label="Sign Out"
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [text]="true"
+        (onClick)="signOut()"
+      />
+    </div>
+  }
+</aside>

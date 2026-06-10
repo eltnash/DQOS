@@ -28,6 +28,7 @@ import {
   auctionStrategyLabel,
   auctionStrategyTagSeverity,
 } from '../gatekeeper/auction-playbook.utils';
+import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { GatekeeperDraftService } from '../gatekeeper/gatekeeper-draft.service';
 import type { AuctionStrategy } from '../../core/models/database.types';
 import {
@@ -70,6 +71,7 @@ import {
 })
 export class JournalPageComponent implements OnInit {
   private readonly draftService = inject(GatekeeperDraftService);
+  private readonly accountScope = inject(AccountScopeService);
   private readonly router = inject(Router);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
@@ -195,11 +197,19 @@ export class JournalPageComponent implements OnInit {
 
   protected startNewJournal(): void {
     this.draftService.clearActive();
-    void this.router.navigate(['/gatekeeper']);
+    this.navigateToGatekeeper();
   }
 
   protected resumeJournal(journal: GatekeeperJournalSummary): void {
-    void this.router.navigate(['/gatekeeper'], { queryParams: { journalId: journal.id } });
+    this.navigateToGatekeeper({ journalId: journal.id });
+  }
+
+  private navigateToGatekeeper(queryParams?: Record<string, string>): void {
+    const accountId = this.accountScope.accountId();
+    if (!accountId) {
+      return;
+    }
+    void this.router.navigate(['/accounts', accountId, 'gatekeeper'], { queryParams });
   }
 
   protected openRenameDialog(journal: GatekeeperJournalSummary): void {

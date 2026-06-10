@@ -12,6 +12,7 @@ import { PaginatorModule, type PaginatorState } from 'primeng/paginator';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { auctionStrategyShortLabel } from '../gatekeeper/auction-playbook.utils';
+import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { GatekeeperDraftService } from '../gatekeeper/gatekeeper-draft.service';
 import type { AuctionStrategy } from '../../core/models/database.types';
 import { formatJournalIdShort } from '../../shared/utils/journal-id.utils';
@@ -38,7 +39,10 @@ import {
 export class TradeLedgerPageComponent implements OnInit {
   private readonly ledgerService = inject(TradeLedgerService);
   private readonly draftService = inject(GatekeeperDraftService);
+  private readonly accountScope = inject(AccountScopeService);
   private readonly router = inject(Router);
+
+  protected readonly accountId = this.accountScope.accountId;
 
   protected readonly loading = signal(true);
   protected readonly openingTradeId = signal<string | null>(null);
@@ -94,7 +98,13 @@ export class TradeLedgerPageComponent implements OnInit {
 
     try {
       await this.draftService.ensureJournalForTrade(tradeId);
-      await this.router.navigate(['/gatekeeper'], { queryParams: { journalId: tradeId } });
+      const accountId = this.accountScope.accountId();
+      if (!accountId) {
+        return;
+      }
+      await this.router.navigate(['/accounts', accountId, 'gatekeeper'], {
+        queryParams: { journalId: tradeId },
+      });
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not open journal');
     } finally {

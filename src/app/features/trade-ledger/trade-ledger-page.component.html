@@ -6,10 +6,12 @@
     </p>
     <p class="ledger-header__meta data-mono">{{ pageLabel() }}</p>
   </div>
-  <a routerLink="/journal" class="ledger-header__link">
+  @if (accountId(); as id) {
+  <a [routerLink]="['/accounts', id, 'journal']" class="ledger-header__link">
     <i class="pi pi-book" aria-hidden="true"></i>
     Journal sessions
   </a>
+  }
 </header>
 
 @if (error(); as message) {
@@ -26,7 +28,9 @@
     <p class="ledger-empty__hint">
       Complete the Execution step in Gatekeeper to save trades to the ledger.
     </p>
-    <a routerLink="/gatekeeper" class="ledger-empty__cta">Open Gatekeeper</a>
+    @if (accountId(); as id) {
+      <a [routerLink]="['/accounts', id, 'gatekeeper']" class="ledger-empty__cta">Open Gatekeeper</a>
+    }
   </section>
 } @else {
   <div class="ledger-shell">

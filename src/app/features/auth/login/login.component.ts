@@ -55,7 +55,7 @@ export class LoginComponent {
     try {
       const { email, password } = this.signInForm.getRawValue();
       await this.auth.signIn(email, password);
-      await this.router.navigate(['/dashboard']);
+      await this.router.navigate(['/accounts']);
     } catch (err) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Sign in failed.');
     } finally {

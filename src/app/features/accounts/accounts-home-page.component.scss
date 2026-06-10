@@ -1,0 +1,15 @@
+.accounts-home {
+  max-width: 40rem;
+
+  &__lead {
+    margin: 0 0 1rem;
+    color: #d1d5db;
+    line-height: 1.6;
+  }
+
+  &__hint {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 0.875rem;
+  }
+}

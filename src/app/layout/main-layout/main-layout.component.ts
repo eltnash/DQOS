@@ -1,41 +1,76 @@
-import { Component, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
-import { AuthService } from '../../core/auth/auth.service';
-
-interface NavItem {
-  label: string;
-  path: string;
-  icon: string;
-}
+import { AccountScopeService } from '../../core/accounts/account-scope.service';
+import { ShellLayoutService } from '../../core/accounts/shell-layout.service';
+import { AccountRailComponent } from '../account-rail/account-rail.component';
+import { AccountSidebarComponent } from '../account-sidebar/account-sidebar.component';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule],
+  imports: [RouterOutlet, AccountRailComponent, AccountSidebarComponent],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss',
 })
 export class MainLayoutComponent {
-  private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly shellLayout = inject(ShellLayoutService);
+  private readonly accountScope = inject(AccountScopeService);
 
-  /** Parent route for sidebar links — resolves sibling child routes correctly. */
-  protected readonly route = inject(ActivatedRoute);
+  protected readonly accountId = signal<string | null>(null);
+  protected readonly accountRailCollapsed = this.shellLayout.accountRailCollapsed;
+  protected readonly sectionSidebarCollapsed = this.shellLayout.sectionSidebarCollapsed;
 
-  protected readonly navItems: NavItem[] = [
-    { label: 'Dashboard', path: 'dashboard', icon: 'pi pi-chart-bar' },
-    { label: 'Gatekeeper', path: 'gatekeeper', icon: 'pi pi-shield' },
-    { label: 'Journal', path: 'journal', icon: 'pi pi-table' },
-    { label: 'Trade History', path: 'trade-history', icon: 'pi pi-list' },
-    { label: 'Setups', path: 'setups', icon: 'pi pi-book' },
-    { label: 'Edge Lab', path: 'lab', icon: 'pi pi-sparkles' },
-  ];
+  protected readonly gridColumns = computed(() => {
+    const rail = this.accountRailCollapsed() ? '48px' : '220px';
+    const hasAccount = this.accountId() != null;
 
-  protected readonly userEmail = () => this.auth.user()?.email ?? '';
+    if (!hasAccount) {
+      return `${rail} 1fr`;
+    }
 
-  protected async signOut(): Promise<void> {
-    await this.auth.signOut();
-    await this.router.navigate(['/login']);
+    const section = this.sectionSidebarCollapsed() ? '48px' : '240px';
+    return `${rail} ${section} 1fr`;
+  });
+
+  constructor() {
+    this.syncAccountFromRoute();
+
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => this.syncAccountFromRoute());
+
+    effect(() => {
+      const cols = this.gridColumns();
+      document.documentElement.style.setProperty('--dqos-shell-columns', cols);
+    });
+  }
+
+  private syncAccountFromRoute(): void {
+    let snapshot = this.route.snapshot;
+    while (snapshot.firstChild) {
+      snapshot = snapshot.firstChild;
+    }
+
+    let accountId: string | null = null;
+    let node: typeof snapshot | null = snapshot;
+    while (node) {
+      const id = node.paramMap.get('accountId');
+      if (id) {
+        accountId = id;
+        break;
+      }
+      node = node.parent;
+    }
+
+    this.accountId.set(accountId);
+
+    if (accountId) {
+      void this.accountScope.bind(accountId);
+    } else {
+      this.accountScope.clear();
+    }
   }
 }

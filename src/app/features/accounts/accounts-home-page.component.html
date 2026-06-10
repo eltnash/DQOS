@@ -1,0 +1,14 @@
+<section class="accounts-home">
+  <p-card header="Trading accounts" subheader="One login, many isolated workspaces">
+    <p class="accounts-home__lead">
+      Pick an account from the left rail or create a new one. Each account has its own capital,
+      journals, and trade history.
+    </p>
+
+    @if (accounts().length === 0) {
+      <p class="accounts-home__hint">Use <strong>New account</strong> in the accounts panel to get started.</p>
+    } @else {
+      <p class="accounts-home__hint">Select an account on the left to open its sections.</p>
+    }
+  </p-card>
+</section>

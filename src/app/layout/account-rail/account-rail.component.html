@@ -1,0 +1,110 @@
+<aside class="account-rail" [class.account-rail--collapsed]="collapsed()">
+  <div class="account-rail__header">
+    @if (!collapsed()) {
+      <span class="account-rail__title">Accounts</span>
+    }
+    <button
+      type="button"
+      class="account-rail__collapse"
+      [attr.aria-label]="collapsed() ? 'Expand accounts panel' : 'Collapse accounts panel'"
+      (click)="toggleCollapse()"
+    >
+      <i [class]="collapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  @if (!collapsed()) {
+    <nav class="account-rail__list" aria-label="Trading accounts">
+      @for (account of accounts(); track account.id) {
+        <a
+          class="account-rail__item"
+          [routerLink]="['/accounts', account.id]"
+          routerLinkActive="account-rail__item--active"
+          [routerLinkActiveOptions]="{ exact: false }"
+        >
+          <span class="account-rail__name">{{ account.name }}</span>
+          <span class="account-rail__meta data-mono">{{ formatBalance(account) }}</span>
+          <span class="account-rail__badge">{{ typeLabel(account.account_type) }}</span>
+        </a>
+      }
+    </nav>
+
+    <p-button
+      type="button"
+      label="New account"
+      icon="pi pi-plus"
+      severity="secondary"
+      [outlined]="true"
+      styleClass="account-rail__new"
+      (onClick)="openCreate()"
+    />
+  } @else {
+    <nav class="account-rail__icons" aria-label="Trading accounts">
+      @for (account of accounts(); track account.id) {
+        <a
+          class="account-rail__icon-btn"
+          [routerLink]="['/accounts', account.id]"
+          routerLinkActive="account-rail__icon-btn--active"
+          [attr.title]="account.name"
+          [attr.aria-label]="account.name"
+        >
+          <i class="pi pi-wallet" aria-hidden="true"></i>
+        </a>
+      }
+      <button
+        type="button"
+        class="account-rail__icon-btn"
+        aria-label="New account"
+        (click)="openCreate()"
+      >
+        <i class="pi pi-plus" aria-hidden="true"></i>
+      </button>
+    </nav>
+  }
+</aside>
+
+<p-dialog
+  header="New trading account"
+  [visible]="createVisible()"
+  [modal]="true"
+  [closable]="!createSaving()"
+  [style]="{ width: 'min(100%, 24rem)' }"
+  (visibleChange)="createVisible.set($event)"
+>
+  @if (createError(); as message) {
+    <p class="account-rail__error">{{ message }}</p>
+  }
+  <label class="account-rail__field-label" for="new-account-name">Account name</label>
+  <input
+    id="new-account-name"
+    pInputText
+    type="text"
+    class="account-rail__input"
+    [(ngModel)]="createName"
+    placeholder="e.g. ES Scalping Demo"
+  />
+  <label class="account-rail__field-label">Mode</label>
+  <p-selectbutton
+    [options]="typeOptions"
+    [(ngModel)]="createType"
+    optionLabel="label"
+    optionValue="value"
+    [allowEmpty]="false"
+  />
+  <div class="account-rail__dialog-actions">
+    <p-button
+      type="button"
+      label="Cancel"
+      severity="secondary"
+      [text]="true"
+      [disabled]="createSaving()"
+      (onClick)="createVisible.set(false)"
+    />
+    <p-button
+      type="button"
+      label="Create"
+      [loading]="createSaving()"
+      (onClick)="submitCreate()"
+    />
+  </div>
+</p-dialog>

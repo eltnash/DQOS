@@ -1,76 +1,8 @@
 .shell {
   display: grid;
-  grid-template-columns: 240px 1fr;
   min-height: 100vh;
   background: var(--dqos-bg-base);
-
-  &__sidebar {
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    background: var(--dqos-bg-panel);
-    border-right: 1px solid var(--dqos-border);
-  }
-
-  &__brand {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    margin-bottom: 2rem;
-  }
-
-  &__brand-mark {
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-  }
-
-  &__brand-sub {
-    font-size: 0.75rem;
-    color: #9ca3af;
-    letter-spacing: 0.04em;
-  }
-
-  &__nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
-  }
-
-  &__nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.625rem 0.75rem;
-    border-radius: 8px;
-    color: #d1d5db;
-    text-decoration: none;
-    font-size: 0.875rem;
-    transition: background 0.15s ease;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    &--active {
-      background: rgba(16, 185, 129, 0.12);
-      color: #34d399;
-    }
-  }
-
-  &__footer {
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid var(--dqos-border);
-  }
-
-  &__user {
-    margin: 0 0 0.5rem;
-    font-size: 0.75rem;
-    color: #9ca3af;
-    word-break: break-all;
-  }
+  transition: grid-template-columns 0.2s ease;
 
   &__main {
     padding: 1.5rem 2rem;
@@ -84,6 +16,10 @@
       width: 100%;
       max-width: 100%;
       min-width: 0;
+    }
+
+    &--wide {
+      padding-inline: clamp(1.5rem, 4vw, 3rem);
     }
   }
 }

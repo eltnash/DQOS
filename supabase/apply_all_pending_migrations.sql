@@ -250,3 +250,45 @@ ALTER TABLE public.trades
 
 COMMENT ON COLUMN public.trades.auction_strategy IS
   'Trader-selected auction read on Behavior step: rejection (responsive) vs acceptance (initiative) at the level.';
+
+-- ---------------------------------------------------------------------------
+-- 12. Trading accounts (isolated workspaces per user)
+-- ---------------------------------------------------------------------------
+DO $$ BEGIN
+  CREATE TYPE public.trading_account_type AS ENUM ('demo', 'live');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.trading_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  account_type public.trading_account_type NOT NULL DEFAULT 'demo',
+  currency TEXT NOT NULL DEFAULT 'USD',
+  starting_capital NUMERIC(18, 2),
+  current_balance NUMERIC(18, 2),
+  max_drawdown_pct NUMERIC(5, 2),
+  daily_drawdown_pct NUMERIC(5, 2),
+  configured_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS trading_accounts_user_list_idx
+  ON public.trading_accounts (user_id, updated_at DESC);
+
+ALTER TABLE public.trades
+  ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES public.trading_accounts(id) ON DELETE CASCADE;
+
+ALTER TABLE public.gatekeeper_drafts
+  ADD COLUMN IF NOT EXISTS account_id UUID REFERENCES public.trading_accounts(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS trades_account_id_idx ON public.trades (account_id);
+CREATE INDEX IF NOT EXISTS gatekeeper_drafts_account_id_idx ON public.gatekeeper_drafts (account_id);
+
+DROP INDEX IF EXISTS gatekeeper_drafts_user_journal_name_unique;
+
+CREATE UNIQUE INDEX IF NOT EXISTS gatekeeper_drafts_account_journal_name_unique
+  ON public.gatekeeper_drafts (account_id, journal_name)
+  WHERE account_id IS NOT NULL;

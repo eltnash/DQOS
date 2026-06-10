@@ -41,6 +41,19 @@ interface DraftExecutionRow {
 export class TradeLedgerService {
   private readonly supabase = inject(SupabaseService);
 
+  private boundAccountId: string | null = null;
+
+  bindAccount(accountId: string | null): void {
+    this.boundAccountId = accountId;
+  }
+
+  private requireAccountId(): string {
+    if (!this.boundAccountId) {
+      throw new Error('No trading account selected.');
+    }
+    return this.boundAccountId;
+  }
+
   async listPage(page: number, pageSize = TRADE_LEDGER_PAGE_SIZE): Promise<TradeLedgerPage> {
     const {
       data: { user },
@@ -50,6 +63,7 @@ export class TradeLedgerService {
       return { rows: [], totalCount: 0, page, pageSize };
     }
 
+    const accountId = this.requireAccountId();
     const from = page * pageSize;
     const to = from + pageSize - 1;
 
@@ -60,6 +74,7 @@ export class TradeLedgerService {
         { count: 'exact' },
       )
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .in('status', ['OPEN', 'CLOSED'])
       .order('opened_at', { ascending: false })
       .range(from, to);

@@ -1,38 +1,11 @@
-<div class="shell">
-  <aside class="shell__sidebar">
-    <div class="shell__brand">
-      <span class="shell__brand-mark">DQOS</span>
-      <span class="shell__brand-sub">AMT Lab</span>
-    </div>
+<div class="shell" [style.grid-template-columns]="gridColumns()">
+  <app-account-rail [activeAccountId]="accountId()" />
 
-    <nav class="shell__nav">
-      @for (item of navItems; track item.path) {
-        <a
-          class="shell__nav-link"
-          [routerLink]="item.path"
-          [relativeTo]="route"
-          routerLinkActive="shell__nav-link--active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <i [class]="item.icon"></i>
-          <span>{{ item.label }}</span>
-        </a>
-      }
-    </nav>
+  @if (accountId(); as id) {
+    <app-account-sidebar [accountId]="id" />
+  }
 
-    <div class="shell__footer">
-      <p class="shell__user data-mono">{{ userEmail() }}</p>
-      <p-button
-        label="Sign Out"
-        icon="pi pi-sign-out"
-        severity="secondary"
-        [text]="true"
-        (onClick)="signOut()"
-      />
-    </div>
-  </aside>
-
-  <main class="shell__main">
+  <main class="shell__main" [class.shell__main--wide]="accountId() == null">
     <router-outlet />
   </main>
 </div>

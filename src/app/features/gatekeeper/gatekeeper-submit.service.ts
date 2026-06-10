@@ -13,6 +13,7 @@ import { SupabaseService } from '../../core/supabase/supabase.service';
 import { taggedNotesPlainText } from '../../shared/components/tagged-notes-editor/tagged-notes.utils';
 import type { GatekeeperSubmitPayload, GatekeeperSubmitResult } from './execution-block.types';
 import type { GatekeeperFormValue, OutcomeStepValue } from './gatekeeper-form.types';
+import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import {
   GatekeeperScreenshotDraftService,
@@ -26,6 +27,7 @@ export class GatekeeperSubmitService {
   private readonly screenshotDrafts = inject(GatekeeperScreenshotDraftService);
   private readonly draftService = inject(GatekeeperDraftService);
   private readonly mediaService = inject(GatekeeperMediaService);
+  private readonly accountService = inject(TradingAccountService);
 
   mapFormToAudit(
     form: GatekeeperFormValue,
@@ -108,11 +110,17 @@ export class GatekeeperSubmitService {
       throw new Error('Not authenticated');
     }
 
+    const accountId = this.draftService.activeAccountId();
+    if (!accountId) {
+      throw new Error('No trading account selected');
+    }
+
     const { data: trade, error: tradeError } = await client
       .from('trades')
       .insert({
         id: draftId,
         user_id: user.id,
+        account_id: accountId,
         status: payload.trade.status,
         readiness_pct_at_entry: 100,
         symbol: payload.trade.symbol,
@@ -162,6 +170,10 @@ export class GatekeeperSubmitService {
       await client.from('execution_audits').delete().eq('id', audit.id);
       await client.from('trades').delete().eq('id', trade.id);
       throw markError instanceof Error ? markError : new Error('Could not update journal after submit');
+    }
+
+    if (payload.trade.status === 'CLOSED') {
+      await this.accountService.recalculateBalance(accountId);
     }
 
     return { tradeId: trade.id, auditId: audit.id };

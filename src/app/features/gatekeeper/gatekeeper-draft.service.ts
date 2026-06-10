@@ -10,6 +10,7 @@ import type {
   TimeframeScreenshotRef,
   TradeDirection,
 } from '../../core/models/database.types';
+import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { GatekeeperMediaService } from '../../core/supabase/gatekeeper-media.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import {
@@ -58,8 +59,10 @@ interface PendingWizardSave {
 export class GatekeeperDraftService {
   private readonly supabase = inject(SupabaseService);
   private readonly mediaService = inject(GatekeeperMediaService);
+  private readonly accountService = inject(TradingAccountService);
 
   private readonly draftId = signal<string | null>(null);
+  private readonly boundAccountId = signal<string | null>(null);
   private readonly boundSession = signal<TradingSessionState | null>(null);
   private initPromise: Promise<GatekeeperDraftLoadResult> | null = null;
   private initPromiseKey: string | null = null;
@@ -75,6 +78,7 @@ export class GatekeeperDraftService {
   readonly status = this.saveStatus.asReadonly();
   readonly error = this.saveError.asReadonly();
   readonly activeDraftId = this.draftId.asReadonly();
+  readonly activeAccountId = this.boundAccountId.asReadonly();
 
   constructor() {
     this.startSaveQueue();
@@ -86,6 +90,18 @@ export class GatekeeperDraftService {
 
   bindSession(sessionState: TradingSessionState | null): void {
     this.boundSession.set(sessionState);
+  }
+
+  bindAccount(accountId: string | null): void {
+    this.boundAccountId.set(accountId);
+  }
+
+  private requireAccountId(): string {
+    const accountId = this.boundAccountId();
+    if (!accountId) {
+      throw new Error('No trading account selected.');
+    }
+    return accountId;
   }
 
   async initById(draftId: string): Promise<GatekeeperDraftLoadResult> {
@@ -102,11 +118,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to open saved journals.');
     }
 
+    const accountId = this.requireAccountId();
     const { data, error } = await client
       .from('gatekeeper_drafts')
       .select(DRAFT_SELECT)
       .eq('id', draftId)
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .maybeSingle();
 
     if (error) {
@@ -137,11 +155,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to save screenshots and drafts to the cloud.');
     }
 
+    const accountId = this.requireAccountId();
     const journalName = sessionState.journalName.trim();
     const { data: existing, error: fetchError } = await client
       .from('gatekeeper_drafts')
       .select('id')
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .eq('journal_name', journalName)
       .maybeSingle();
 
@@ -161,6 +181,7 @@ export class GatekeeperDraftService {
     const session = sessionState.session;
     const insertPayload = {
       user_id: user.id,
+      account_id: accountId,
       journal_name: journalName,
       trading_date: session.trading_date,
       symbol: sessionState.symbol,
@@ -195,8 +216,10 @@ export class GatekeeperDraftService {
       return [];
     }
 
+    const accountId = this.requireAccountId();
+
     if (!options?.archivedOnly) {
-      await this.reconcileOrphanedTradeJournals(user.id);
+      await this.reconcileOrphanedTradeJournals(user.id, accountId);
     }
 
     let query = this.supabase.client
@@ -204,7 +227,8 @@ export class GatekeeperDraftService {
       .select(
         'id, journal_name, trading_date, symbol, session_context, wizard_form, media, ui_state, execution_form, created_at, updated_at, archived_at, submitted_at, completed_at, recovered_from_trade',
       )
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('account_id', accountId);
 
     if (options?.archivedOnly) {
       query = query.not('archived_at', 'is', null);
@@ -259,7 +283,7 @@ export class GatekeeperDraftService {
    * Older builds deleted gatekeeper_drafts when execution was saved, leaving trades in the
    * ledger with no journal row. Re-create minimal draft records so the Journal page can list them.
    */
-  private async reconcileOrphanedTradeJournals(userId: string): Promise<void> {
+  private async reconcileOrphanedTradeJournals(userId: string, accountId: string): Promise<void> {
     const client = this.supabase.client;
 
     const { data: trades, error: tradesError } = await client
@@ -268,24 +292,30 @@ export class GatekeeperDraftService {
         'id, symbol, direction, trading_date, session_context, opened_at, closed_at, entry_price, stop_price, exit_price, size, commissions, net_profit, notes, updated_at',
       )
       .eq('user_id', userId)
+      .eq('account_id', accountId)
       .in('status', ['OPEN', 'CLOSED']);
 
     if (tradesError || !trades?.length) {
       return;
     }
 
-    const { data: drafts } = await client.from('gatekeeper_drafts').select('id').eq('user_id', userId);
+    const { data: drafts } = await client
+      .from('gatekeeper_drafts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('account_id', accountId);
 
     const draftIds = new Set((drafts ?? []).map((row) => row.id));
     const orphans = trades.filter((trade) => !draftIds.has(trade.id));
 
     for (const trade of orphans) {
-      await this.insertRecoveredDraft(userId, trade);
+      await this.insertRecoveredDraft(userId, accountId, trade);
     }
   }
 
   private async insertRecoveredDraft(
     userId: string,
+    accountId: string,
     trade: {
       id: string;
       symbol: string;
@@ -306,6 +336,7 @@ export class GatekeeperDraftService {
   ): Promise<void> {
     const journalName = await this.uniqueRecoveredJournalName(
       userId,
+      accountId,
       trade.trading_date,
       trade.symbol,
       trade.id,
@@ -316,6 +347,7 @@ export class GatekeeperDraftService {
     const { error } = await this.supabase.client.from('gatekeeper_drafts').insert({
       id: trade.id,
       user_id: userId,
+      account_id: accountId,
       journal_name: journalName,
       trading_date: trade.trading_date,
       symbol: trade.symbol,
@@ -337,6 +369,7 @@ export class GatekeeperDraftService {
 
   private async uniqueRecoveredJournalName(
     userId: string,
+    accountId: string,
     tradingDate: string,
     symbol: string,
     tradeId: string,
@@ -350,6 +383,7 @@ export class GatekeeperDraftService {
         .from('gatekeeper_drafts')
         .select('id')
         .eq('user_id', userId)
+        .eq('account_id', accountId)
         .eq('journal_name', candidate)
         .maybeSingle();
 
@@ -459,11 +493,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to rename journals.');
     }
 
+    const accountId = this.requireAccountId();
     const { data, error } = await this.supabase.client
       .from('gatekeeper_drafts')
       .update({ journal_name: trimmed })
       .eq('id', draftId)
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .select('journal_name')
       .maybeSingle();
 
@@ -556,11 +592,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to delete journals.');
     }
 
+    const accountId = this.requireAccountId();
     const { data: draft, error: draftError } = await this.supabase.client
       .from('gatekeeper_drafts')
       .select('id, trade_id, media')
       .eq('id', draftId)
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .maybeSingle();
 
     if (draftError) {
@@ -587,11 +625,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to open journals.');
     }
 
+    const accountId = this.requireAccountId();
     const { data: existing } = await this.supabase.client
       .from('gatekeeper_drafts')
       .select('id')
       .eq('id', tradeId)
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .maybeSingle();
 
     if (existing) {
@@ -605,6 +645,7 @@ export class GatekeeperDraftService {
       )
       .eq('id', tradeId)
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .maybeSingle();
 
     if (tradeError) {
@@ -615,7 +656,7 @@ export class GatekeeperDraftService {
       throw new Error('No journal exists for this trade.');
     }
 
-    await this.insertRecoveredDraft(user.id, trade);
+    await this.insertRecoveredDraft(user.id, accountId, trade);
   }
 
   peekExecutionSnapshot(): ExecutionFormValue | null {
@@ -810,12 +851,16 @@ export class GatekeeperDraftService {
   }
 
   private buildInitKey(sessionState: TradingSessionState): string {
-    return sessionState.journalName.trim();
+    const accountId = this.boundAccountId() ?? '';
+    return `${accountId}:${sessionState.journalName.trim()}`;
   }
 
   private formatDraftError(err: unknown): string {
     const message = err instanceof Error ? err.message : String(err);
-    if (message.includes('gatekeeper_drafts_user_journal_name_unique')) {
+    if (
+      message.includes('gatekeeper_drafts_user_journal_name_unique') ||
+      message.includes('gatekeeper_drafts_account_journal_name_unique')
+    ) {
       return 'A journal with this name already exists. Choose a different journal name.';
     }
     if (message.includes('gatekeeper_drafts') || message.toLowerCase().includes('schema cache')) {
@@ -1027,11 +1072,13 @@ export class GatekeeperDraftService {
       throw new Error('Sign in to manage journals.');
     }
 
+    const accountId = this.requireAccountId();
     const { data, error } = await this.supabase.client
       .from('gatekeeper_drafts')
       .update({ archived_at: archivedAt })
       .eq('id', draftId)
       .eq('user_id', user.id)
+      .eq('account_id', accountId)
       .select('id')
       .maybeSingle();
 
@@ -1054,13 +1101,14 @@ export class GatekeeperDraftService {
     draftMedia: GatekeeperDraftMedia,
   ): Promise<void> {
     const client = this.supabase.client;
+    const accountId = this.boundAccountId();
 
-    const { data: trade } = await client
-      .from('trades')
-      .select('id')
-      .eq('id', tradeId)
-      .eq('user_id', userId)
-      .maybeSingle();
+    let tradeQuery = client.from('trades').select('id').eq('id', tradeId).eq('user_id', userId);
+    if (accountId) {
+      tradeQuery = tradeQuery.eq('account_id', accountId);
+    }
+
+    const { data: trade } = await tradeQuery.maybeSingle();
 
     if (!trade) {
       return;
@@ -1089,9 +1137,17 @@ export class GatekeeperDraftService {
       }
     }
 
-    const { error: tradeError } = await client.from('trades').delete().eq('id', tradeId).eq('user_id', userId);
+    let deleteQuery = client.from('trades').delete().eq('id', tradeId).eq('user_id', userId);
+    if (accountId) {
+      deleteQuery = deleteQuery.eq('account_id', accountId);
+    }
+    const { error: tradeError } = await deleteQuery;
     if (tradeError) {
       throw new Error(tradeError.message);
+    }
+
+    if (accountId) {
+      await this.accountService.recalculateBalance(accountId);
     }
   }
 
@@ -1126,12 +1182,16 @@ export class GatekeeperDraftService {
   ): Promise<void> {
     let media = mediaHint;
     if (!media) {
-      const { data, error } = await this.supabase.client
+      const accountId = this.boundAccountId();
+      let draftQuery = this.supabase.client
         .from('gatekeeper_drafts')
         .select('media')
         .eq('id', draftId)
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
+      if (accountId) {
+        draftQuery = draftQuery.eq('account_id', accountId);
+      }
+      const { data, error } = await draftQuery.maybeSingle();
 
       if (error) {
         throw new Error(this.formatDraftError(error.message));
@@ -1156,11 +1216,16 @@ export class GatekeeperDraftService {
       }
     }
 
-    const { error: deleteError } = await this.supabase.client
+    const accountId = this.boundAccountId();
+    let deleteDraftQuery = this.supabase.client
       .from('gatekeeper_drafts')
       .delete()
       .eq('id', draftId)
       .eq('user_id', userId);
+    if (accountId) {
+      deleteDraftQuery = deleteDraftQuery.eq('account_id', accountId);
+    }
+    const { error: deleteError } = await deleteDraftQuery;
 
     if (deleteError) {
       throw new Error(this.formatDraftError(deleteError.message));

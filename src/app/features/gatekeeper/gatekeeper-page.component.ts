@@ -19,6 +19,7 @@ import {
   type PillarStepState,
 } from '../../shared/components/readiness-meter/readiness-meter.types';
 import { RiskRewardCalculatorComponent } from './risk-reward-calculator/risk-reward-calculator.component';
+import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { GatekeeperDraftService } from './gatekeeper-draft.service';
 import { GatekeeperWizardComponent } from './gatekeeper-wizard.component';
 import type { GatekeeperFormValue } from './gatekeeper-form.types';
@@ -46,6 +47,7 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
   private readonly messageService = inject(MessageService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly accountScope = inject(AccountScopeService);
   private readonly sessionBarRef = viewChild(TradingSessionBarComponent);
   private readonly wizardRef = viewChild(GatekeeperWizardComponent);
 
@@ -147,7 +149,15 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
         : 'Your completed journal is in the journal list.',
       life: 5000,
     });
-    void this.router.navigate(['/journal']);
+    this.navigateToSection('journal');
+  }
+
+  private navigateToSection(segment: string, queryParams?: Record<string, string>): void {
+    const accountId = this.accountScope.accountId();
+    if (!accountId) {
+      return;
+    }
+    void this.router.navigate(['/accounts', accountId, segment], { queryParams });
   }
 
   private async syncRouteState(journalId: string | null): Promise<void> {
@@ -225,7 +235,7 @@ export class GatekeeperPageComponent implements OnInit, AfterViewInit, OnDestroy
         detail: message,
         life: 6000,
       });
-      void this.router.navigate(['/journal']);
+      this.navigateToSection('journal');
     }
   }
 
