@@ -59,7 +59,6 @@ import {
 } from './htf-context.utils';
 import { PillarStepPanelComponent } from './pillar-step-panel/pillar-step-panel.component';
 import { pillarFocusLabel } from './pillar-context.utils';
-import { HtfNarrativePanelComponent } from './htf-narrative-panel/htf-narrative-panel.component';
 import { ExecutionStepPanelComponent } from './execution-step-panel/execution-step-panel.component';
 import { GatekeeperStepTabsComponent } from './gatekeeper-step-tabs/gatekeeper-step-tabs.component';
 import { TimeframeJournalPanelComponent } from './timeframe-journal-panel.component';
@@ -88,7 +87,6 @@ const EXECUTION_UNLOCK_FOR_TESTING = true;
   imports: [
     ReactiveFormsModule,
     TimeframeJournalPanelComponent,
-    HtfNarrativePanelComponent,
     PillarStepPanelComponent,
     ExecutionStepPanelComponent,
     GatekeeperStepTabsComponent,
@@ -148,7 +146,7 @@ export class GatekeeperWizardComponent {
       number: 1,
       title: 'HTF Context',
       methodology:
-        'Select timeframes, journal charts for each tab, then complete that timeframe\'s narrative Q&A before continuing.',
+        'Select timeframes and journal charts for each tab — screenshots and tagged notes per timeframe before continuing.',
     },
     {
       key: 'auction_type',
@@ -354,10 +352,6 @@ export class GatekeeperWizardComponent {
 
   protected contextGroup(): FormGroup {
     return this.stepGroup('context');
-  }
-
-  protected narrativeGroup(tf: AnalyzedTimeframe): FormGroup {
-    return this.journalGroup(tf).get('narrative') as FormGroup;
   }
 
   protected auctionTypeGroup(): FormGroup {

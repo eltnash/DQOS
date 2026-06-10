@@ -18,7 +18,7 @@ const DEFAULT_JOURNAL_COPY: TimeframeJournalCopy = {
 
 const WEEKLY_JOURNAL_COPY: TimeframeJournalCopy = {
   intro:
-    'Upload your weekly chart with prior week high, prior week low, and prior week composite VAH / VAL / POC marked. Answer the narrative Q&A below for this tab.',
+    'Upload your weekly chart with prior week high, prior week low, and prior week composite VAH / VAL / POC marked.',
   uploadHint:
     'Upload a weekly chart with prior week high, prior week low, and prior week composite VAH / VAL / POC marked.',
   notesLabel: 'Chart annotation notes',

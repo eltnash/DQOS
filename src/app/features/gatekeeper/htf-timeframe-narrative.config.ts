@@ -347,10 +347,7 @@ export function narrativeFieldKeysForTimeframe(tf: AnalyzedTimeframe): Timeframe
   return TIMEFRAME_NARRATIVE_CONFIG[tf].fields.map((field) => field.key);
 }
 
-/** Daily HTF journal is chart + notes only — no narrative Q&A. */
-export function htfContextNarrativeFieldKeys(tf: AnalyzedTimeframe): TimeframeNarrativeFieldKey[] {
-  if (tf === 'D') {
-    return [];
-  }
-  return narrativeFieldKeysForTimeframe(tf);
+/** HTF context is chart journal only — narrative Q&A removed from all timeframe tabs. */
+export function htfContextNarrativeFieldKeys(_tf: AnalyzedTimeframe): TimeframeNarrativeFieldKey[] {
+  return [];
 }

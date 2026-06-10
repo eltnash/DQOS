@@ -26,7 +26,7 @@
         <section class="gatekeeper-form__panel" formGroupName="context">
           <p-message
             severity="info"
-            text="HTF chart journal — upload screenshots and tagged notes for each higher timeframe. Narrative Q&A appears below for each selected tab except Daily."
+            text="HTF chart journal — upload screenshots and tagged notes for each higher timeframe you are analyzing."
             styleClass="gatekeeper-form__oath"
           />
 
@@ -55,7 +55,7 @@
           @if (selectedTimeframes().length === 0) {
             <p-message
               severity="warn"
-              text="Select at least one timeframe — each gets its own screenshots, tagged notes, and narrative Q&A."
+              text="Select at least one timeframe — each gets its own screenshots and tagged notes."
             />
           } @else {
             <nav class="gatekeeper-form__tf-tabs" aria-label="Timeframe journal tabs">
@@ -80,13 +80,6 @@
                     [journalGroup]="journalGroup(tf)"
                     [pasteActive]="true"
                   />
-
-                  @if (tf !== 'D') {
-                    <app-htf-narrative-panel
-                      [timeframe]="tf"
-                      [narrativeGroup]="narrativeGroup(tf)"
-                    />
-                  }
                 }
               }
             </div>
@@ -94,7 +87,7 @@
             @if (!isStepValid('context') && contextGroup().touched) {
               <p-message
                 severity="warn"
-                text="For each selected timeframe, complete the chart journal and narrative Q&A (minimum 20 characters on text answers)."
+                text="For each selected timeframe, add at least one screenshot and tagged notes (minimum 20 characters)."
               />
             }
           }
