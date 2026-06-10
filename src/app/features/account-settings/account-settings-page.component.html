@@ -7,8 +7,14 @@
     </p>
   </header>
 
-  @if (riskDetail(); as alert) {
-    <p-message severity="warn" [text]="alert" styleClass="account-settings__message" />
+  @if (riskStatus().blocked) {
+    <div class="account-settings__risk">
+      <p-message severity="warn" text="Account locked — executions and new journal records are paused." styleClass="account-settings__message" />
+      <app-account-risk-locks [accountId]="settingsAccountId()" />
+      @if (riskMetrics(); as metrics) {
+        <p class="account-settings__risk-metrics">{{ metrics }}</p>
+      }
+    </div>
   }
 
   @if (error(); as message) {

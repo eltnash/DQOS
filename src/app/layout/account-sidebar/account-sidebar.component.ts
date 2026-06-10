@@ -3,8 +3,8 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
-import { formatRiskAlertDetail } from '../../core/accounts/account-risk.utils';
 import { accountTypeLabel, formatAccountBalance } from '../../core/accounts/account.utils';
+import { AccountRiskLocksComponent } from '../../shared/components/account-risk-locks/account-risk-locks.component';
 import { ShellLayoutService } from '../../core/accounts/shell-layout.service';
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -18,7 +18,7 @@ interface SectionNavItem {
 
 @Component({
   selector: 'app-account-sidebar',
-  imports: [RouterLink, RouterLinkActive, ButtonModule],
+  imports: [RouterLink, RouterLinkActive, ButtonModule, AccountRiskLocksComponent],
   templateUrl: './account-sidebar.component.html',
   styleUrl: './account-sidebar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,11 +43,6 @@ export class AccountSidebarComponent {
   protected readonly formatBalance = formatAccountBalance;
   protected readonly typeLabel = accountTypeLabel;
   protected readonly riskBlocked = computed(() => this.riskService.status().blocked);
-  protected readonly riskDetail = computed(() => {
-    const status = this.riskService.status();
-    const currency = this.account()?.currency ?? 'USD';
-    return status.blocked ? formatRiskAlertDetail(status, currency) : null;
-  });
 
   protected readonly navItems = computed((): SectionNavItem[] => {
     const locked = !this.configured();

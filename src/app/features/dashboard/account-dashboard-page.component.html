@@ -56,16 +56,18 @@
             [styleClass]="'dashboard-progress dashboard-progress--' + riskUsageSeverity(limit.usedPct, limit.limitPct)"
           />
           @if (limit.breached) {
-            <p class="dashboard-limit-breach">Limit reached — executions paused</p>
+            <p class="dashboard-limit-breach">{{ lockLineFor(limit.key) }}</p>
           }
         </p-card>
       }
     </div>
   </section>
 
-  @if (riskDetail(); as alert) {
-    <p-message severity="warn" [text]="alert" styleClass="dashboard-alert" />
-    <a class="dashboard-settings-link" [routerLink]="['/accounts', accountId(), 'settings']">Update rules in Settings</a>
+  @if (riskStatus().blocked) {
+    <app-account-risk-locks [accountId]="accountId()" />
+    @if (riskMetrics(); as metrics) {
+      <p class="dashboard-alert-metrics">{{ metrics }}</p>
+    }
   }
 } @else {
   <p-message severity="error" text="Account not found." />

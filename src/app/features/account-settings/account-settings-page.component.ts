@@ -24,7 +24,8 @@ import { TagModule } from 'primeng/tag';
 
 import { accountTypeLabel } from '../../core/accounts/account.utils';
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
-import { formatRiskAlertDetail } from '../../core/accounts/account-risk.utils';
+import { formatRiskMetricsDetail } from '../../core/accounts/account-risk.utils';
+import { AccountRiskLocksComponent } from '../../shared/components/account-risk-locks/account-risk-locks.component';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { validateDrawdownHierarchy } from '../../core/accounts/drawdown-limits.utils';
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
@@ -53,6 +54,7 @@ function drawdownHierarchyValidator(control: AbstractControl): ValidationErrors 
     ButtonModule,
     MessageModule,
     ConfirmDialogModule,
+    AccountRiskLocksComponent,
   ],
   templateUrl: './account-settings-page.component.html',
   styleUrl: './account-settings-page.component.scss',
@@ -74,10 +76,14 @@ export class AccountSettingsPageComponent implements OnInit {
   protected readonly account = this.accountService.active;
   protected readonly riskStatus = this.riskService.status;
 
-  protected readonly riskDetail = computed(() => {
+  protected readonly settingsAccountId = (): string | null =>
+    this.route.parent?.snapshot.paramMap.get('accountId') ?? null;
+
+  protected readonly riskMetrics = computed(() => {
+    this.riskService.clock();
     const status = this.riskStatus();
     const currency = this.account()?.currency ?? 'USD';
-    return status.blocked ? formatRiskAlertDetail(status, currency) : null;
+    return status.blocked ? formatRiskMetricsDetail(status, currency) : null;
   });
 
   protected readonly hierarchyError = computed(() => {

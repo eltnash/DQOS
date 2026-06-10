@@ -23,7 +23,6 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 
 import { AccountRiskService } from '../../../core/accounts/account-risk.service';
-import { formatRiskBlockMessage } from '../../../core/accounts/account-risk.utils';
 import type { AssetSymbol, DayType } from '../../../core/models/database.types';
 import {
   PLATFORM_ORDER_TYPE_OPTIONS,
@@ -148,7 +147,8 @@ export class ExecutionStepPanelComponent implements OnInit {
   protected readonly submitBlockReason = computed(() => {
     this.formTick();
     if (this.recordingBlocked()) {
-      return formatRiskBlockMessage(this.riskService.status());
+      this.riskService.clock();
+      return this.riskService.blockMessage();
     }
     if (this.isLocked()) {
       return this.lockReason();

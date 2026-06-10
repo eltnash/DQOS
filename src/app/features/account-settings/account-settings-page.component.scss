@@ -23,6 +23,17 @@
     margin-bottom: 1rem;
   }
 
+  &__risk {
+    margin-bottom: 1rem;
+  }
+
+  &__risk-metrics {
+    margin: 0.5rem 0 0;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
   &__form {
     display: flex;
     flex-direction: column;

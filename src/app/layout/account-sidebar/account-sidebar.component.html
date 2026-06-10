@@ -20,8 +20,10 @@
     </button>
   </div>
 
-  @if (!collapsed() && riskDetail(); as alert) {
-    <p class="account-sidebar__risk-alert">{{ alert }}</p>
+  @if (!collapsed() && riskBlocked()) {
+    <div class="account-sidebar__risk-alert">
+      <app-account-risk-locks [accountId]="accountId()" [showSettingsLink]="false" />
+    </div>
   }
 
   @if (!collapsed()) {

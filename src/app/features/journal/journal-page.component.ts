@@ -29,7 +29,6 @@ import {
   auctionStrategyTagSeverity,
 } from '../gatekeeper/auction-playbook.utils';
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
-import { formatRiskBlockMessage } from '../../core/accounts/account-risk.utils';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
 import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
 import { GatekeeperDraftService } from '../gatekeeper/gatekeeper-draft.service';
@@ -208,7 +207,7 @@ export class JournalPageComponent implements OnInit {
       this.messageService.add({
         severity: 'warn',
         summary: 'Recording paused',
-        detail: formatRiskBlockMessage(this.riskService.status()),
+        detail: this.riskService.blockMessage(),
         life: 8000,
       });
       return;

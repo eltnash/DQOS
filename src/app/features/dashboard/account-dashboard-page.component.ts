@@ -7,7 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { ProgressBarModule } from 'primeng/progressbar';
@@ -16,9 +16,11 @@ import { TagModule } from 'primeng/tag';
 
 import {
   buildRiskLimitUsage,
-  formatRiskAlertDetail,
+  formatRiskLockLine,
+  formatRiskMetricsDetail,
   riskUsageProgress,
   riskUsageSeverity,
+  type AccountRiskViolation,
 } from '../../core/accounts/account-risk.utils';
 import { AccountRiskService } from '../../core/accounts/account-risk.service';
 import { AccountScopeService } from '../../core/accounts/account-scope.service';
@@ -26,19 +28,20 @@ import { accountTypeLabel, formatAccountBalance } from '../../core/accounts/acco
 import { TradingAccountService } from '../../core/accounts/trading-account.service';
 import { SupabaseService } from '../../core/supabase/supabase.service';
 import { AccountRiskBannerComponent } from '../../shared/components/account-risk-banner/account-risk-banner.component';
+import { AccountRiskLocksComponent } from '../../shared/components/account-risk-locks/account-risk-locks.component';
 
 @Component({
   selector: 'app-account-dashboard-page',
   imports: [
     CurrencyPipe,
     DecimalPipe,
-    RouterLink,
     CardModule,
     MessageModule,
     ProgressBarModule,
     ProgressSpinnerModule,
     TagModule,
     AccountRiskBannerComponent,
+    AccountRiskLocksComponent,
   ],
   templateUrl: './account-dashboard-page.component.html',
   styleUrl: './account-dashboard-page.component.scss',
@@ -78,11 +81,22 @@ export class AccountDashboardPageComponent implements OnInit {
     return buildRiskLimitUsage(acc, this.riskStatus());
   });
 
-  protected readonly riskDetail = computed(() => {
+  protected readonly riskMetrics = computed(() => {
     const status = this.riskStatus();
     const currency = this.account()?.currency ?? 'USD';
-    return status.blocked ? formatRiskAlertDetail(status, currency) : null;
+    return status.blocked ? formatRiskMetricsDetail(status, currency) : null;
   });
+
+  protected lockLineFor(key: 'daily' | 'weekly' | 'max'): string | null {
+    this.riskService.clock();
+    const violation: AccountRiskViolation =
+      key === 'daily' ? 'daily_drawdown' : key === 'weekly' ? 'weekly_drawdown' : 'max_drawdown';
+    const lock = this.riskStatus().locks.find((entry) => entry.violation === violation);
+    if (!lock) {
+      return null;
+    }
+    return formatRiskLockLine(lock, new Date(this.riskService.clock()));
+  }
 
   async ngOnInit(): Promise<void> {
     const accountId = this.route.parent?.snapshot.paramMap.get('accountId');
