@@ -1,0 +1,17 @@
+.perf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dash-empty {
+  margin: 0;
+  padding: 2rem 0;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 992px) {
+  .perf-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,53 @@
+<section class="dash-section">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 3</span>
+      <h2 class="dash-section__title">Setup Analytics</h2>
+      <p class="dash-section__subtitle">Within the selected strategy — locations, behaviors, and confirmations ranked by expectancy.</p>
+    </div>
+    <p-selectButton
+      [options]="filterOptions"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      optionLabel="label"
+      optionValue="value"
+    />
+  </header>
+
+  @if (filtered().length) {
+    <div class="setup-table-wrap">
+      <table class="setup-table">
+        <thead>
+          <tr>
+            <th>Setup</th>
+            <th>Dimension</th>
+            <th>Trades</th>
+            <th>Win rate</th>
+            <th>Expectancy</th>
+            <th>PF</th>
+            <th>Confidence</th>
+            <th>Edge</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of filtered(); track row.key + row.dimension) {
+            <tr>
+              <td class="setup-table__name">{{ row.label }}</td>
+              <td><span class="setup-table__dim">{{ row.dimension }}</span></td>
+              <td class="data-mono">{{ row.tradeCount }}</td>
+              <td class="data-mono">{{ row.winRate | percent: '1.1-1' }}</td>
+              <td class="data-mono" [class.pos]="(row.expectancyR ?? 0) > 0" [class.neg]="(row.expectancyR ?? 0) < 0">
+                {{ row.expectancyR != null ? (row.expectancyR | number: '1.2-2') + 'R' : '—' }}
+              </td>
+              <td class="data-mono">{{ row.profitFactor != null ? (row.profitFactor | number: '1.2-2') : '∞' }}</td>
+              <td><span class="setup-table__conf">{{ confidenceLabel(row.confidenceLevel) }}</span></td>
+              <td><p-tag [value]="statusLabel(row.edgeStatus)" severity="secondary" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="dash-empty">Record closed trades with pillar data in Gatekeeper to rank setups.</p>
+  }
+</section>

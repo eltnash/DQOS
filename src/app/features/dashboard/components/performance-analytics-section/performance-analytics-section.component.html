@@ -1,0 +1,67 @@
+<section class="dash-section">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 2</span>
+      <h2 class="dash-section__title">Performance Analytics — {{ strategyLabel() }}</h2>
+      <p class="dash-section__subtitle">Rolling metrics and curves for this strategy's trades only.</p>
+    </div>
+  </header>
+
+  <div class="perf-grid">
+    <p-card header="Strategy cumulative P&amp;L" styleClass="dash-card">
+      @if (strategyPnlCurve().length) {
+        <app-dashboard-line-chart [points]="strategyPnlCurve()" color="#34d399" />
+      } @else {
+        <p class="dash-empty">No closed trades for this strategy yet.</p>
+      }
+    </p-card>
+
+    <p-card header="Account equity (all strategies)" styleClass="dash-card">
+      @if (accountEquityCurve().length) {
+        <app-dashboard-line-chart [points]="accountEquityCurve()" color="#6b7280" />
+      } @else {
+        <p class="dash-empty">Account equity builds from all closed trades.</p>
+      }
+    </p-card>
+
+    <p-card header="Cumulative R" styleClass="dash-card">
+      @if (cumulativeR().length) {
+        <app-dashboard-line-chart [points]="cumulativeR()" color="#818cf8" />
+      } @else {
+        <p class="dash-empty">R-multiples need entry/stop/exit prices.</p>
+      }
+    </p-card>
+
+    <p-card header="Monthly P&amp;L" styleClass="dash-card">
+      @if (monthlyPerformance().length) {
+        <app-dashboard-bar-chart [points]="monthlyPerformance()" [colorBySign]="true" />
+      } @else {
+        <p class="dash-empty">No monthly data yet.</p>
+      }
+    </p-card>
+
+    <p-card header="Rolling 30-trade expectancy (R)" styleClass="dash-card">
+      @if (rollingExpectancy().length) {
+        <app-dashboard-line-chart [points]="rollingExpectancy()" color="#fbbf24" />
+      } @else {
+        <p class="dash-empty">Need 30+ closed trades.</p>
+      }
+    </p-card>
+
+    <p-card header="Rolling 30-trade profit factor" styleClass="dash-card">
+      @if (rollingProfitFactor().length) {
+        <app-dashboard-line-chart [points]="rollingProfitFactor()" color="#60a5fa" />
+      } @else {
+        <p class="dash-empty">Need 30+ closed trades.</p>
+      }
+    </p-card>
+
+    <p-card header="Rolling 30-trade win rate" styleClass="dash-card">
+      @if (rollingWinRate().length) {
+        <app-dashboard-line-chart [points]="rollingWinRate()" color="#a78bfa" />
+      } @else {
+        <p class="dash-empty">Need 30+ closed trades.</p>
+      }
+    </p-card>
+  </div>
+</section>

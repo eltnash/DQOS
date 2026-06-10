@@ -1,0 +1,37 @@
+<section class="dash-section">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 4</span>
+      <h2 class="dash-section__title">Edge Discovery Engine</h2>
+      <p class="dash-section__subtitle">
+        Location × Behavior × Confirmation combinations ranked by expectancy (minimum 5 trades).
+      </p>
+    </div>
+  </header>
+
+  @if (patterns().length) {
+    <div class="pattern-grid">
+      @for (p of patterns(); track p.location + p.behavior + p.confirmation) {
+        <article class="pattern-card">
+          <div class="pattern-card__pillars">
+            <div><span class="pattern-card__dim">Location</span>{{ p.locationLabel }}</div>
+            <div><span class="pattern-card__dim">Behavior</span>{{ p.behaviorLabel }}</div>
+            <div><span class="pattern-card__dim">Confirmation</span>{{ p.confirmationLabel }}</div>
+          </div>
+          <div class="pattern-card__stats">
+            <div><span>Trades</span><strong class="data-mono">{{ p.tradeCount }}</strong></div>
+            <div><span>Win rate</span><strong class="data-mono">{{ p.winRate | percent: '1.1-1' }}</strong></div>
+            <div>
+              <span>Expectancy</span>
+              <strong class="data-mono pos">{{ p.expectancyR != null ? (p.expectancyR | number: '1.2-2') + 'R' : '—' }}</strong>
+            </div>
+            <div><span>PF</span><strong class="data-mono">{{ p.profitFactor != null ? (p.profitFactor | number: '1.2-2') : '∞' }}</strong></div>
+          </div>
+          <p-tag [value]="confidenceLabel(p.confidenceLevel)" severity="secondary" />
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="dash-empty">Need 5+ trades sharing the same Location + Behavior + Confirmation triple.</p>
+  }
+</section>

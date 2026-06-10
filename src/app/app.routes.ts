@@ -11,7 +11,6 @@ import { GatekeeperPageComponent } from './features/gatekeeper/gatekeeper-page.c
 import { JournalPageComponent } from './features/journal/journal-page.component';
 import { TradeLedgerPageComponent } from './features/trade-ledger/trade-ledger-page.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
-import { AccountDashboardPageComponent } from './features/dashboard/account-dashboard-page.component';
 import { FeaturePlaceholderComponent } from './shared/components/feature-placeholder/feature-placeholder.component';
 
 export const routes: Routes = [
@@ -42,7 +41,10 @@ export const routes: Routes = [
           {
             path: 'dashboard',
             canActivate: [accountConfigGuard],
-            component: AccountDashboardPageComponent,
+            loadComponent: () =>
+              import('./features/dashboard/account-dashboard-page.component').then(
+                (m) => m.AccountDashboardPageComponent,
+              ),
           },
           {
             path: 'gatekeeper',

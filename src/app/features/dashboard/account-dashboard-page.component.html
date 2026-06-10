@@ -8,47 +8,62 @@
   <header class="dashboard-header">
     <div>
       <h1 class="dashboard-header__title">{{ acc.name }}</h1>
-      <p class="dashboard-header__subtitle">Account overview and drawdown limits</p>
+      <p class="dashboard-header__subtitle">
+        Per-strategy edge analytics — Rejection and Acceptance evaluated independently
+      </p>
     </div>
-    <p-tag [value]="typeLabel(acc.account_type)" severity="secondary" />
+    <div class="dashboard-header__meta">
+      <span class="dashboard-header__balance data-mono">{{ formatBalance(acc) }}</span>
+      <p-tag [value]="typeLabel(acc.account_type)" severity="secondary" />
+    </div>
   </header>
 
-  <section class="dashboard-metrics">
-    <p-card header="Current balance" styleClass="dashboard-card">
-      <p class="dashboard-stat data-mono">{{ formatBalance(acc) }}</p>
-      <p class="dashboard-meta">Starting {{ acc.starting_capital | currency: acc.currency || 'USD' }}</p>
-    </p-card>
+  @if (snapshot(); as data) {
+    <app-edge-assessment-section [bundles]="data.strategyBundles" [currency]="currency()" />
 
-    <p-card header="Closed P&amp;L" styleClass="dashboard-card">
-      <p
-        class="dashboard-stat data-mono"
-        [class.dashboard-stat--negative]="netPnl() < 0"
-        [class.dashboard-stat--positive]="netPnl() > 0"
-      >
-        {{ netPnl() | currency: acc.currency || 'USD' }}
-      </p>
-      <p class="dashboard-meta">From closed trades only</p>
-    </p-card>
+    <div class="strategy-scope-bar">
+      <span class="strategy-scope-bar__label">Drill into strategy</span>
+      <p-selectButton
+        [options]="strategyOptions()"
+        [ngModel]="activeStrategy()"
+        (ngModelChange)="activeStrategy.set($event)"
+        optionLabel="label"
+        optionValue="value"
+      />
+      <span class="strategy-scope-bar__hint">Sections below show the selected strategy only — not a combined sum.</span>
+    </div>
 
-    <p-card header="Closed trades" styleClass="dashboard-card">
-      <p class="dashboard-stat data-mono">{{ closedTradeCount() }}</p>
-      <p class="dashboard-meta">Recorded on this account</p>
-    </p-card>
-  </section>
+    @if (activeBundle(); as bundle) {
+      <app-strategy-health-section [health]="bundle.strategyHealth" [strategyLabel]="bundle.label" />
+      <app-performance-analytics-section
+        [strategyLabel]="bundle.label"
+        [strategyPnlCurve]="bundle.strategyPnlCurve"
+        [accountEquityCurve]="data.accountEquityCurve"
+        [cumulativeR]="bundle.cumulativeRCurve"
+        [monthlyPerformance]="bundle.monthlyPerformance"
+        [rollingExpectancy]="bundle.rollingExpectancy"
+        [rollingProfitFactor]="bundle.rollingProfitFactor"
+        [rollingWinRate]="bundle.rollingWinRate"
+      />
+      <app-setup-analytics-section [rows]="bundle.setupAnalytics" />
+      <app-edge-discovery-section [patterns]="bundle.edgePatterns" />
+      <app-execution-quality-section [grades]="bundle.processGrades" [avgScore]="bundle.avgProcessScore" />
+      <app-risk-analytics-section [risk]="bundle.riskAnalytics" [currency]="currency()" />
+    }
+
+    <app-kpi-glossary-section />
+  }
 
   <section class="dashboard-limits">
-    <h2 class="dashboard-limits__title">Drawdown limits</h2>
-    <p class="dashboard-limits__hint">Used vs configured limits (closed trades, % of starting capital)</p>
-
+    <h2 class="dashboard-limits__title">Account drawdown limits</h2>
+    <p class="dashboard-limits__hint">Account-level risk rails (applies across all strategies)</p>
     <div class="dashboard-limits__grid">
       @for (limit of riskLimits(); track limit.key) {
-        <p-card [header]="limit.label" styleClass="dashboard-card dashboard-card--limit">
-          <p class="dashboard-limit-period">{{ limit.periodLabel }}</p>
-          <div class="dashboard-limit-row">
-            <span class="dashboard-limit-value data-mono">
-              {{ limit.usedPct | number: '1.1-2' }}%
-            </span>
-            <span class="dashboard-limit-cap data-mono">/ {{ limit.limitPct | number: '1.1-2' }}%</span>
+        <div class="limit-card">
+          <span class="limit-card__label">{{ limit.label }}</span>
+          <span class="limit-card__period">{{ limit.periodLabel }}</span>
+          <div class="limit-card__row data-mono">
+            {{ limit.usedPct | number: '1.1-2' }}% / {{ limit.limitPct | number: '1.1-2' }}%
           </div>
           <p-progressbar
             [value]="riskUsageProgress(limit.usedPct, limit.limitPct)"
@@ -56,9 +71,9 @@
             [styleClass]="'dashboard-progress dashboard-progress--' + riskUsageSeverity(limit.usedPct, limit.limitPct)"
           />
           @if (limit.breached) {
-            <p class="dashboard-limit-breach">{{ lockLineFor(limit.key) }}</p>
+            <p class="limit-card__breach">{{ lockLineFor(limit.key) }}</p>
           }
-        </p-card>
+        </div>
       }
     </div>
   </section>

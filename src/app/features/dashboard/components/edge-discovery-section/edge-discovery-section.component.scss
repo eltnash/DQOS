@@ -1,0 +1,50 @@
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.pattern-card {
+  border: 1px solid var(--dqos-border);
+  border-radius: 8px;
+  background: #12151c;
+  padding: 0.85rem;
+
+  &__pillars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8125rem;
+    color: #e5e7eb;
+  }
+
+  &__dim {
+    display: block;
+    font-size: 0.65rem;
+    color: #6b7280;
+    text-transform: uppercase;
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+
+    strong {
+      display: block;
+      font-size: 0.9rem;
+      color: #d1d5db;
+      &.pos { color: #34d399; }
+    }
+  }
+}
+
+.dash-empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}

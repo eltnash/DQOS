@@ -1,0 +1,43 @@
+.exec-avg {
+  text-align: right;
+
+  &__label {
+    display: block;
+    font-size: 0.68rem;
+    color: #6b7280;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+}
+
+.exec-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.exec-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 0.35rem;
+
+  strong {
+    color: #e5e7eb;
+    &.pos { color: #34d399; }
+    &.neg { color: #f87171; }
+  }
+}
+
+@media (max-width: 1100px) {
+  .exec-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .exec-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,107 @@
+<section class="dash-section dash-section--hero">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 1</span>
+      <h2 class="dash-section__title">Edge Assessment</h2>
+      <p class="dash-section__subtitle">
+        Per-strategy verdict — each auction strategy is evaluated on its own trades only, never blended.
+      </p>
+    </div>
+  </header>
+
+  <div class="edge-strategies">
+    @for (bundle of bundles(); track bundle.strategy) {
+      <article class="edge-strategy-panel">
+        <header class="edge-strategy-panel__head">
+          <p-tag [value]="bundle.label" [severity]="strategySeverity(bundle.strategy)" />
+          <div class="edge-hero-verdict">
+            <p-tag
+              [value]="statusLabel(bundle.edgeAssessment.edgeStatus)"
+              [severity]="statusSeverity(bundle.edgeAssessment.edgeStatus)"
+            />
+            <span class="edge-hero-verdict__confidence">
+              {{ confidenceLabel(bundle.edgeAssessment.confidenceLevel) }}
+            </span>
+          </div>
+        </header>
+
+        <div class="edge-hero-grid">
+          <p-card styleClass="dash-card dash-card--highlight">
+            <div class="edge-metric-hero">
+              <span class="edge-metric-hero__label">Sample size (this strategy)</span>
+              <span class="edge-metric-hero__value data-mono">{{ bundle.edgeAssessment.sampleSize }}</span>
+              <p-progressbar [value]="sampleProgress(bundle.edgeAssessment.sampleSize)" [showValue]="false" />
+              @if (bundle.edgeAssessment.tradesUntilMinimum > 0) {
+                <span class="edge-metric-hero__hint">
+                  {{ bundle.edgeAssessment.tradesUntilMinimum }} more for minimum ({{ sampleMin }})
+                </span>
+              } @else {
+                <span class="edge-metric-hero__hint">
+                  {{ sampleMin }} min · {{ samplePreliminary }} stable · {{ sampleRobust }} robust
+                </span>
+              }
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label" pTooltip="Avg R per trade for this strategy only" tooltipPosition="top">Expectancy (R)</span>
+              <span class="edge-kpi__value data-mono" [class.pos]="(bundle.edgeAssessment.expectancyR ?? 0) > 0" [class.neg]="(bundle.edgeAssessment.expectancyR ?? 0) < 0">
+                {{ bundle.edgeAssessment.expectancyR != null ? (bundle.edgeAssessment.expectancyR | number: '1.2-2') + 'R' : '—' }}
+              </span>
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label">Profit factor</span>
+              <span class="edge-kpi__value data-mono">{{ pfDisplay(bundle.edgeAssessment.profitFactor) }}</span>
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label">Win rate</span>
+              <span class="edge-kpi__value data-mono">{{ bundle.edgeAssessment.winRate | percent: '1.1-1' }}</span>
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label">Avg R / trade</span>
+              <span class="edge-kpi__value data-mono">
+                {{ bundle.edgeAssessment.avgR != null ? (bundle.edgeAssessment.avgR | number: '1.2-2') + 'R' : '—' }}
+              </span>
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label">Strategy drawdown</span>
+              <span class="edge-kpi__value data-mono neg">
+                {{ bundle.edgeAssessment.maxDrawdownDollars | currency: currency() }}
+                ({{ bundle.edgeAssessment.maxDrawdownPct | number: '1.1-1' }}%)
+              </span>
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label">SQN</span>
+              <span class="edge-kpi__value data-mono">{{ bundle.edgeAssessment.sqn != null ? (bundle.edgeAssessment.sqn | number: '1.2-2') : '—' }}</span>
+            </div>
+          </p-card>
+
+          <p-card styleClass="dash-card">
+            <div class="edge-kpi">
+              <span class="edge-kpi__label">Strategy net P&amp;L</span>
+              <span class="edge-kpi__value data-mono" [class.pos]="bundle.edgeAssessment.isProfitable" [class.neg]="!bundle.edgeAssessment.isProfitable && bundle.edgeAssessment.sampleSize > 0">
+                {{ bundle.edgeAssessment.totalPnl | currency: currency() }}
+              </span>
+            </div>
+          </p-card>
+        </div>
+      </article>
+    }
+  </div>
+</section>

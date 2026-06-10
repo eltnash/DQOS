@@ -1,0 +1,38 @@
+<section class="dash-section">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 6</span>
+      <h2 class="dash-section__title">Risk Analytics</h2>
+      <p class="dash-section__subtitle">Institutional risk monitoring — drawdown, streaks, and tail events.</p>
+    </div>
+  </header>
+
+  <div class="risk-grid">
+    <p-card header="Max drawdown" styleClass="dash-card">
+      <p class="risk-val data-mono neg">{{ risk().maxDrawdownDollars | currency: currency() }}</p>
+      <p class="risk-sub data-mono">{{ risk().maxDrawdownPct | number: '1.1-1' }}% from peak</p>
+    </p-card>
+    <p-card header="Current drawdown" styleClass="dash-card">
+      <p class="risk-val data-mono" [class.neg]="risk().currentDrawdownDollars > 0">{{ risk().currentDrawdownDollars | currency: currency() }}</p>
+      <p class="risk-sub data-mono">{{ risk().currentDrawdownPct | number: '1.1-1' }}%</p>
+    </p-card>
+    <p-card header="Largest win" styleClass="dash-card">
+      <p class="risk-val data-mono pos">{{ risk().largestWin | currency: currency() }}</p>
+    </p-card>
+    <p-card header="Largest loss" styleClass="dash-card">
+      <p class="risk-val data-mono neg">{{ risk().largestLoss | currency: currency() }}</p>
+    </p-card>
+    <p-card header="Avg risk / trade" styleClass="dash-card">
+      <p class="risk-val data-mono">{{ risk().avgRiskPerTrade != null ? (risk().avgRiskPerTrade | currency: currency()) : '—' }}</p>
+    </p-card>
+    <p-card header="Max win streak" styleClass="dash-card">
+      <p class="risk-val data-mono">{{ risk().maxConsecutiveWins }}</p>
+    </p-card>
+    <p-card header="Max loss streak" styleClass="dash-card">
+      <p class="risk-val data-mono">{{ risk().maxConsecutiveLosses }}</p>
+    </p-card>
+    <p-card header="Current streak" styleClass="dash-card">
+      <p class="risk-val data-mono">{{ risk().currentStreakCount }} {{ risk().currentStreakType }}</p>
+    </p-card>
+  </div>
+</section>

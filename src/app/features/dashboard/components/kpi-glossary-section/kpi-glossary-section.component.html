@@ -1,0 +1,31 @@
+<section class="dash-section">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 8</span>
+      <h2 class="dash-section__title">Professional KPI Definitions</h2>
+      <p class="dash-section__subtitle">Formula, meaning, benchmarks, and warning thresholds for every metric.</p>
+    </div>
+  </header>
+
+  <p-accordion [multiple]="true" value="0">
+    @for (kpi of definitions; track kpi.key; let i = $index) {
+      <p-accordion-panel [value]="i">
+        <p-accordion-header>{{ kpi.name }}</p-accordion-header>
+        <p-accordion-content>
+          <dl class="kpi-dl">
+            <dt>Formula</dt>
+            <dd>{{ kpi.formula }}</dd>
+            <dt>Meaning</dt>
+            <dd>{{ kpi.meaning }}</dd>
+            <dt>Why it matters</dt>
+            <dd>{{ kpi.whyItMatters }}</dd>
+            <dt>Industry benchmark</dt>
+            <dd>{{ kpi.benchmark }}</dd>
+            <dt>Warning</dt>
+            <dd class="kpi-warn">{{ kpi.warning }}</dd>
+          </dl>
+        </p-accordion-content>
+      </p-accordion-panel>
+    }
+  </p-accordion>
+</section>

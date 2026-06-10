@@ -1,0 +1,39 @@
+<section class="dash-section dash-section--health">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 7</span>
+      <h2 class="dash-section__title">Strategy Health — {{ strategyLabel() }}</h2>
+      <p class="dash-section__subtitle">{{ health().summary }}</p>
+    </div>
+    <p-tag [value]="statusLabel(health().status)" [severity]="severity(health().status)" />
+  </header>
+
+  <div class="health-compare">
+    <p-card header="Rolling 30 vs Historical" styleClass="dash-card">
+      <div class="health-row">
+        <span>Expectancy (R)</span>
+        <span class="data-mono">
+          {{ health().rollingExpectancyR != null ? (health().rollingExpectancyR | number: '1.2-2') + 'R' : '—' }}
+          vs
+          {{ health().historicalExpectancyR != null ? (health().historicalExpectancyR | number: '1.2-2') + 'R' : '—' }}
+        </span>
+      </div>
+      <div class="health-row">
+        <span>Profit factor</span>
+        <span class="data-mono">
+          {{ health().rollingProfitFactor != null ? (health().rollingProfitFactor | number: '1.2-2') : '—' }}
+          vs
+          {{ health().historicalProfitFactor != null ? (health().historicalProfitFactor | number: '1.2-2') : '—' }}
+        </span>
+      </div>
+      <div class="health-row">
+        <span>Win rate</span>
+        <span class="data-mono">
+          {{ health().recentWinRate != null ? (health().recentWinRate | percent: '1.1-1') : '—' }}
+          vs
+          {{ health().historicalWinRate != null ? (health().historicalWinRate | percent: '1.1-1') : '—' }}
+        </span>
+      </div>
+    </p-card>
+  </div>
+</section>

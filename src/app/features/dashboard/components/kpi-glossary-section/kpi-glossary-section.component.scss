@@ -1,0 +1,21 @@
+.kpi-dl {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+
+  dt {
+    color: #6b7280;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    margin-top: 0.65rem;
+
+    &:first-child { margin-top: 0; }
+  }
+
+  dd {
+    margin: 0.15rem 0 0;
+    color: #d1d5db;
+  }
+
+  .kpi-warn { color: #fca5a5; }
+}

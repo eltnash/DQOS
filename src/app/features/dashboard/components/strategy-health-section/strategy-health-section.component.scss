@@ -1,0 +1,20 @@
+.dash-section--health {
+  border: 1px solid var(--dqos-border);
+  border-radius: 10px;
+  padding: 1rem;
+  background: #12151c;
+}
+
+.health-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  border-bottom: 1px solid rgba(38, 43, 55, 0.5);
+
+  &:last-child { border-bottom: none; }
+
+  span:last-child { color: #e5e7eb; }
+}

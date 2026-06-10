@@ -1,0 +1,30 @@
+<section class="dash-section">
+  <header class="dash-section__header">
+    <div>
+      <span class="dash-section__eyebrow">Section 5</span>
+      <h2 class="dash-section__title">Execution Quality</h2>
+      <p class="dash-section__subtitle">
+        4-pillar process score — Location, Behavior, Confirmation, Invalidation defined.
+      </p>
+    </div>
+    <div class="exec-avg">
+      <span class="exec-avg__label">Avg score</span>
+      <span class="exec-avg__value data-mono">{{ avgScore() | number: '1.1-1' }} / 4</span>
+    </div>
+  </header>
+
+  <div class="exec-grid">
+    @for (g of grades(); track g.grade) {
+      <p-card [header]="'Grade ' + g.grade + ' (' + g.score + '/4)'" styleClass="dash-card">
+        <div class="exec-stat"><span>Trades</span><strong class="data-mono">{{ g.tradeCount }}</strong></div>
+        <div class="exec-stat"><span>Win rate</span><strong class="data-mono">{{ g.winRate | percent: '1.1-1' }}</strong></div>
+        <div class="exec-stat">
+          <span>Expectancy</span>
+          <strong class="data-mono" [class.pos]="(g.expectancyR ?? 0) > 0" [class.neg]="(g.expectancyR ?? 0) < 0">
+            {{ g.expectancyR != null ? (g.expectancyR | number: '1.2-2') + 'R' : '—' }}
+          </strong>
+        </div>
+      </p-card>
+    }
+  </div>
+</section>
