@@ -7,8 +7,8 @@ import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
 import { TabsModule } from 'primeng/tabs';
 
+import { TradingAccountService } from '../../../core/accounts/trading-account.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { PageSkeletonComponent } from '../../../shared/components/page-skeleton/page-skeleton.component';
 
 @Component({
   selector: 'app-login',
@@ -19,13 +19,13 @@ import { PageSkeletonComponent } from '../../../shared/components/page-skeleton/
     ButtonModule,
     MessageModule,
     TabsModule,
-    PageSkeletonComponent,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);
+  private readonly accountService = inject(TradingAccountService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -57,7 +57,7 @@ export class LoginComponent {
     try {
       const { email, password } = this.signInForm.getRawValue();
       await this.auth.signIn(email, password);
-      await this.router.navigate(['/accounts']);
+      await this.navigateAfterAuth();
     } catch (err) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Sign in failed.');
     } finally {
@@ -85,5 +85,17 @@ export class LoginComponent {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  private async navigateAfterAuth(): Promise<void> {
+    const list = await this.accountService.loadAccounts();
+    if (list.length === 1) {
+      const account = list[0];
+      const target = this.accountService.isConfigured(account) ? 'dashboard' : 'settings';
+      await this.router.navigate(['/accounts', account.id, target]);
+      return;
+    }
+
+    await this.router.navigate(['/accounts']);
   }
 }

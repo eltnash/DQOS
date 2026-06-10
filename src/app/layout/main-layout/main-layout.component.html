@@ -5,16 +5,7 @@
     <app-account-sidebar [accountId]="id" />
   }
 
-  <main
-    class="shell__main"
-    [class.shell__main--wide]="accountId() == null"
-    [class.shell__main--navigating]="navigating()"
-  >
+  <main class="shell__main" [class.shell__main--wide]="accountId() == null">
     <router-outlet />
-    @if (navigating()) {
-      <div class="shell__route-skeleton">
-        <app-page-skeleton [layout]="skeletonLayout()" />
-      </div>
-    }
   </main>
 </div>

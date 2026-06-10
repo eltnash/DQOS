@@ -24,13 +24,8 @@
   }
 
   &__main {
-    position: relative;
     padding: 1.5rem 2rem;
     min-width: 0;
-
-    &--navigating {
-      overflow: hidden;
-    }
 
     > :not(router-outlet) {
       display: block;
@@ -42,14 +37,5 @@
     &--wide {
       padding-inline: clamp(1.5rem, 4vw, 3rem);
     }
-  }
-
-  &__route-skeleton {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    overflow-y: auto;
-    background: var(--dqos-bg-base);
-    padding: inherit;
   }
 }
